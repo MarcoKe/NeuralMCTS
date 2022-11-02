@@ -15,6 +15,9 @@ class RandomTreePolicy(TreePolicy):
     def select(self, node: Node, state):
         return random.choice(node.children)
 
+    def __str__(self):
+        return "RandTree"
+
 class UCTPolicy(TreePolicy):
     def __init__(self, exploration_const):
         self.exp_const = exploration_const
@@ -38,3 +41,6 @@ class UCTPolicy(TreePolicy):
             child = random.choice(node.children)
 
         return child
+
+    def __str__(self):
+        return "UCT"

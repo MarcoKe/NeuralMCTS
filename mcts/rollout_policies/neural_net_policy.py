@@ -22,6 +22,9 @@ class NeuralRolloutPolicy(RolloutPolicy):
 
         return reward
 
+    def __str__(self):
+        return "NRoll"
+
 
 
 class NeuralValueRolloutPolicy(RolloutPolicy):
@@ -38,3 +41,6 @@ class NeuralValueRolloutPolicy(RolloutPolicy):
         legal_actions = self.model.legal_actions(state)
 
         return self.stb3_value(self.model.create_obs(state), legal_actions)
+
+    def __str__(self):
+        return "NVRoll"

@@ -19,7 +19,7 @@ class MCTSAgent:
     def rollout(self, state):
         return self.rollout_policy.rollout(state)
 
-    def mcts_search(self, state, mode='mean'):
+    def mcts_search(self, state, mode='mean'): # todo: ability to pass root node. that way you can continue where you left off
         root_node = Node(None, None)
 
         simulation_count = 0
@@ -46,9 +46,13 @@ class MCTSAgent:
         action, value = root_node.select_best_action(mode)
         return action, value
 
-
     def select_action(self, state, mode='mean'):
         return self.mcts_search(state, mode)
+
+    def __str__(self):
+        return "MCTS(" + str(self.tree_policy) + ", " + str(self.rollout_policy) + ")"
+
+
 if __name__ == '__main__':
     from envs.TSP import TSPGym, TSP
     tp = RandomTreePolicy()

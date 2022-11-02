@@ -22,3 +22,6 @@ class RandomRolloutPolicy(RolloutPolicy):
             state, reward, done = self.model.step(state, action)
 
         return reward
+
+    def __str__(self):
+        return "RandRoll"
