@@ -29,6 +29,8 @@ class TSP:
             if i < len(tour) - 1:
                 distance += self._euclidean_distance(city, tour[i + 1])
 
+        distance += self._euclidean_distance(tour[0], tour[-1])
+
         return distance
 
     def _reward(self, tour):
@@ -70,43 +72,6 @@ class TSP:
 
 
 
-# class TSPGym(gym.Env):
-#     def __init__(self, num_cities=5):
-#         self.num_cities = num_cities
-#         self.env = TSP(num_cities)
-#         self.observation_space = gym.spaces.Box(low=-1, high=1, shape=[4*num_cities], dtype=np.float32)
-#         self.action_space = gym.spaces.Discrete(num_cities)
-#
-#     def reset(self):
-#         self.state = self.env.initial_problem()
-#         return self.create_obs(self.state)
-#
-#     def step(self, action):
-#         legal = self.env.legal_actions(self.state)
-#         if action in legal:
-#             self.state, reward, done = self.env.step(self.state, action)
-#         else:
-#             reward = -1
-#             done = False
-#
-#         return self.create_obs(self.state), reward, done, dict()
-#
-#     def create_obs(self, state):
-#         unscheduled = state['unscheduled'][:]
-#         tour = state['tour'][:]
-#         unscheduled.extend([(-1, -1)] * (self.num_cities - len(unscheduled)))
-#         tour.extend([(-1, -1)] * (self.num_cities - len(tour)))
-#
-#         obs = unscheduled + tour
-#
-#         obs = [item for t in obs for item in t]
-#
-#         return obs
-#
-#     def render(self):
-#         from envs.tour_plotter import plot_state
-#         plot_state(self.state['tour'])
-#
 
 class TSPGym(gym.Env, TSP):
     def __init__(self, num_cities=5):
@@ -138,6 +103,27 @@ class TSPGym(gym.Env, TSP):
         from envs.tour_plotter import plot_state
         plot_state(self.state['tour'])
 
+from envs.simulated_annealing import TSPSAOptimizer
+class TSPGymSA(TSPGym):
+    """
+    When the episode is done, the generated solution is further optimized by Simulated Annealing
+    The reward is calculated using this further optimized solution
+    """
+    def __init__(self, num_cities):
+        super().__init__(num_cities)
+        self.optimizer = TSPSAOptimizer()
+
+    def step(self, action):
+        obs, reward, done, info = super().step(action)
+
+        if done:
+            solution, cost = self.optimizer.optimize(self.state['tour'])
+            reward = -cost
+
+        return obs, reward, done, info
+
+
+
 
 
 
@@ -160,13 +146,13 @@ if __name__ == '__main__':
 
 
     env = TSPGym(num_cities=15)
-
+    import torch
     from stable_baselines3 import PPO
-
-    model = PPO("MlpPolicy", env, verbose=1, tensorboard_log="stb3_tsp_tensorboard/")
-    model.learn(total_timesteps=1_000_000)
-    model.save("ppo_tsp.zip")
-    model = PPO.load("ppo_tsp")
+    policy_kwargs = dict(activation_fn=torch.nn.modules.activation.Mish)
+    model = PPO("MlpPolicy", env, verbose=1, tensorboard_log="stb3_tsp_tensorboard/", policy_kwargs=policy_kwargs)
+    model.learn(total_timesteps=5_000_000)
+    model.save("ppo_tsp_15_2.zip")
+    model = PPO.load("ppo_tsp_15")
 
     obs = env.reset()
     done = False

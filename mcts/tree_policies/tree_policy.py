@@ -37,7 +37,7 @@ class UCTPolicy(TreePolicy):
                     best_uct = uct
                     child = c
         if not child:
-            print("here")
+            # print("here")
             child = random.choice(node.children)
 
         return child

@@ -38,7 +38,6 @@ class NeuralPUCTPolicy(UCTPolicy):
                 best_uct = uct
                 child = c
         if not child:
-            print("here")
             child = random.choice(node.children)
 
         return child
