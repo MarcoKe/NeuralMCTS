@@ -1,7 +1,9 @@
 import copy
 import random
 import tqdm
+import time
 from tree_policies.tree_policy import TreePolicy, RandomTreePolicy
+from tree_policies.neural_puct_policy import NeuralPUCTPolicy
 from mcts.rollout_policies.rollout_policy import RolloutPolicy, RandomRolloutPolicy
 from node import Node
 
@@ -19,25 +21,29 @@ class MCTSAgent:
     def rollout(self, state):
         return self.rollout_policy.rollout(state)
 
-    def mcts_search(self, state, mode='mean'): # todo: ability to pass root node. that way you can continue where you left off
+    def mcts_search(self, state,
+                    mode='mean'):  # todo: ability to pass root node. that way you can continue where you left off
         root_node = Node(None, None)
 
         simulation_count = 0
         while simulation_count < self.num_simulations:
+            # print("Simulation " + str(simulation_count))
             simulation_count += 1
 
             n, s = root_node, copy.deepcopy(state)
 
             done = False
             while not n.is_leaf():
-                n = self.select(n, s)
-                s, _, done = self.model.step(s, n.action) #todo make a distinction between model and env
+                n = self.select(n, s)  # uses tree policy
+                # s contains the unscheduled actions and the tour
+                s, _, done = self.model.step(s, n.action)  # todo make a distinction between model and env
 
             if not done:
+                # Extend n with the unscheduled actions from s
                 n.expand(self.model.legal_actions(s))
-                n = self.select(n, s)
-
-                rollout_reward = self.rollout(s)
+                # Select an action according to the tree policy
+                n = self.select(n, s)  # uses tree policy
+                rollout_reward = self.rollout(s)  # uses rollout policy
 
             while n.has_parent():
                 n.update(rollout_reward)
@@ -55,10 +61,12 @@ class MCTSAgent:
 
 if __name__ == '__main__':
     from envs.TSP import TSPGym, TSP
-    tp = RandomTreePolicy()
+
+    # tp = RandomTreePolicy()
+    # Initialize environment and model
     env = TSPGym(num_cities=15)
     model = TSP(num_cities=15)
-    rp = RandomRolloutPolicy(model)
+    # rp = RandomRolloutPolicy(model)
 
     # rewards = 0
     # for i in tqdm.tqdm(range(1000)):
@@ -90,27 +98,33 @@ if __name__ == '__main__':
 
     rewards = 0
     from tree_policies.tree_policy import UCTPolicy
-    tp = UCTPolicy(10)
+    from tree_policies.neural_puct_policy import NeuralPUCTPolicy
+
+    # tp = UCTPolicy(10)
     from rollout_policies.neural_net_policy import NeuralRolloutPolicy
     from stable_baselines3 import PPO
 
-    agent = PPO.load("ppo_tsp")
+    # Load trained agent
+    agent = PPO.load("ppo_tsp_15")
+    # Initialize rollout policy
     rp = NeuralRolloutPolicy(model_free_agent=agent, model=model)
     # for i in tqdm.tqdm(range(1000)):
     state = env.reset()
+    # Initialize tree policy
+    tp = NeuralPUCTPolicy(10, agent, model)
     agent = MCTSAgent(model, tp, rp, num_simulations=10000)
     done = False
 
-    while not done:
-        action = agent.select_action(env.raw_state())
+    n = 10  # number of iterations
+    # while not done:
+    for i in range(n):
+        start = time.time()
+        action = agent.select_action(env.raw_state())  # runs mcts_search -> num_simulations times
+        print(f'Action Selection Time: {time.time() - start}')
         state, reward, done, _ = env.step(action)
         # print(reward)
 
     rewards += reward
 
-    env.render()
+    # env.render()
     print("avg rew: ", rewards / 1000)
-
-
-
-
