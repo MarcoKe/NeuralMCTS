@@ -5,10 +5,11 @@ import torch
 class NeuralRolloutPolicy(RolloutPolicy):
     def __init__(self, model_free_agent, model):
         self.agent = model_free_agent
-        self.model = model
+        self.model = model  # environment model
 
     def stb3_policy_probs(self, obs, actions):
         obs_tensor = self.agent.policy.obs_to_tensor(obs)[0]
+        # Return likelihood of taking each action
         return torch.exp(self.agent.policy.evaluate_actions(obs_tensor, torch.tensor(actions))[1])
 
     def rollout(self, state):
@@ -34,6 +35,7 @@ class NeuralValueRolloutPolicy(RolloutPolicy):
 
     def stb3_value(self, obs, actions):
         obs_tensor = self.agent.policy.obs_to_tensor(obs)[0]
+        # Return estimated value of each action given the observation
         return self.agent.policy.evaluate_actions(obs_tensor, torch.tensor(actions))[0]
 
     def rollout(self, state):

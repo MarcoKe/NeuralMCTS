@@ -5,7 +5,11 @@ import time
 from tree_policies.tree_policy import TreePolicy, RandomTreePolicy
 from tree_policies.neural_puct_policy import NeuralPUCTPolicy
 from mcts.rollout_policies.rollout_policy import RolloutPolicy, RandomRolloutPolicy
+from rollout_policies.neural_net_policy import NeuralRolloutPolicy
+from stable_baselines3 import PPO
+from envs.TSP import TSPGym, TSP
 from node import Node
+from tree_visualization.app import get_tree_visualization
 
 
 class MCTSAgent:
@@ -21,13 +25,11 @@ class MCTSAgent:
     def rollout(self, state):
         return self.rollout_policy.rollout(state)
 
-    def mcts_search(self, state,
-                    mode='mean'):  # todo: ability to pass root node. that way you can continue where you left off
+    def mcts_search(self, state, mode='mean'):  # todo: ability to pass root node. that way you can continue where you left off
         root_node = Node(None, None)
 
         simulation_count = 0
         while simulation_count < self.num_simulations:
-            # print("Simulation " + str(simulation_count))
             simulation_count += 1
 
             n, s = root_node, copy.deepcopy(state)
@@ -39,15 +41,18 @@ class MCTSAgent:
                 s, _, done = self.model.step(s, n.action)  # todo make a distinction between model and env
 
             if not done:
-                # Extend n with the unscheduled actions from s
+                # Expand n with the unscheduled actions from s
                 n.expand(self.model.legal_actions(s))
                 # Select an action according to the tree policy
                 n = self.select(n, s)  # uses tree policy
                 rollout_reward = self.rollout(s)  # uses rollout policy
 
             while n.has_parent():
+                # Backpropagation
                 n.update(rollout_reward)
                 n = n.parent
+
+            get_tree_visualization(n, 10)  # TODO enable visualization with program continuing to run
 
         action, value = root_node.select_best_action(mode)
         return action, value
@@ -60,13 +65,9 @@ class MCTSAgent:
 
 
 if __name__ == '__main__':
-    from envs.TSP import TSPGym, TSP
-
-    # tp = RandomTreePolicy()
     # Initialize environment and model
     env = TSPGym(num_cities=15)
     model = TSP(num_cities=15)
-    # rp = RandomRolloutPolicy(model)
 
     # rewards = 0
     # for i in tqdm.tqdm(range(1000)):
@@ -96,35 +97,30 @@ if __name__ == '__main__':
     #     rewards += reward
     # print("avg rew: ", rewards / 1000)
 
-    rewards = 0
-    from tree_policies.tree_policy import UCTPolicy
-    from tree_policies.neural_puct_policy import NeuralPUCTPolicy
-
-    # tp = UCTPolicy(10)
-    from rollout_policies.neural_net_policy import NeuralRolloutPolicy
-    from stable_baselines3 import PPO
-
     # Load trained agent
     agent = PPO.load("ppo_tsp_15")
-    # Initialize rollout policy
-    rp = NeuralRolloutPolicy(model_free_agent=agent, model=model)
+    rp = NeuralRolloutPolicy(model_free_agent=agent, model=model)  # rollout policy
     # for i in tqdm.tqdm(range(1000)):
     state = env.reset()
-    # Initialize tree policy
-    tp = NeuralPUCTPolicy(10, agent, model)
+    tp = NeuralPUCTPolicy(10, agent, model)  # tree policy
     agent = MCTSAgent(model, tp, rp, num_simulations=10000)
     done = False
 
-    n = 10  # number of iterations
-    # while not done:
+    rewards = 0
+    n = 1000  # number of iterations
     for i in range(n):
-        start = time.time()
-        action = agent.select_action(env.raw_state())  # runs mcts_search -> num_simulations times
-        print(f'Action Selection Time: {time.time() - start}')
+        print("iteration " + str(i))
+        print("select action")
+        prev = time.time()
+        action = agent.select_action(env.raw_state())
+        print(time.time() - prev)
+        print("step")
+        prev = time.time()
         state, reward, done, _ = env.step(action)
-        # print(reward)
-
-    rewards += reward
+        print(time.time() - prev)
+        rewards += reward
+        if done:
+            break
 
     # env.render()
-    print("avg rew: ", rewards / 1000)
+    print("avg rew: ", rewards / n)

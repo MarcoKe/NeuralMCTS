@@ -19,6 +19,7 @@ class RandomTreePolicy(TreePolicy):
         return "RandTree"
 
 class UCTPolicy(TreePolicy):
+    # "Upper Confidence bounds applied to Trees"
     def __init__(self, exploration_const):
         self.exp_const = exploration_const
 
@@ -29,6 +30,7 @@ class UCTPolicy(TreePolicy):
         return self.exp_const * math.sqrt(ln(node.visits) / child.visits)
 
     def select(self, node: Node, state):
+        # Find the child with the best upper confidence bound
         best_uct, child = -1e7, None
         for c in node.children:
             if c.visits > 0 and node.visits > 0:
