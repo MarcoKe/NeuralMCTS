@@ -1,3 +1,5 @@
+import time
+
 from mcts.tree_policies.tree_policy import UCTPolicy
 from mcts.node import Node
 import torch
@@ -22,21 +24,21 @@ class NeuralPUCTPolicy(UCTPolicy):
         return value  # of the observation
 
     def U(self, node, child, state):
-        return self.exp_const * child.action_probs * node.visits / (0 + child.visits)  # todo: check whether there is a difference between node visits and the summed visits of all children
+        return self.exp_const * child.action_prob * node.visits / (0 + child.visits)  # todo: check whether there is a difference between node visits and the summed visits of all children
 
     def select(self, node: Node, state):
         best_uct, child = -1e7, None
         for c in node.children:
-            if c.visits == 0:
-                s_, _, _ = self.model.step(state, c.action)
-                c.update(self.stb3_value(s_).detach().numpy()[0][0])  # update child's visits and returns
-                c.action_probs = self.stb3_policy_probs(s_, c.action)
+            # if c.visits == 0:
+            #     s_, _, _ = self.model.step(state, c.action)
+            #     c.returns = self.stb3_value(s_)
+            #     c.visits = 1
 
-            # if c.visits > 0 and node.visits > 0:
-            uct = self.Q(c) + self.U(node, c, state)
-            if uct > best_uct:
-                best_uct = uct
-                child = c
+            if c.visits > 0 and node.visits > 0:
+                uct = self.Q(c) + self.U(node, c, state)
+                if uct > best_uct:
+                    best_uct = uct
+                    child = c
 
         if not child:
             child = random.choice(node.children)

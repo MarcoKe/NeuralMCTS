@@ -2,7 +2,7 @@ import copy
 import random
 import tqdm
 import time
-from tree_policies.tree_policy import TreePolicy, RandomTreePolicy
+from tree_policies.tree_policy import TreePolicy, RandomTreePolicy, UCTPolicy
 from tree_policies.neural_puct_policy import NeuralPUCTPolicy
 from mcts.rollout_policies.rollout_policy import RolloutPolicy, RandomRolloutPolicy
 from rollout_policies.neural_net_policy import NeuralRolloutPolicy
@@ -42,17 +42,21 @@ class MCTSAgent:
 
             if not done:
                 # Expand n with the unscheduled actions from s
-                n.expand(self.model.legal_actions(s))
+                actions = self.model.legal_actions(s)
+                n.expand(actions)
+                # Initialize action probabilities
+                action_probs = self.tree_policy.stb3_policy_probs(s, actions)
+                for i, c in enumerate(n.children):
+                    c.action_prob = action_probs[i]
                 # Select an action according to the tree policy
                 n = self.select(n, s)  # uses tree policy
+                # Rollout
                 rollout_reward = self.rollout(s)  # uses rollout policy
 
             while n.has_parent():
                 # Backpropagation
                 n.update(rollout_reward)
                 n = n.parent
-
-            get_tree_visualization(n, 10)  # TODO enable visualization with program continuing to run
 
         action, value = root_node.select_best_action(mode)
         return action, value
@@ -99,9 +103,11 @@ if __name__ == '__main__':
 
     # Load trained agent
     agent = PPO.load("ppo_tsp_15")
+    # rp = RandomRolloutPolicy(model)
     rp = NeuralRolloutPolicy(model_free_agent=agent, model=model)  # rollout policy
     # for i in tqdm.tqdm(range(1000)):
     state = env.reset()
+    # tp = UCTPolicy(10)
     tp = NeuralPUCTPolicy(10, agent, model)  # tree policy
     agent = MCTSAgent(model, tp, rp, num_simulations=10000)
     done = False
@@ -113,11 +119,8 @@ if __name__ == '__main__':
         print("select action")
         prev = time.time()
         action = agent.select_action(env.raw_state())
-        print(time.time() - prev)
-        print("step")
-        prev = time.time()
+        print(time.time() - prev)  # 650-750s
         state, reward, done, _ = env.step(action)
-        print(time.time() - prev)
         rewards += reward
         if done:
             break
