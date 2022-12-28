@@ -3,7 +3,7 @@ class Node:
     def __init__(self, action, parent):
         self.action, self.parent, self.children = action, parent, []  # action is the action that led to this node from the parent
         self.visits, self.returns, self.max_return = 0, 0, -1e7
-        self.action_prob= 0
+        self.action_prob = 0
 
     def expand(self, actions):
         for a in actions:

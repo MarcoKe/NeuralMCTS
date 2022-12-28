@@ -45,13 +45,13 @@ class MCTSAgent:
                 actions = self.model.legal_actions(s)
                 n.expand(actions)
                 # Initialize action probabilities
-                action_probs = self.tree_policy.stb3_policy_probs(s, actions)
+                action_probs = self.tree_policy.get_action_probs(s, actions)
                 for i, c in enumerate(n.children):
                     c.action_prob = action_probs[i]
                 # Select an action according to the tree policy
-                n = self.select(n, s)  # uses tree policy
+                n = self.select(n, s)
                 # Rollout
-                rollout_reward = self.rollout(s)  # uses rollout policy
+                rollout_reward = self.rollout(s)
 
             while n.has_parent():
                 # Backpropagation
@@ -114,16 +114,23 @@ if __name__ == '__main__':
 
     rewards = 0
     n = 1000  # number of iterations
-    for i in range(n):
-        print("iteration " + str(i))
-        print("select action")
-        prev = time.time()
-        action = agent.select_action(env.raw_state())
-        print(time.time() - prev)  # 650-750s
-        state, reward, done, _ = env.step(action)
-        rewards += reward
+    i = 0
+    prev = time.time()
+    while i < n:
+        # print("select action")
+        # prev = time.time()
+        action, _ = agent.select_action(env.raw_state())
+        # print(time.time() - prev)
+        obs, reward, done, state = env.step(action)
+        # print(state['tour'])
         if done:
-            break
+            print("iteration " + str(i))
+            print("time: " + str(time.time() - prev))
+            prev = time.time()
+            print("reward: " + str(reward))
+            rewards += reward
+            env.reset()
+            i += 1
 
     # env.render()
     print("avg rew: ", rewards / n)

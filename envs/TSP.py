@@ -90,13 +90,15 @@ class TSPGym(gym.Env, TSP):
 
     def step(self, action):
         legal = self.legal_actions(self.state)
+        # print(legal)
+        # print(action)
         if action in legal:
             self.state, reward, done = TSP.step(self, self.state, action)
         else:
             reward = -1
             done = False
 
-        return self.create_obs(self.state), reward, done, dict()
+        return self.create_obs(self.state), reward, done, self.state
 
 
     def render(self):
@@ -153,7 +155,7 @@ if __name__ == '__main__':
     policy_kwargs = dict(activation_fn=torch.nn.modules.activation.Mish)
     model = PPO("MlpPolicy", env, verbose=1, tensorboard_log="stb3_tsp_tensorboard/", policy_kwargs=policy_kwargs)
     model.learn(total_timesteps=5_000_000)
-    model.save("ppo_tsp_15_2.zip")
+    model.save("ppo_tsp_15.zip")
     model = PPO.load("ppo_tsp_15")
 
     obs = env.reset()

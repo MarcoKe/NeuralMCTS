@@ -27,7 +27,6 @@ class NeuralRolloutPolicy(RolloutPolicy):
         return "NRoll"
 
 
-
 class NeuralValueRolloutPolicy(RolloutPolicy):
     def __init__(self, model_free_agent, model):
         self.agent = model_free_agent
@@ -39,9 +38,7 @@ class NeuralValueRolloutPolicy(RolloutPolicy):
         return self.agent.policy.evaluate_actions(obs_tensor, torch.tensor(actions))[0]
 
     def rollout(self, state):
-
         legal_actions = self.model.legal_actions(state)
-
         return self.stb3_value(self.model.create_obs(state), legal_actions)
 
     def __str__(self):

@@ -26,6 +26,9 @@ class NeuralPUCTPolicy(UCTPolicy):
     def U(self, node, child, state):
         return self.exp_const * child.action_prob * node.visits / (0 + child.visits)  # todo: check whether there is a difference between node visits and the summed visits of all children
 
+    def get_action_probs(self, obs, actions):
+        return self.stb3_policy_probs(obs, actions)
+
     def select(self, node: Node, state):
         best_uct, child = -1e7, None
         for c in node.children:

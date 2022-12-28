@@ -10,6 +10,9 @@ class TreePolicy:
     def select(self, node: Node, state):
         raise NotImplementedError
 
+    def get_action_probs(self, obs, actions):
+        return [1 / len(actions) for _ in actions]
+
 
 class RandomTreePolicy(TreePolicy):
     def select(self, node: Node, state):
