@@ -98,7 +98,7 @@ class TSPGym(gym.Env, TSP):
             reward = -1
             done = False
 
-        return self.create_obs(self.state), reward, done, self.state
+        return self.create_obs(self.state), reward, done
 
 
     def render(self):
@@ -166,6 +166,6 @@ if __name__ == '__main__':
 
         # print(model.policy.evaluate_actions())
         action, _state = model.predict(obs, deterministic=True)
-        obs, reward, done, info = env.step(action)
+        obs, reward, done = env.step(action)
 
     env.render()

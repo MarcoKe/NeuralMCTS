@@ -121,7 +121,7 @@ if __name__ == '__main__':
         # prev = time.time()
         action, _ = agent.select_action(env.raw_state())
         # print(time.time() - prev)
-        obs, reward, done, state = env.step(action)
+        obs, reward, done = env.step(action)
         # print(state['tour'])
         if done:
             print("iteration " + str(i))

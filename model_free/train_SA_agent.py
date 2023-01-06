@@ -15,6 +15,6 @@ obs = env.reset()
 done = False
 while not done:
     action, _state = model.predict(obs, deterministic=True)
-    obs, reward, done, info = env.step(action)
+    obs, reward, done = env.step(action)
 
 env.render()
