@@ -5,7 +5,7 @@ from param_parser import configs
 from permissibleLS import permissibleLeftShift
 
 
-class SJSSP(gym.Env, EzPickle):
+class JSSP:
     def __init__(self, n_j, n_m):
         EzPickle.__init__(self)
 
@@ -20,12 +20,7 @@ class SJSSP(gym.Env, EzPickle):
         self.getEndTimeLB = calEndTimeLB  # function calculating the end time lower bounds for all operations
         self.getNghbs = getActionNbghs  # function returning the action's predecessor and successor
 
-    def done(self):
-        if len(self.partial_sol_sequence) == self.number_of_tasks:
-            return True
-        return False
-
-    def step(self, action):  # TODO pass state
+    def step(self, state, action):
         # action is a int 0 - 224 for 15x15 for example
         # redundant action makes no effect
         if action not in self.partial_sol_sequence:
@@ -39,7 +34,7 @@ class SJSSP(gym.Env, EzPickle):
             self.partial_sol_sequence.append(action)
 
             # UPDATE STATE:
-            # permissible left shift
+            # permissible left shift (whether the action can be scheduled between already scheduled actions)
             startTime_a, flag = permissibleLeftShift(a=action, durMat=self.dur, mchMat=self.m, mchsStartTimes=self.mchsStartTimes, opIDsOnMchs=self.opIDsOnMchs)
             self.flags.append(flag)
             # update omega or mask
@@ -47,6 +42,77 @@ class SJSSP(gym.Env, EzPickle):
                 self.omega[action // self.number_of_machines] += 1
             else:
                 self.mask[action // self.number_of_machines] = 1
+            # TODO state = ...
+
+            self.temp1[row, col] = startTime_a + dur_a
+
+            self.LBs = calEndTimeLB(self.temp1, self.dur_cp)
+
+            # adj matrix
+            precd, succd = self.getNghbs(action, self.opIDsOnMchs)
+            self.adj[action] = 0
+            self.adj[action, action] = 1
+            if action not in self.first_col:
+                self.adj[action, action - 1] = 1
+            self.adj[action, precd] = 1
+            self.adj[succd, action] = 1
+            if flag and precd != action and succd != action:  # Remove the old arc when a new operation inserts between two operations
+                self.adj[succd, precd] = 0
+
+        # prepare for return
+        fea = np.concatenate((self.LBs.reshape(-1, 1)/configs.et_normalize_coef,
+                              self.finished_mark.reshape(-1, 1)), axis=1)
+        reward = - (self.LBs.max() - self.max_endTime)
+        if reward == 0:
+            reward = configs.rewardscale
+            self.posRewards += reward
+        self.max_endTime = self.LBs.max()
+
+        return state, self.adj, fea, reward, self.done(), self.omega, self.mask
+
+    def legal_actions(self, state):
+        pass  # TODO
+
+    def create_obs(self):
+        pass  # TODO return obs
+
+
+class JSSPGym(gym.Env, JSSP, EzPickle):
+    def __init__(self, n_j, n_m):
+        JSSP.__init__(self, n_j, n_m)
+        EzPickle.__init__(self)
+
+        self.partial_sol_sequence = []
+        self.state = {'unscheduled': self.number_of_tasks, 'partial_sol_sequence': self.partial_sol_sequence}
+
+    def done(self):
+        if len(self.partial_sol_sequence) == self.number_of_tasks:
+            return True
+        return False
+
+    def step(self, action):  # TODO shorten by calling JSSP.step?
+        # action is a int 0 - 224 for 15x15 for example
+        # redundant action makes no effect
+        if action not in self.partial_sol_sequence:
+
+            # UPDATE BASIC INFO:
+            row = action // self.number_of_machines
+            col = action % self.number_of_machines
+            self.step_count += 1
+            self.finished_mark[row, col] = 1  # mark action as finished
+            dur_a = self.dur[row, col]
+            self.partial_sol_sequence.append(action)
+
+            # UPDATE STATE:
+            # permissible left shift (whether the action can be scheduled between already scheduled actions)
+            startTime_a, flag = permissibleLeftShift(a=action, durMat=self.dur, mchMat=self.m, mchsStartTimes=self.mchsStartTimes, opIDsOnMchs=self.opIDsOnMchs)
+            self.flags.append(flag)
+            # update omega or mask
+            if action not in self.last_col:
+                self.omega[action // self.number_of_machines] += 1
+            else:
+                self.mask[action // self.number_of_machines] = 1
+            # TODO self.state = JSSP.step(...)
 
             self.temp1[row, col] = startTime_a + dur_a
 
@@ -73,7 +139,6 @@ class SJSSP(gym.Env, EzPickle):
         self.max_endTime = self.LBs.max()
 
         return self.adj, fea, reward, self.done(), self.omega, self.mask
-        # TODO return state dict {'unscheduled': list, ...}, reward, self.done()
 
     def reset(self, data):
         """
@@ -116,10 +181,10 @@ class SJSSP(gym.Env, EzPickle):
                               # self.dur.reshape(-1, 1)/configs.high,
                               # wkr.reshape(-1, 1)/configs.wkr_normalize_coef,
                               self.finished_mark.reshape(-1, 1)), axis=1)  # 1 if scheduled, 0 otherwise
-        # initialize feasible omega (the first operations for each action)
+        # initialize feasible omega (the first operations for each job)
         self.omega = self.first_col.astype(np.int64)
 
-        # initialize mask (indicates whether the operations in omega are scheduled or not)
+        # initialize mask (indicates whether all operations of a job have been scheduled or not?)
         self.mask = np.full(shape=self.number_of_jobs, fill_value=0, dtype=bool)
 
         # start time of operations on machines
@@ -131,11 +196,11 @@ class SJSSP(gym.Env, EzPickle):
 
         return self.adj, fea, self.omega, self.mask, self.state
 
-    def create_obs(self):
-        pass  # TODO return obs
-
     def raw_state(self):
-        pass  # TODO return self.state
+        return self.state
+
+    def render(self):
+        raise NotImplementedError
 
 
 def lastNonZero(arr, axis, invalid_val=-1):

@@ -8,19 +8,24 @@ def permissibleLeftShift(a, durMat, mchMat, mchsStartTimes, opIDsOnMchs):
     mch_a = np.take(mchMat, a) - 1
     startTimesForMchOfa = mchsStartTimes[mch_a]
     opsIDsForMchOfa = opIDsOnMchs[mch_a]
-    flag = False
+    flag = False  # True if operation a is scheduled between other operations, False if it is pushed to the end
 
+    # positions between already scheduled operations on the machine required by operation a
     possiblePos = np.where(jobRdyTime_a < startTimesForMchOfa)[0]
     # print('possiblePos:', possiblePos)
     if len(possiblePos) == 0:
+        # not possible to schedule operation a between other operations -> put in the end
         startTime_a = putInTheEnd(a, jobRdyTime_a, mchRdyTime_a, startTimesForMchOfa, opsIDsForMchOfa)
     else:
+        # positions which fit the length of operation a (there is enough time before the next operation)
         idxLegalPos, legalPos, endTimesForPossiblePos = calLegalPos(dur_a, jobRdyTime_a, durMat, possiblePos,
                                                                     startTimesForMchOfa, opsIDsForMchOfa)
         # print('legalPos:', legalPos)
         if len(legalPos) == 0:
+            # no position which can fit operation a -> put in the end
             startTime_a = putInTheEnd(a, jobRdyTime_a, mchRdyTime_a, startTimesForMchOfa, opsIDsForMchOfa)
         else:
+            # schedule operation a between other operations
             flag = True
             startTime_a = putInBetween(a, idxLegalPos, legalPos, endTimesForPossiblePos, startTimesForMchOfa,
                                        opsIDsForMchOfa)
@@ -62,21 +67,28 @@ def putInBetween(a, idxLegalPos, legalPos, endTimesForPossiblePos, startTimesFor
 
 
 def calJobAndMchRdyTimeOfa(a, mchMat, durMat, mchsStartTimes, opIDsOnMchs):
+    """
+    :return jobRdyTime_a: the time at which all of operation a's predecessing operations of the same job will be completed
+    :return mchRdyTime_a: the time at which all operations already scheduled on the same machine required by a will be completed
+    """
     mch_a = np.take(mchMat, a) - 1
     # cal jobRdyTime_a
     jobPredecessor = a - 1 if a % mchMat.shape[1] != 0 else None
     if jobPredecessor is not None:
         durJobPredecessor = np.take(durMat, jobPredecessor)
         mchJobPredecessor = np.take(mchMat, jobPredecessor) - 1
+        # the time when a's predecessor will be done and operation a can begin
         jobRdyTime_a = (mchsStartTimes[mchJobPredecessor][
                             np.where(opIDsOnMchs[mchJobPredecessor] == jobPredecessor)] + durJobPredecessor).item()
     else:
         jobRdyTime_a = 0
     # cal mchRdyTime_a
+    # True if there are operations already scheduled on the machine required by a
     mchPredecessor = opIDsOnMchs[mch_a][np.where(opIDsOnMchs[mch_a] >= 0)][-1] if len(
         np.where(opIDsOnMchs[mch_a] >= 0)[0]) != 0 else None
     if mchPredecessor is not None:
         durMchPredecessor = np.take(durMat, mchPredecessor)
+        # the time when the machine required by operation a will be free
         mchRdyTime_a = (mchsStartTimes[mch_a][np.where(mchsStartTimes[mch_a] >= 0)][-1] + durMchPredecessor).item()
     else:
         mchRdyTime_a = 0
@@ -113,7 +125,7 @@ def uni_instance_gen(n_j, n_m, low, high):
 
 
 if __name__ == "__main__":
-    from JSSP import SJSSP
+    from JSSP import JSSPGym
     import time
 
     n_j = 3
@@ -122,7 +134,7 @@ if __name__ == "__main__":
     high = 99
     SEED = 10
     np.random.seed(SEED)
-    env = SJSSP(n_j=n_j, n_m=n_m)
+    env = JSSPGym(n_j=n_j, n_m=n_m)
 
     '''arr = np.ones(3)
     idces = np.where(arr == -1)
