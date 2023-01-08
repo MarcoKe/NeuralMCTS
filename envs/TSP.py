@@ -66,7 +66,7 @@ class TSP:
 
         obs = unscheduled + tour
 
-        obs = [item for t in obs for item in t]
+        obs = [item for t in obs for item in t]  # flat list of all elements in obs (used as NN input)
 
         return obs
 

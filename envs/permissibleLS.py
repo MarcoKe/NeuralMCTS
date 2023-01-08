@@ -96,34 +96,6 @@ def calJobAndMchRdyTimeOfa(a, mchMat, durMat, mchsStartTimes, opIDsOnMchs):
     return jobRdyTime_a, mchRdyTime_a
 
 
-def permute_rows(x):
-    '''
-    :param x: an np array
-    :return: x with the rows permuted in a random order
-    '''
-    ix_i = np.tile(np.arange(x.shape[0]), (x.shape[1], 1)).T
-    ix_j = np.random.sample(x.shape).argsort(axis=1)
-    return x[ix_i, ix_j]
-
-
-def uni_instance_gen(n_j, n_m, low, high):
-    """
-    Generates random action processing times and orders in which the actions have to go through the machines
-    :param n_j: number of operations (actions) in the jobs
-    :param n_m: number of machines
-    :param low: minimum processing time of an action
-    :param high: maximum processing time of an action
-    """
-    # Set normally distributed random values for the operations' processing times
-    times = np.random.randint(low=low, high=high, size=(n_j, n_m))
-    # Create np array with n_j rows and entries from 1 to n_m in each row
-    # For each job, holds the machine order in which its operations have to be carried out
-    machines = np.expand_dims(np.arange(1, n_m + 1), axis=0).repeat(repeats=n_j, axis=0)
-    # Permute the row's entries into a random order
-    machines = permute_rows(machines)
-    return times, machines
-
-
 if __name__ == "__main__":
     from JSSP import JSSPGym
     import time
@@ -142,7 +114,7 @@ if __name__ == "__main__":
 
     # rollout env random action
     t1 = time.time()
-    data = uni_instance_gen(n_j=n_j, n_m=n_m, low=low, high=high)
+    data = env.uni_instance_gen(n_j=n_j, n_m=n_m, low=low, high=high)
     print('Dur')
     print(data[0])
     print('Mach')
@@ -156,7 +128,9 @@ if __name__ == "__main__":
 
     # random rollout to test
     # count = 0
-    _, _, omega, mask, _ = env.reset(data)
+    state = env.reset()
+    omega = state['omega']
+    mask = state['mask']
     rewards = []
     flags = []
     # ts = []
@@ -167,7 +141,10 @@ if __name__ == "__main__":
         # print(mch_a)
         # print('action:', action)
         # t3 = time.time()
-        adj, _, reward, done, omega, mask = env.step(action)
+        state, reward, done = env.step(action)
+        adj = state['adj']
+        omega = state['omega']
+        mask = state['mask']
         # t4 = time.time()
         # ts.append(t4 - t3)
         # jobRdyTime_a, mchRdyTime_a = calJobAndMchRdyTimeOfa(a=action, mchMat=data[-1], durMat=data[0], mchsStartTimes=mchsStartTimes, opIDsOnMchs=opIDsOnMchs)
