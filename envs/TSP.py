@@ -98,7 +98,7 @@ class TSPGym(gym.Env, TSP):
             reward = -1
             done = False
 
-        return self.create_obs(self.state), reward, done
+        return self.create_obs(self.state), reward, done, dict()  # dict() needed as info parameter for the monitor wrapper
 
 
     def render(self):
@@ -166,6 +166,6 @@ if __name__ == '__main__':
 
         # print(model.policy.evaluate_actions())
         action, _state = model.predict(obs, deterministic=True)
-        obs, reward, done = env.step(action)
+        obs, reward, done, info = env.step(action)
 
     env.render()

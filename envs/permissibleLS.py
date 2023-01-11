@@ -1,4 +1,4 @@
-from param_parser import configs
+from envs.param_parser import configs
 import numpy as np
 
 
@@ -38,7 +38,7 @@ def putInTheEnd(a, jobRdyTime_a, mchRdyTime_a, startTimesForMchOfa, opsIDsForMch
     index = np.where(startTimesForMchOfa == -configs.high)[0][0]
     startTime_a = max(jobRdyTime_a, mchRdyTime_a)
     startTimesForMchOfa[index] = startTime_a
-    opsIDsForMchOfa[index] = a
+    opsIDsForMchOfa[index] = a  # modifies opIDsOnMchs
     return startTime_a
 
 
@@ -62,7 +62,7 @@ def putInBetween(a, idxLegalPos, legalPos, endTimesForPossiblePos, startTimesFor
     startTime_a = endTimesForPossiblePos[earlstIdx]
     # print('endTimesForPossiblePos:', endTimesForPossiblePos)
     startTimesForMchOfa[:] = np.insert(startTimesForMchOfa, earlstPos, startTime_a)[:-1]
-    opsIDsForMchOfa[:] = np.insert(opsIDsForMchOfa, earlstPos, a)[:-1]
+    opsIDsForMchOfa[:] = np.insert(opsIDsForMchOfa, earlstPos, a)[:-1]  # modifies opIDsOnMchs
     return startTime_a
 
 
@@ -141,8 +141,8 @@ if __name__ == "__main__":
         # print(mch_a)
         # print('action:', action)
         # t3 = time.time()
-        state, reward, done = env.step(action)
-        adj = state['adj']
+        state, reward, done, _ = env.step(action)
+        adj = state['adj_matrix']
         omega = state['omega']
         mask = state['mask']
         # t4 = time.time()

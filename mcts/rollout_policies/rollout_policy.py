@@ -19,7 +19,7 @@ class RandomRolloutPolicy(RolloutPolicy):
         while not done:
             legal_actions = self.model.legal_actions(state)
             action = random.choice(legal_actions)
-            state, reward, done = self.model.step(state, action)
+            state, reward, done, _ = self.model.step(state, action)
 
         return reward
 

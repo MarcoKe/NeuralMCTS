@@ -38,7 +38,7 @@ class MCTSAgent:
             while not n.is_leaf():
                 n = self.select(n, s)  # uses tree policy
                 # s contains the unscheduled actions and the tour
-                s, _, done = self.model.step(s, n.action)  # todo make a distinction between model and env
+                s, _, done, _ = self.model.step(s, n.action)  # todo make a distinction between model and env
 
             if not done:
                 # Expand n with the unscheduled actions from s
@@ -121,7 +121,7 @@ if __name__ == '__main__':
         # prev = time.time()
         action, _ = agent.select_action(env.raw_state())
         # print(time.time() - prev)
-        obs, reward, done = env.step(action)
+        obs, reward, done, _ = env.step(action)
         # print(state['tour'])
         if done:
             print("iteration " + str(i))

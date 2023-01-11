@@ -19,7 +19,7 @@ class NeuralRolloutPolicy(RolloutPolicy):
             legal_actions = self.model.legal_actions(state)
 
             action = torch.argmax(self.stb3_policy_probs(self.model.create_obs(state), legal_actions))
-            state, reward, done = self.model.step(state, action)
+            state, reward, done, _ = self.model.step(state, action)
 
         return reward
 

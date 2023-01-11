@@ -61,7 +61,7 @@ def perform_episode(env, agent, hstate=None, obs=None):
 
     while not done:
         action = agent.select_action(state)  # todo: why throw the tree away after every action
-        state, reward, done = env.step(action)
+        state, reward, done, _ = env.step(action)
 
     return reward
 

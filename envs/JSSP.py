@@ -1,8 +1,8 @@
 import gym
 import numpy as np
 from gym.utils import EzPickle
-from param_parser import configs
-from permissibleLS import permissibleLeftShift
+from envs.param_parser import configs
+from envs.permissibleLS import permissibleLeftShift
 
 
 class JSSP:
@@ -22,7 +22,8 @@ class JSSP:
 
     def reset(self):
         # JSSP instance (processing times and machine orders for the operations)
-        data = self.uni_instance_gen(n_j=self.number_of_jobs, n_m=self.number_of_machines, low=configs.low, high=configs.high)
+        data = self.uni_instance_gen(n_j=self.number_of_jobs, n_m=self.number_of_machines, low=configs.low,
+                                     high=configs.high)
         self.step_count = 0
         # np array holding the machine order in which each job's operations have to be carried out
         self.m = data[-1]
@@ -55,14 +56,14 @@ class JSSP:
         self.finished_mark = np.zeros_like(self.m, dtype=np.single)  # 0 for unfinished, 1 for finished
 
         # action (node) features: normalized end time lower bounds and binary indicator of whether the action has been scheduled
-        fea = np.concatenate((self.LBs.reshape(-1, 1)/configs.et_normalize_coef,  # et_normalize_coef default is 1000
+        self.fea = np.concatenate((self.LBs.reshape(-1, 1)/configs.et_normalize_coef,  # et_normalize_coef default is 1000
                               # self.dur.reshape(-1, 1)/configs.high,
                               # wkr.reshape(-1, 1)/configs.wkr_normalize_coef,
                               self.finished_mark.reshape(-1, 1)), axis=1)  # 1 if scheduled, 0 otherwise
-        # initialize feasible omega (the first operations for each job)
+        # initialize feasible omega (the next operations for each job)
         self.omega = self.first_col.astype(np.int64)
 
-        # initialize mask (indicates whether all operations of a job have been scheduled or not?)
+        # initialize mask (indicates whether an operation of a job have been scheduled or not)
         self.mask = np.full(shape=self.number_of_jobs, fill_value=0, dtype=bool)
 
         # start time of operations on machines
@@ -72,18 +73,15 @@ class JSSP:
 
         self.temp1 = np.zeros_like(self.dur, dtype=np.single)
 
-        unscheduled = [tuple(f) for f in fea if f[1] == 0]
-        schedule = [tuple(f) for f in fea if f[1] == 1]
-
-        self.state = {'unscheduled': unscheduled, 'schedule': schedule,
-                      'adj': self.adj, 'fea': fea, 'omega': self.omega, 'mask': self.mask}
+        self.state = {'adj_matrix': self.adj, 'features': self.fea, 'omega': self.omega, 'mask': self.mask}
+        # TODO check if more information in state improves training
 
         return self.state
 
     def step(self, state, action):
         # action is a int 0 - 224 for 15x15 for example
         # redundant action makes no effect
-        if action not in self.partial_sol_sequence:
+        if action in self.legal_actions(state):
 
             # UPDATE BASIC INFO:
             row = action // self.number_of_machines
@@ -109,43 +107,32 @@ class JSSP:
 
             # adj matrix
             precd, succd = self.getNghbs(action, self.opIDsOnMchs)
-            self.adj[action] = 0
-            self.adj[action, action] = 1
+            state['adj_matrix'][action] = 0
+            state['adj_matrix'][action, action] = 1
             if action not in self.first_col:
-                self.adj[action, action - 1] = 1
-            self.adj[action, precd] = 1
-            self.adj[succd, action] = 1
+                state['adj_matrix'][action, action - 1] = 1
+            state['adj_matrix'][action, precd] = 1
+            state['adj_matrix'][succd, action] = 1
             if flag and precd != action and succd != action:  # Remove the old arc when a new operation inserts between two operations
-                self.adj[succd, precd] = 0
+                state['adj_matrix'][succd, precd] = 0
 
         # prepare for return
-        fea = np.concatenate((self.LBs.reshape(-1, 1)/configs.et_normalize_coef,
-                              self.finished_mark.reshape(-1, 1)), axis=1)
+        state['features'] = np.concatenate((self.LBs.reshape(-1, 1) / configs.et_normalize_coef,
+                                            self.finished_mark.reshape(-1, 1)), axis=1)
         reward = - (self.LBs.max() - self.max_endTime)
         if reward == 0:
             reward = configs.rewardscale
             self.posRewards += reward
         self.max_endTime = self.LBs.max()
-        unscheduled = [tuple(f) for f in fea if f[1] == 0]
-        schedule = [tuple(f) for f in fea if f[1] == 1]
-        state = {'unscheduled': unscheduled, 'schedule': schedule,
-                  'adj': self.adj, 'fea': fea, 'omega': self.omega, 'mask': self.mask}
 
-        return state, reward, self.done()
+        return state, reward, self.done(), dict()  # dict() needed as info parameter for the monitor wrapper
 
     def legal_actions(self, state):
-        return [i for i in range(len(state['unscheduled']))]
+        return [i for i in state['omega'][np.where(state['mask'] == 0)]]
 
-    def create_obs(self, state):
-        unscheduled = state['unscheduled'][:]
-        schedule = state['schedule'][:]
-        unscheduled.extend([(-1, -1)] * (self.number_of_tasks - len(unscheduled)))
-        schedule.extend([(-1, -1)] * (self.number_of_tasks - len(schedule)))
-
-        obs = unscheduled + schedule
-
+    def create_obs(self, state):  # TODO adjust to output graph embedding
+        obs = state['features'][:]
         obs = [item for t in obs for item in t]  # flat list of all elements in obs (used as NN input)
-
         return obs
 
     def done(self):
@@ -181,16 +168,19 @@ class JSSP:
 class JSSPGym(JSSP, gym.Env, EzPickle):
     def __init__(self, n_j, n_m):
         JSSP.__init__(self, n_j, n_m)
-        EzPickle.__init__(self)
-
         self.reset()
+        self.observation_space = gym.spaces.Dict(
+            {"adj_matrix": gym.spaces.Box(low=-1, high=1, shape=self.adj.shape, dtype=np.float32),
+             "features": gym.spaces.Box(low=-1, high=1, shape=self.fea.shape, dtype=np.float32)})
+        self.action_space = gym.spaces.Discrete(self.number_of_tasks)
 
     def reset(self):
         self.state = JSSP.reset(self)
-        return self.state  # TODO self.create_obs(self.state)
+        return self.state
 
     def step(self, action):
-        return JSSP.step(self, self.state, action)  # TODO self.create_obs(self.state)
+        self.state, reward, done, info = JSSP.step(self, self.state, action)
+        return self.state, reward, done, info
 
     def raw_state(self):
         return self.state
@@ -212,6 +202,7 @@ def lastNonZero(arr, axis, invalid_val=-1):
     yRet = yAxis[yAxis >= 0]
     return xRet, yRet
 
+
 def calEndTimeLB(temp1, dur_cp):
     """
     Calculates the end time lower bounds for all operations
@@ -224,8 +215,9 @@ def calEndTimeLB(temp1, dur_cp):
     dur_cp[x, y] = temp1[x, y]
     temp2 = np.cumsum(dur_cp, axis=1)
     temp2[np.where(temp1 != 0)] = 0
-    ret = temp1+temp2
+    ret = temp1 + temp2
     return ret
+
 
 def getActionNbghs(action, opIDsOnMchs):
     """
@@ -236,7 +228,9 @@ def getActionNbghs(action, opIDsOnMchs):
     """
     coordAction = np.where(opIDsOnMchs == action)
     precd = opIDsOnMchs[coordAction[0], coordAction[1] - 1 if coordAction[1].item() > 0 else coordAction[1]].item()
-    succdTemp = opIDsOnMchs[coordAction[0], coordAction[1] + 1 if coordAction[1].item() + 1 < opIDsOnMchs.shape[-1] else coordAction[1]].item()
+    succdTemp = opIDsOnMchs[
+        coordAction[0], coordAction[1] + 1 if coordAction[1].item() + 1 < opIDsOnMchs.shape[-1] else coordAction[
+            1]].item()
     succd = action if succdTemp < 0 else succdTemp
     # precedX = coordAction[0]
     # precedY = coordAction[1] - 1 if coordAction[1].item() > 0 else coordAction[1]
