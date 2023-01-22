@@ -1,4 +1,3 @@
-
 class Node:
     def __init__(self, action, parent):
         self.action, self.parent, self.children = action, parent, []  # action is the action that led to this node from the parent

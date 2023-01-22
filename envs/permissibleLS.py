@@ -100,8 +100,8 @@ if __name__ == "__main__":
     from JSSP import JSSPGym
     import time
 
-    n_j = 3
-    n_m = 3
+    n_j = 2
+    n_m = 2
     low = 1
     high = 99
     SEED = 10
@@ -137,9 +137,8 @@ if __name__ == "__main__":
     while True:
         action = np.random.choice(omega[np.where(mask == 0)])
         print(action)
-        mch_a = np.take(data[-1], action) - 1
+        # mch_a = np.take(data[-1], action) - 1
         # print(mch_a)
-        # print('action:', action)
         # t3 = time.time()
         state, reward, done, _ = env.step(action)
         adj = state['adj_matrix']
@@ -160,7 +159,7 @@ if __name__ == "__main__":
         rewards.append(reward)
         # print('ET after action:\n', env.LBs)
         print()
-        if env.done():
+        if env.done(state):
             break
     t2 = time.time()
     print(t2 - t1)
@@ -178,8 +177,8 @@ if __name__ == "__main__":
     print(mchsStartTimes)
     print(mchsEndTimes)
     print()
-    print(env.opIDsOnMchs)
-    print(env.adj)
+    print(env.state['opIDsOnMchs'])
+    print(env.state['adj_matrix'])
     # print(sum(flags))
     # data = np.load('data.npy')
 

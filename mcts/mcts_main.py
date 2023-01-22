@@ -8,6 +8,7 @@ from mcts.rollout_policies.rollout_policy import RolloutPolicy, RandomRolloutPol
 from rollout_policies.neural_net_policy import NeuralRolloutPolicy
 from stable_baselines3 import PPO
 from envs.TSP import TSPGym, TSP
+from envs.JSSP import JSSPGym, JSSP
 from node import Node
 from tree_visualization.app import get_tree_visualization
 
@@ -70,8 +71,8 @@ class MCTSAgent:
 
 if __name__ == '__main__':
     # Initialize environment and model
-    env = TSPGym(num_cities=15)
-    model = TSP(num_cities=15)
+    env = JSSPGym(2, 2)
+    model = JSSP(2, 2)
 
     # rewards = 0
     # for i in tqdm.tqdm(range(1000)):
@@ -102,13 +103,13 @@ if __name__ == '__main__':
     # print("avg rew: ", rewards / 1000)
 
     # Load trained agent
-    agent = PPO.load("ppo_tsp_15")
-    # rp = RandomRolloutPolicy(model)
-    rp = NeuralRolloutPolicy(model_free_agent=agent, model=model)  # rollout policy
+    # agent = PPO.load("ppo_jssp_2x2")
+    rp = RandomRolloutPolicy(model)
+    # rp = NeuralRolloutPolicy(model_free_agent=agent, model=model)  # rollout policy
     # for i in tqdm.tqdm(range(1000)):
-    state = env.reset()
-    # tp = UCTPolicy(10)
-    tp = NeuralPUCTPolicy(10, agent, model)  # tree policy
+    # state = env.reset()
+    tp = UCTPolicy(10)
+    # tp = NeuralPUCTPolicy(10, agent, model)  # tree policy
     agent = MCTSAgent(model, tp, rp, num_simulations=10000)
     done = False
 
@@ -117,9 +118,12 @@ if __name__ == '__main__':
     i = 0
     prev = time.time()
     while i < n:
+        while not (env.m == model.m).all():
+            env.reset()  # only for testing, generally the model should be resetted and not the environment
         # print("select action")
         # prev = time.time()
         action, _ = agent.select_action(env.raw_state())
+        print("action:", action)
         # print(time.time() - prev)
         obs, reward, done, _ = env.step(action)
         # print(state['tour'])
