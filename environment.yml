@@ -3,6 +3,7 @@ channels:
   - pytorch
 dependencies:
   - pytorch
+  - networkx
   - tqdm
   - pip
   - pip:
