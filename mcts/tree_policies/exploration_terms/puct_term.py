@@ -1,4 +1,4 @@
-from uct_term import UCTTerm
+from .uct_term import UCTTerm
 
 
 class PUCTTerm(UCTTerm):

@@ -1,6 +1,6 @@
 import math
 from numpy import log as ln
-from exploration_term import ExplorationTerm
+from .exploration_term import ExplorationTerm
 
 
 class UCTTerm(ExplorationTerm):
