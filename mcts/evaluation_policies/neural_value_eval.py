@@ -8,7 +8,7 @@ class NeuralValueEvalPolicy(EvaluationPolicy):
 
     def evaluate(self, state):
         legal_actions = self.model.legal_actions(state)
-        state_value, action_probs = self.agent.evaluate_state(self.model.create_obs(state), legal_actions)
+        state_value, action_probs = self.agent.evaluate_actions(self.model.create_obs(state), legal_actions)
 
         return state_value, action_probs
 

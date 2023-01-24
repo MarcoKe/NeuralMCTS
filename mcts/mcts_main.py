@@ -32,16 +32,12 @@ class MCTSAgent:
             if not done:
                 new_children = self.expansion_policy.expand(n, s)
                 state_value, action_probs = self.evaluation_policy.evaluate(s)
+                # children_states = [self.model.step(state, c.action)[0] for c in new_children]
+                children_state_values = self.evaluation_policy.agent.state_values([self.model.create_obs(self.model.step(state, c.action)[0]) for c in new_children])
                 for i, c in enumerate(new_children):
                     c.prior_prob = action_probs[i]
-                    # experimental
-                    s_, _, _ = self.model.step(state, c.action)
-                    r_, _ = self.evaluation_policy.agent.evaluate_state(self.model.create_obs(s_))
-                    c.update(r_)
+                    c.update(children_state_values[i][0]) # maybe create a class to define how new children are initialized?
 
-                    # end exp
-
-                # n = self.select(n, s)
             else:
                 state_value = terminal_reward
 
@@ -80,7 +76,6 @@ if __name__ == '__main__':
 
     num_iter = 100
 
-
     rewards = 0
     for _ in range(num_iter):
         state = env.reset()
@@ -94,22 +89,22 @@ if __name__ == '__main__':
 
         env.render()
     print("avg rew: ", rewards / num_iter)
-
-
-    rewards = 0
-    for _ in range(num_iter):
-        state = env.reset()
-        done = False
-
-        while not done:
-            action, _ = model_free_agent.predict(state, deterministic=True)
-            state, reward, done, _ = env.step(action)
-
-        rewards += reward
-
-        env.render()
-    print("avg rew: ", rewards / num_iter)
-
+    #
+    #
+    # rewards = 0
+    # for _ in range(num_iter):
+    #     state = env.reset()
+    #     done = False
+    #
+    #     while not done:
+    #         action, _ = model_free_agent.predict(state, deterministic=True)
+    #         state, reward, done, _ = env.step(action)
+    #
+    #     rewards += reward
+    #
+    #     env.render()
+    # print("avg rew: ", rewards / num_iter)
+    #
 
 
 

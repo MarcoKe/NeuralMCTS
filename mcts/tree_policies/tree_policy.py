@@ -32,8 +32,12 @@ class UCTPolicy(TreePolicy):
 
         for i, c in enumerate(node.children):
             if c.visits > 0 and node.visits > 0:
-                noise = dirichlet_noise[i] if add_dirichlet else None
-                uct = self.exploitation_term.val(c) + self.exploration_term.val(c, dirichlet_noise=noise)
+                uct = self.exploitation_term.val(c)
+                if add_dirichlet:
+                    uct += self.exploration_term.val(c, dirichlet_noise=dirichlet_noise[i])
+                else:
+                    uct += self.exploration_term.val(c)
+
                 if uct > best_uct:
                     best_uct = uct
                     child = c
