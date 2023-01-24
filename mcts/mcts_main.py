@@ -15,7 +15,7 @@ class MCTSAgent:
         self.num_simulations = num_simulations
         self.dirichlet_noise = dirichlet_noise
 
-    def mcts_search(self, state, mode='mean'): # todo: ability to pass root node. that way you can continue where you left off
+    def mcts_search(self, state, mode='mean'):
         root_node = Node(None, None)
 
         simulation_count = 0
