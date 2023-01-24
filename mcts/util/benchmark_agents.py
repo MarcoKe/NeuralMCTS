@@ -185,27 +185,6 @@ if __name__ == '__main__':
     # rp2 = NeuralValueEvalPolicy(model_free_agent=Stb3ACAgent(model_free_agent), model=model)
     # agent2 = MCTSAgentWrapper(MCTSAgent(model, tp2, ep2, rp2, num_simulations=1000), env)
 
-
-    # budget_analysis()
     ppo_agent = Stb3AgentWrapper(model_free_agent)
-    # evaluate_agent(env, ppo_agent)
-    # evaluate_agent(env, nPUCTAgent)
-    # compete(env, [ppo_agent, nPUCTAgent, nPUCTRolloutAgent, nPUCTValueRolloutAgent])
     agents = [ppo_agent, agent, agent2]
-    # df = budget_analysis(env, agents, trials=10)
-    # df.to_csv("budget_analysis.csv")
-    # df = pd.read_csv("budget_analysis.csv", index_col=0)
-    # plot_budget_analysis(df)
     print(averaged_budget_analysis(env, agents))
-    # neuralRolloutAgent = MCTSAgent(model, UCTPolicy(exploration_const=10),
-    #                                NeuralRolloutPolicy(model_free_agent=model_free_agent, model=model),
-    #                                num_simulations=simulation_budget)
-    #
-    # evaluate_agent(env, neuralRolloutAgent)
-
-
-    # 3) todo flat monte carl
-    # 5) todo improve the model free starting point: cnn, gnn
-    # 6) todo: mcts while training
-    # todo optimize neural net usage efficiency (turn off torch gradients?
-    # todo: sensitivity analysis: how important is agent prediction quality. try saved agents from different stages of training
