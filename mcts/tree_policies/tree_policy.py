@@ -26,13 +26,14 @@ class UCTPolicy(TreePolicy):
 
     def select(self, node: Node, add_dirichlet: bool = False):
         best_uct, child = -1e7, None
-        # dirichlet_noise = np.random.dirichlet([d])
+
+        dirichlet_noise = np.random.dirichlet([self.dirichlet_alpha]*len(node.children))
         for c in node.children:
-            if c.visits > 0 and node.visits > 0:
-                uct = self.exploitation_term.val(node) + self.exploration_term.val(node)
-                if uct > best_uct:
-                    best_uct = uct
-                    child = c
+            # if c.visits > 0 and node.visits > 0:
+            uct = self.exploitation_term.val(c) + self.exploration_term.val(c)
+            if uct > best_uct:
+                best_uct = uct
+                child = c
         if not child:
             child = random.choice(node.children)
 
