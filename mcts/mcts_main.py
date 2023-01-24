@@ -7,12 +7,13 @@ from mcts.node import Node
 
 class MCTSAgent:
     def __init__(self, model, tree_policy: TreePolicy, expansion_policy: ExpansionPolicy, evaluation_policy: EvaluationPolicy,
-                 num_simulations=10):
+                 num_simulations=10, dirichlet_noise=False):
         self.model = model
         self.tree_policy = tree_policy
         self.expansion_policy = expansion_policy
         self.evaluation_policy = evaluation_policy
         self.num_simulations = num_simulations
+        self.dirichlet_noise = dirichlet_noise
 
     def mcts_search(self, state, mode='mean'): # todo: ability to pass root node. that way you can continue where you left off
         root_node = Node(None, None)
@@ -25,7 +26,7 @@ class MCTSAgent:
 
             done = False
             while not n.is_leaf():
-                n = self.tree_policy.select(n)
+                n = self.tree_policy.select(n, add_dirichlet=(n.is_root() and self.dirichlet_noise))
                 s, terminal_reward, done = self.model.step(s, n.action)
 
             if not done:
@@ -55,7 +56,7 @@ class MCTSAgent:
         return self.mcts_search(state, mode)
 
     def __str__(self):
-        return "MCTS(" + str(self.tree_policy) + ", " + str(self.evaluation_policy) + ")"
+        return "MCTS(" + str(self.tree_policy) + ", " + str(self.evaluation_policy) + ")" + str(self.dirichlet_noise)
 
 
 if __name__ == '__main__':

@@ -22,18 +22,21 @@ class UCTPolicy(TreePolicy):
     def __init__(self, exploitation_term: ExploitationTerm, exploration_term: ExplorationTerm, dirichlet_alpha=0.03):
         self.exploitation_term = exploitation_term
         self.exploration_term = exploration_term
-        self.dirichlet_alpha = dirichlet_alpha
 
     def select(self, node: Node, add_dirichlet: bool = False):
         best_uct, child = -1e7, None
 
-        dirichlet_noise = np.random.dirichlet([self.dirichlet_alpha]*len(node.children))
-        for c in node.children:
-            # if c.visits > 0 and node.visits > 0:
-            uct = self.exploitation_term.val(c) + self.exploration_term.val(c)
-            if uct > best_uct:
-                best_uct = uct
-                child = c
+        dirichlet_noise = None
+        if add_dirichlet:
+            dirichlet_noise = np.random.dirichlet([self.exploration_term.dirichlet_alpha]*len(node.children))
+
+        for i, c in enumerate(node.children):
+            if c.visits > 0 and node.visits > 0:
+                noise = dirichlet_noise[i] if add_dirichlet else None
+                uct = self.exploitation_term.val(c) + self.exploration_term.val(c, dirichlet_noise=noise)
+                if uct > best_uct:
+                    best_uct = uct
+                    child = c
         if not child:
             child = random.choice(node.children)
 
