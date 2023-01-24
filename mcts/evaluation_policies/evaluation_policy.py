@@ -1,19 +1,19 @@
 import random
 
 
-class RolloutPolicy:
+class EvaluationPolicy:
     def __init__(self, model):
         self.model = model
 
-    def rollout(self, state):
+    def evaluate(self, state):
         raise NotImplementedError
 
 
-class RandomRolloutPolicy(RolloutPolicy):
+class RandomRolloutPolicy(EvaluationPolicy):
     def __init__(self, model):
         self.model = model
 
-    def rollout(self, state):
+    def evaluate(self, state):
         done = False
 
         while not done:

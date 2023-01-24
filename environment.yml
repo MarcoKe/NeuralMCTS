@@ -1,0 +1,11 @@
+name: neural_mcts
+channels:
+  - pytorch
+dependencies:
+  - pytorch
+  - tqdm
+  - pip
+  - pip:
+      - stable-baselines3
+  - tensorboard
+
