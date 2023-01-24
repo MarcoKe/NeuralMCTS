@@ -1,10 +1,13 @@
 import tqdm
 import copy
 import pandas as pd
+import numpy as np
+import seaborn as sns
 
 from stable_baselines3 import PPO
 from mcts.mcts_main import MCTSAgent
 import matplotlib.pyplot as plt
+
 
 class Agent:
     def select_action(self, obs):
@@ -74,8 +77,10 @@ def compete(env, agents, trials=10):
 
         print("rewards: ", [(str(a), r) for a, r in zip(agents, rewards)])
 
+
 def opt_gap(opt, sol):
     return (sol - opt) / opt
+
 
 def budget_analysis(env, agents, trials=15, render=True):
     state = env.reset()
@@ -117,19 +122,19 @@ def averaged_budget_analysis(env, agents, trials=10, num_repetitions=10):
     for i in range(num_repetitions):
         df = budget_analysis(env, agents, trials, render=False)
         dfs.append(df)
-        df.to_csv('df'+str(i)+'.csv')
+        df.to_csv('df' + str(i) + '.csv')
 
-    plt.figure()
-    import numpy as np
-    for agent in agents:
-        agent = str(agent)
-        means =  [np.mean(k) for k in zip(*[df[agent] for df in dfs])]
-        errors = [np.std(k, ddof=1) / np.sqrt(np.size(k)) for k in zip(*[df[agent] for df in dfs])]
-        # plt.plot(dfs[0]['budget'], means, '--o', yerr=errors, label=agent)
-        eplt = plt.errorbar(dfs[0]['budget'], means, errors)
-        eplt[0].set_label(agent)
-
-
+    fig, ax = plt.subplots()
+    clrs = sns.color_palette("Set2", 5)
+    styles = ['o', '^', '<', 's', 'D', 'h']
+    with sns.axes_style("darkgrid"):
+        for i, agent in enumerate(agents):
+            agent = str(agent)
+            means =  np.array([np.mean(k) for k in zip(*[df[agent] for df in dfs])])
+            errors = np.array([np.std(k, ddof=1) / np.sqrt(np.size(k)) for k in zip(*[df[agent] for df in dfs])])
+            ax.plot(dfs[0]['budget'], means, '-o', label=agent, c=clrs[i], marker=styles[i])
+            ax.fill_between(dfs[0]['budget'], means-errors, means+errors ,alpha=0.3, facecolor=clrs[i])
+    plt.ylim([0.0, 1.4])
     plt.title('TSP Distance Minimization')
     plt.xlabel('Simulation Budget')
     plt.ylabel('Optimality Gap')
@@ -147,6 +152,7 @@ def plot_budget_analysis(df):
 
     plt.legend()
     plt.show()
+
 
 if __name__ == '__main__':
     from envs.TSP import TSPGym, TSP
@@ -170,10 +176,14 @@ if __name__ == '__main__':
     rp = NeuralValueEvalPolicy(model_free_agent=Stb3ACAgent(model_free_agent), model=model)
     agent = MCTSAgentWrapper(MCTSAgent(model, tp, ep, rp, num_simulations=1000), env)
 
-    tp2 = UCTPolicy(MaxNodeValueTerm(), PUCTTerm(exploration_constant=1))
+    tp2 = UCTPolicy(AvgNodeValueTerm(), PUCTTerm(exploration_constant=1))
     ep2 = ExpansionPolicy(model=model)
     rp2 = NeuralValueEvalPolicy(model_free_agent=Stb3ACAgent(model_free_agent), model=model)
-    agent2 = MCTSAgentWrapper(MCTSAgent(model, tp2, ep2, rp2, num_simulations=1000), env)
+    agent2 = MCTSAgentWrapper(MCTSAgent(model, tp2, ep2, rp2, num_simulations=1000, dirichlet_noise=True), env)
+    # tp2 = UCTPolicy(MaxNodeValueTerm(), PUCTTerm(exploration_constant=1))
+    # ep2 = ExpansionPolicy(model=model)
+    # rp2 = NeuralValueEvalPolicy(model_free_agent=Stb3ACAgent(model_free_agent), model=model)
+    # agent2 = MCTSAgentWrapper(MCTSAgent(model, tp2, ep2, rp2, num_simulations=1000), env)
 
 
     # budget_analysis()
@@ -194,16 +204,8 @@ if __name__ == '__main__':
     # evaluate_agent(env, neuralRolloutAgent)
 
 
-    # 2) todo dirichlet noise
     # 3) todo flat monte carl
     # 5) todo improve the model free starting point: cnn, gnn
-    # 4) todo ranked reward
-    # 1) todo proper experiment with visualization. all different configurations with different runtimes.
-    # then scatter matrix with plotted tour and curves (x: budget, y, quality), multiple in one plot
     # 6) todo: mcts while training
-    # 0) todo: refactor
     # todo optimize neural net usage efficiency (turn off torch gradients?
-    # todo: the rl + SA pipeline is pretty close here. include SA in the environment, so that it optimizes the
-    # RL tour as soon as the episode is complete. The RL agent then gets the reward from the optimized tour.
-    # Does this improve SA? How about when a standalone RL agent provides candidate solutions?
     # todo: sensitivity analysis: how important is agent prediction quality. try saved agents from different stages of training
