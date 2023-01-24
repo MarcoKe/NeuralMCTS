@@ -8,5 +8,6 @@ dependencies:
   - pip
   - pip:
       - stable-baselines3
+      - python-tsp
   - tensorboard
 
