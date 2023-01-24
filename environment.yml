@@ -5,6 +5,7 @@ dependencies:
   - pytorch
   - networkx
   - tqdm
+  - seaborn
   - pip
   - pip:
       - stable-baselines3
