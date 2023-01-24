@@ -103,33 +103,7 @@ class TSPGym(gym.Env, TSP):
         from envs.tour_plotter import plot_state
         plot_state(self.state['tour'])
 
-from envs.simulated_annealing import TSPSAOptimizer
-class TSPGymSA(TSPGym):
-    """
-    When the episode is done, the generated solution is further optimized by Simulated Annealing
-    The reward is calculated using this further optimized solution
-    """
-    def __init__(self, num_cities):
-        super().__init__(num_cities)
-        self.optimizer = TSPSAOptimizer()
 
-    def step(self, action):
-        obs, reward, done, info = super().step(action)
-
-        if done:
-            solution, cost = self.optimizer.optimize(self.state['tour'])
-            reward = -cost
-
-        return obs, reward, done, info
-
-
-
-
-
-
-def stb3_policy_probs(model, obs, num_actions):
-    obs_tensor = model.policy.obs_to_tensor(obs)[0]
-    return torch.exp(model.policy.evaluate_actions(obs_tensor, torch.tensor([i for i in range(num_actions)]))[1])
 
 if __name__ == '__main__':
     # env = TSP()
