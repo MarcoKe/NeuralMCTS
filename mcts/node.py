@@ -16,6 +16,13 @@ class Node:
     def is_leaf(self):
         return len(self.children) == 0
 
+    def is_root(self):
+        if self.parent:
+            return False
+
+        return True
+
+
     def has_parent(self):
         return self.parent is not None
 

@@ -1,16 +1,16 @@
 import copy
-from .tree_policies.tree_policy import TreePolicy
+from mcts.tree_policies.tree_policy import TreePolicy
 from mcts.evaluation_policies.evaluation_policy import EvaluationPolicy
 from mcts.expansion_policies.expansion_policy import ExpansionPolicy
-from .node import Node
+from mcts.node import Node
 
 
 class MCTSAgent:
-    def __init__(self, model, tree_policy: TreePolicy, exapnsion_policy: ExpansionPolicy, evaluation_policy: EvaluationPolicy,
+    def __init__(self, model, tree_policy: TreePolicy, expansion_policy: ExpansionPolicy, evaluation_policy: EvaluationPolicy,
                  num_simulations=10):
         self.model = model
         self.tree_policy = tree_policy
-        self.expansion_policy = exapnsion_policy
+        self.expansion_policy = expansion_policy
         self.evaluation_policy = evaluation_policy
         self.num_simulations = num_simulations
 
@@ -26,13 +26,19 @@ class MCTSAgent:
             done = False
             while not n.is_leaf():
                 n = self.tree_policy.select(n)
-                s, terminal_reward, done = self.model.step(s, n.action) #todo make a distinction between model and env
+                s, terminal_reward, done = self.model.step(s, n.action)
 
             if not done:
                 new_children = self.expansion_policy.expand(n, s)
-                state_value, action_probs = self.evaluation_policy.evaluate(s) # todo check that self.model.legal_actions(state) is deterministic
+                state_value, action_probs = self.evaluation_policy.evaluate(s)
                 for i, c in enumerate(new_children):
-                    c.prior_prob = action_probs[i]  # check
+                    c.prior_prob = action_probs[i]
+                    # experimental
+                    s_, _, _ = self.model.step(state, c.action)
+                    r_, _ = self.evaluation_policy.agent.evaluate_state(self.model.create_obs(s_))
+                    c.update(r_)
+
+                    # end exp
 
                 # n = self.select(n, s)
             else:
@@ -40,13 +46,12 @@ class MCTSAgent:
 
             while n.has_parent():
                 n.update(state_value)
-
                 n = n.parent
 
         action, value = root_node.select_best_action(mode)
         return action, value
 
-    def select_action(self, state, mode='mean'):
+    def select_action(self, state, mode='max'):
         return self.mcts_search(state, mode)
 
     def __str__(self):
@@ -67,26 +72,12 @@ if __name__ == '__main__':
     from model_free.stb3_wrapper import Stb3ACAgent
 
     model_free_agent = PPO.load("ppo_tsp")
-    tp = UCTPolicy(AvgNodeValueTerm(), PUCTTerm(exploration_constant=10))
+    tp = UCTPolicy(AvgNodeValueTerm(), PUCTTerm(exploration_constant=1))
     ep = ExpansionPolicy(model=model)
     rp = NeuralValueEvalPolicy(model_free_agent=Stb3ACAgent(model_free_agent), model=model)
     agent = MCTSAgent(model, tp, ep, rp, num_simulations=1000)
 
     num_iter = 100
-
-    rewards = 0
-    for _ in range(num_iter):
-        state = env.reset()
-        done = False
-
-        while not done:
-            action, _ = model_free_agent.predict(state, deterministic=True)
-            state, reward, done, _ = env.step(action)
-
-        rewards += reward
-
-        env.render()
-    print("avg rew: ", rewards / num_iter)
 
 
     rewards = 0
@@ -103,6 +94,20 @@ if __name__ == '__main__':
         env.render()
     print("avg rew: ", rewards / num_iter)
 
+
+    rewards = 0
+    for _ in range(num_iter):
+        state = env.reset()
+        done = False
+
+        while not done:
+            action, _ = model_free_agent.predict(state, deterministic=True)
+            state, reward, done, _ = env.step(action)
+
+        rewards += reward
+
+        env.render()
+    print("avg rew: ", rewards / num_iter)
 
 
 
