@@ -18,7 +18,7 @@ class Stb3ACAgent(RLAgent):
             obs_tensor = self.agent.policy.obs_to_tensor(obs)[0]
             value, logprob, entropy = self.agent.policy.evaluate_actions(obs_tensor, torch.tensor(actions))
 
-        return value, torch.exp(logprob)
+        return value, torch.nn.functional.softmax(logprob, dim=0)
 
     def state_values(self, observations):
 
