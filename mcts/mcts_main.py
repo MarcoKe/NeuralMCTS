@@ -1,4 +1,5 @@
 import copy
+import math
 from mcts.tree_policies.tree_policy import TreePolicy
 from mcts.evaluation_policies.evaluation_policy import EvaluationPolicy
 from mcts.expansion_policies.expansion_policy import ExpansionPolicy
@@ -15,8 +16,43 @@ class MCTSAgent:
         self.num_simulations = num_simulations
         self.dirichlet_noise = dirichlet_noise
 
+    def init_tree(self, n, s):
+        """
+        create a path from the root of the tree to a terminal node by greedily choosing nodes with the learned policy
+        this should make the results of a tree search at least as good as the learned policy without tree search would have been
+        but only under the assumption that value estimates are perfect
+        """
+        done = False
+
+        while not done:
+            new_children = self.expansion_policy.expand(n, s)
+            state_value, action_probs = self.evaluation_policy.evaluate(s)
+            # children_states = [self.model.step(state, c.action)[0] for c in new_children]
+            children_state_values = self.evaluation_policy.agent.state_values(
+                [self.model.create_obs(self.model.step(s, c.action)[0]) for c in new_children])
+
+            max_prior = -math.inf
+            best_child = None
+            for i, c in enumerate(new_children):
+                c.prior_prob = action_probs[i]
+                c.update(
+                    children_state_values[i][0])  # maybe create a class to define how new children are initialized?
+                if c.prior_prob > max_prior:
+                    max_prior = c.prior_prob
+                    best_child = c
+
+            n = best_child
+            s, terminal_reward, done = self.model.step(s, n.action)
+
+        while n.has_parent():
+            n.update(terminal_reward)
+            n = n.parent
+        n.update(state_value)
+
     def mcts_search(self, state, mode='mean'):
         root_node = Node(None, None)
+
+        self.init_tree(root_node, copy.deepcopy(state))
 
         simulation_count = 0
         while simulation_count < self.num_simulations:
@@ -33,7 +69,7 @@ class MCTSAgent:
                 new_children = self.expansion_policy.expand(n, s)
                 state_value, action_probs = self.evaluation_policy.evaluate(s)
                 # children_states = [self.model.step(state, c.action)[0] for c in new_children]
-                children_state_values = self.evaluation_policy.agent.state_values([self.model.create_obs(self.model.step(state, c.action)[0]) for c in new_children])
+                children_state_values = self.evaluation_policy.agent.state_values([self.model.create_obs(self.model.step(s, c.action)[0]) for c in new_children])
                 for i, c in enumerate(new_children):
                     c.prior_prob = action_probs[i]
                     c.update(children_state_values[i][0]) # maybe create a class to define how new children are initialized?
@@ -44,6 +80,7 @@ class MCTSAgent:
             while n.has_parent():
                 n.update(state_value)
                 n = n.parent
+            n.update(state_value)
 
         action, value = root_node.select_best_action(mode)
         return action, value
