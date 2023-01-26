@@ -24,6 +24,7 @@ class MCTSPolicyImprovementTrainer:
         self.mcts_agent = mcts_agent
         self.model_free_agent.learn(total_timesteps=1)
         self.policy.optimizer.weight_decay = 0.03
+        self.policy.optimizer.learning_rate = 1e-5
 
     def mcts_policy_improvement_loss(self, pi_mcts, pi_theta, v_mcts, v_theta):
         """
@@ -99,15 +100,15 @@ class MCTSPolicyImprovementTrainer:
         observations = []
         rewards = 0
         for _ in range(num_episodes):
-            state = env.reset()
+            state = self.env.reset()
             done = False
 
             while not done:
-                pi_mcts_, v_mcts_, action = self.mcts_agent.stochastic_policy(env.raw_state())
+                pi_mcts_, v_mcts_, action = self.mcts_agent.stochastic_policy(self.env.raw_state())
                 observations.append(state)
                 pi_mcts.append(pi_mcts_.tolist())
                 v_mcts.append(v_mcts_)
-                state, reward, done, _ = env.step(action)
+                state, reward, done, _ = self.env.step(action)
 
             rewards += reward
         print("avg reward: ", rewards / num_episodes)
