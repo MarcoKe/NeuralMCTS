@@ -1,5 +1,6 @@
 import copy
 import math
+import torch
 from mcts.tree_policies.tree_policy import TreePolicy
 from mcts.evaluation_policies.evaluation_policy import EvaluationPolicy
 from mcts.expansion_policies.expansion_policy import ExpansionPolicy
@@ -82,11 +83,19 @@ class MCTSAgent:
                 n = n.parent
             n.update(state_value)
 
-        action, value = root_node.select_best_action(mode)
-        return action, value
+        return root_node
 
     def select_action(self, state, mode='max'):
-        return self.mcts_search(state, mode)
+        root_node = self.mcts_search(state, mode)
+        action, value = root_node.select_best_action(mode)
+
+        return action, value
+
+    def stochastic_policy(self, state):
+        root_node = self.mcts_search(state)
+        policy = torch.nn.functional.softmax(torch.Tensor([c.visits for c in root_node.children]), dim=0) #todo change to exponentiated counts
+        value = root_node.returns / root_node.visits
+        return policy, value, root_node.select_best_action()
 
     def __str__(self):
         return "MCTS(" + str(self.tree_policy) + ", " + str(self.evaluation_policy) + ")" + str(self.dirichlet_noise)
@@ -109,7 +118,7 @@ if __name__ == '__main__':
     tp = UCTPolicy(AvgNodeValueTerm(), PUCTTerm(exploration_constant=1))
     ep = ExpansionPolicy(model=model)
     rp = NeuralValueEvalPolicy(model_free_agent=Stb3ACAgent(model_free_agent), model=model)
-    agent = MCTSAgent(model, tp, ep, rp, num_simulations=1000)
+    agent = MCTSAgent(model, tp, ep, rp, num_simulations=1000, dirichlet_noise=True)
 
     num_iter = 100
 
