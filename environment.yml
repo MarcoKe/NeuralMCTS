@@ -10,5 +10,6 @@ dependencies:
   - pip:
       - stable-baselines3
       - python-tsp
+      - multiprocess
   - tensorboard
 
