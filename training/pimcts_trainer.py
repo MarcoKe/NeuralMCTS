@@ -19,8 +19,11 @@ class MCTSPolicyImprovementTrainer:
         typically, the policy and/or value function of the model free agent are also a part of the mcts agent
         """
         self.env = env
+        self.model_free_agent = model_free_agent
         self.policy: ActorCriticPolicy = model_free_agent.policy
         self.mcts_agent = mcts_agent
+        self.model_free_agent.learn(total_timesteps=1)
+        self.policy.optimizer.weight_decay = 0.03
 
     def mcts_policy_improvement_loss(self, pi_mcts, pi_theta, v_mcts, v_theta):
         """
@@ -28,10 +31,10 @@ class MCTSPolicyImprovementTrainer:
         mse between value estimates
         """
         policy_loss = th.mean(-th.sum(pi_mcts * th.log(pi_theta), dim=-1))
-        value_loss = F.mse_loss(v_mcts, v_theta)
-
+        value_loss = F.mse_loss(v_mcts, v_theta) / 10
+        print("ce loss: ", policy_loss, " mse: ", value_loss)
         total_loss = (policy_loss + value_loss) / 2 # + todo regularization
-        return total_loss
+        return total_loss, policy_loss, value_loss
 
     def forward(self, obs: th.Tensor):
         """
@@ -68,7 +71,7 @@ class MCTSPolicyImprovementTrainer:
         predicted_probs, predicted_values = self.forward(observations) # legal actions or just all actions?
 
 
-        loss = self.mcts_policy_improvement_loss(mcts_probs, predicted_probs, mcts_values, predicted_values)
+        loss, ploss, vloss = self.mcts_policy_improvement_loss(mcts_probs, predicted_probs, mcts_values, predicted_values)
 
         # Optimization step
         self.policy.optimizer.zero_grad()
@@ -80,17 +83,17 @@ class MCTSPolicyImprovementTrainer:
         print("loss: ", loss.item())
         # Logs
         # self.logger.record("mctstrain/entropy_loss", np.mean(entropy_losses))
-        # self.logger.record("mctstrain/policy_gradient_loss", np.mean(pg_losses))
-        # self.logger.record("mctstrain/value_loss", np.mean(value_losses))
+        self.model_free_agent.logger.record("mctstrain/policy_ce_loss", ploss.item())
+        self.model_free_agent.logger.record("mctstrain/value_mse_loss", vloss.item())
         # self.logger.record("mctstrain/clip_fraction", np.mean(clip_fractions))
         # self.logger.record("mctstrain/loss", loss.item())
         # # self.logger.record("mctstrain/explained_variance", explained_var)
         # if hasattr(self.policy, "log_std"):
         #     self.logger.record("mctstrain/std", th.exp(self.policy.log_std).mean().item())
-
+        # log policy entropy
         self.policy.set_training_mode(False)
 
-    def collect_experience(self, num_episodes=1):
+    def collect_experience(self, num_episodes=5):
         pi_mcts = []
         v_mcts = []
         observations = []
@@ -102,78 +105,104 @@ class MCTSPolicyImprovementTrainer:
             while not done:
                 pi_mcts_, v_mcts_, action = self.mcts_agent.stochastic_policy(env.raw_state())
                 observations.append(state)
-                pi_mcts.append(pi_mcts_)
+                pi_mcts.append(pi_mcts_.tolist())
                 v_mcts.append(v_mcts_)
                 state, reward, done, _ = env.step(action)
 
             rewards += reward
-
-        return observations, pi_mcts, v_mcts
+        print("avg reward: ", rewards / num_episodes)
+        return observations, pi_mcts, v_mcts, rewards / num_episodes
 
     def train(self, policy_improvement_iterations=100):
         for _ in range(policy_improvement_iterations):
             print("collecting experience")
             observations, pi_mcts, v_mcts = self.collect_experience()
-            print("training")
+            observations = th.Tensor(observations)
+            pi_mcts = th.Tensor(pi_mcts)
+            v_mcts = th.Tensor(v_mcts)
+            print("training", observations.shape, pi_mcts.shape, v_mcts.shape)
             self.train_on_mcts_experiences(observations, pi_mcts, v_mcts)
 
+    def train_parallel(self, policy_improvement_iterations=1000):
+        for i in range(policy_improvement_iterations):
+            print("collecting experience")
+            import multiprocess as mp
+
+            pool = mp.Pool(mp.cpu_count())
+            results = pool.starmap(self.collect_experience, [[]] * 8)
 
 
 
+            pool.close()
+            for r in results:
+                observations = th.Tensor(r[0])
+                pi_mcts = th.Tensor(r[1])
+                v_mcts = th.Tensor(r[2])
+                avg_reward = r[3]
+                print("training", observations.shape, pi_mcts.shape, v_mcts.shape)
+                self.train_on_mcts_experiences(observations, pi_mcts, v_mcts)
+                self.model_free_agent.logger.record('mctstrain/ep_rew', avg_reward)
 
-num_cities = 15
-env = TSPGym(num_cities=num_cities)
-model = TSP(num_cities=15)
+            self.model_free_agent.logger.record('mctstrain/policy_improvement_iter', i)
 
-# agent = PPO.load("ppo_tsp_15_1e6.zip")
-policy_kwargs = dict(activation_fn=th.nn.modules.activation.Mish)
-model_free_agent = PPO("MlpPolicy", env, verbose=1, tensorboard_log="stb3_tsp_tensorboard/", policy_kwargs=policy_kwargs, ent_coef=0.05)
-
-from mcts.tree_policies.tree_policy import UCTPolicy
-from mcts.tree_policies.exploration_terms.puct_term import PUCTTerm
-from mcts.tree_policies.exploitation_terms.avg_node_value import AvgNodeValueTerm
-from mcts.expansion_policies.expansion_policy import ExpansionPolicy
-from mcts.evaluation_policies.neural_value_eval import NeuralValueEvalPolicy
-from model_free.stb3_wrapper import Stb3ACAgent
+            self.model_free_agent.logger.dump(step=i)
 
 
-tp = UCTPolicy(AvgNodeValueTerm(), PUCTTerm(exploration_constant=1))
-ep = ExpansionPolicy(model=model)
-rp = NeuralValueEvalPolicy(model_free_agent=Stb3ACAgent(model_free_agent), model=model)
-mcts_agent = MCTSAgent(model, tp, ep, rp, num_simulations=10)
+if __name__ == '__main__':
+    num_cities = 15
+    env = TSPGym(num_cities=num_cities)
+    model = TSP(num_cities=15)
 
-trainer = MCTSPolicyImprovementTrainer(env, mcts_agent, model_free_agent)
-trainer.train()
+    # agent = PPO.load("ppo_tsp_15_1e6.zip")
+    policy_kwargs = dict(activation_fn=th.nn.modules.activation.Mish)
+    model_free_agent = PPO("MlpPolicy", env, verbose=1, tensorboard_log="stb3_tsp_tensorboard/", policy_kwargs=policy_kwargs)
+
+    from mcts.tree_policies.tree_policy import UCTPolicy
+    from mcts.tree_policies.exploration_terms.puct_term import PUCTTerm
+    from mcts.tree_policies.exploitation_terms.avg_node_value import AvgNodeValueTerm
+    from mcts.expansion_policies.expansion_policy import ExpansionPolicy
+    from mcts.evaluation_policies.neural_value_eval import NeuralValueEvalPolicy
+    from mcts.evaluation_policies.neural_rollout_policy import NeuralRolloutPolicy
+    from model_free.stb3_wrapper import Stb3ACAgent
 
 
-#
-# num_experiences = 128
-#
-# obs = []
-# mcts_probs = []
-# mcts_values = []
-# for _ in range(num_experiences):
-#     obs.append(env.reset())
-#     mcts_values.append(random.random())
-#
-# mcts_probs = np.random.dirichlet(np.ones(num_cities), size=num_experiences)
-#
-# obs_tensor = th.Tensor(obs)
-# mcts_probs_tensor = th.Tensor(mcts_probs)
-# mcts_values_tensor = th.Tensor(mcts_values)
-# mcts_values_tensor = mcts_values_tensor[:, None]
-#
-# print("obs size", obs_tensor.shape)
-# print("probs size", mcts_probs_tensor.shape)
-# print("values size", mcts_values_tensor.shape)
-# # agent = PPO.load("ppo_tsp_15_1e6.zip")
-# # print(agent.get_parameters())
-# # print(agent.policy)
-#
-# # model = MCTSActorCriticPolicy(env.observation_space, env.action_space, stable_baselines3.common.utils.constant_fn(0.3))
-# # model.load_state_dict(th.load("ppo_tsp_15_1e6/policy.pth"))
-# agent = PPO.load("ppo_tsp_15_1e6.zip")
-# trainer = MCTSPolicyImprovementTrainer(agent.policy)
-#
-#
-# trainer.train_on_mcts_experiences(obs_tensor, mcts_probs_tensor, mcts_values_tensor)
+    tp = UCTPolicy(AvgNodeValueTerm(), PUCTTerm(exploration_constant=1))
+    ep = ExpansionPolicy(model=model)
+    rp = NeuralRolloutPolicy(model_free_agent=Stb3ACAgent(model_free_agent), model=model)
+    mcts_agent = MCTSAgent(model, tp, ep, rp, num_simulations=100)
+
+    trainer = MCTSPolicyImprovementTrainer(env, mcts_agent, model_free_agent)
+    trainer.train_parallel()
+
+    model_free_agent.save('pimcts_15')
+    #
+    # num_experiences = 128
+    #
+    # obs = []
+    # mcts_probs = []
+    # mcts_values = []
+    # for _ in range(num_experiences):
+    #     obs.append(env.reset())
+    #     mcts_values.append(random.random())
+    #
+    # mcts_probs = np.random.dirichlet(np.ones(num_cities), size=num_experiences)
+    #
+    # obs_tensor = th.Tensor(obs)
+    # mcts_probs_tensor = th.Tensor(mcts_probs)
+    # mcts_values_tensor = th.Tensor(mcts_values)
+    # mcts_values_tensor = mcts_values_tensor[:, None]
+    #
+    # print("obs size", obs_tensor.shape)
+    # print("probs size", mcts_probs_tensor.shape)
+    # print("values size", mcts_values_tensor.shape)
+    # # agent = PPO.load("ppo_tsp_15_1e6.zip")
+    # # print(agent.get_parameters())
+    # # print(agent.policy)
+    #
+    # # model = MCTSActorCriticPolicy(env.observation_space, env.action_space, stable_baselines3.common.utils.constant_fn(0.3))
+    # # model.load_state_dict(th.load("ppo_tsp_15_1e6/policy.pth"))
+    # agent = PPO.load("ppo_tsp_15_1e6.zip")
+    # trainer = MCTSPolicyImprovementTrainer(agent.policy)
+    #
+    #
+    # trainer.train_on_mcts_experiences(obs_tensor, mcts_probs_tensor, mcts_values_tensor)
