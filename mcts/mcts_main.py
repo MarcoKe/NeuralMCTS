@@ -93,9 +93,12 @@ class MCTSAgent:
 
     def stochastic_policy(self, state):
         root_node = self.mcts_search(state)
-        policy = torch.nn.functional.softmax(torch.Tensor([c.visits for c in root_node.children]), dim=0) #todo change to exponentiated counts
+        policy = [0] * self.model.max_num_actions()
+        for c in root_node.children:
+            policy[c.action] = c.visits
+        policy = torch.nn.functional.softmax(torch.Tensor(policy), dim=0) #todo change to exponentiated counts
         value = root_node.returns / root_node.visits
-        return policy, value, root_node.select_best_action()
+        return policy, value, root_node.select_best_action()[0]
 
     def __str__(self):
         return "MCTS(" + str(self.tree_policy) + ", " + str(self.evaluation_policy) + ")" + str(self.dirichlet_noise)

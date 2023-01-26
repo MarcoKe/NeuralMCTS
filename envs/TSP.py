@@ -70,6 +70,9 @@ class TSP:
 
         return obs
 
+    def max_num_actions(self):
+        return self.num_cities
+
 
 
 
