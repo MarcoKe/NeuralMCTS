@@ -7,6 +7,7 @@ dependencies:
   - tqdm
   - seaborn
   - pytest
+  - wandb
   - pip
   - pip:
       - stable-baselines3
