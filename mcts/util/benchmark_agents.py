@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 
-from stable_baselines3 import PPO
+from envs.tsp_solver import TSPSolver
 from mcts.mcts_main import MCTSAgent
 import matplotlib.pyplot as plt
 
@@ -90,8 +90,7 @@ def budget_analysis(env, agents, trials=15, render=True):
     df = pd.DataFrame(columns=['budget'] + [str(a) for a in agents])
     df['budget'] = trials
 
-    from envs.tsp_solver import solve as solve_exactly
-    optimum = solve_exactly(state_['unscheduled'])
+    optimum = TSPSolver.solve_exactly(state_)
     print('optimum: ', optimum)
 
     # df['optimum'] = [optimum] * len(trials)
