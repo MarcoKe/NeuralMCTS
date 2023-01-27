@@ -1,3 +1,5 @@
+import multiprocessing
+
 import stable_baselines3.common.utils
 from stable_baselines3 import PPO
 import torch as th
@@ -10,10 +12,12 @@ import random
 from stable_baselines3.common.policies import ActorCriticPolicy
 from mcts.mcts_main import MCTSAgent
 from scipy.stats import entropy
-
+import multiprocess as mp
+mp.set_start_method('fork')
+import wandb
 
 class MCTSPolicyImprovementTrainer:
-    def __init__(self, env, mcts_agent: MCTSAgent, model_free_agent):
+    def __init__(self, env, mcts_agent: MCTSAgent, model_free_agent, wandb_run=None):
         """
         :mcts_agent: is the agent generating experiences by performing mcts searches
         :model_free_agent: is the model free agent that is being trained using these collected experiences
@@ -26,15 +30,24 @@ class MCTSPolicyImprovementTrainer:
         self.model_free_agent.learn(total_timesteps=1)
         self.policy.optimizer.weight_decay = 0.03
         self.policy.optimizer.learning_rate = 1e-5
+        self.wandb_run = wandb_run
+        self.wandb_run = wandb.init(
+            project="neural_mcts")
 
-    def mcts_policy_improvement_loss(self, pi_mcts, pi_theta, v_mcts, v_theta):
+    def log(self, key, value):
+        if self.wandb_run:
+            self.wandb_run.log({key: value})
+        else:
+            self.model_free_agent.logger.record(key, value)
+
+    @staticmethod
+    def mcts_policy_improvement_loss(pi_mcts, pi_theta, v_mcts, v_theta):
         """
         cross entropy between model free policy prediction and mcts policy
         mse between value estimates
         """
         policy_loss = th.mean(-th.sum(pi_mcts * th.log(pi_theta), dim=-1))
         value_loss = F.mse_loss(v_mcts, v_theta) / 5
-        print("ce loss: ", policy_loss, " mse: ", value_loss)
         total_loss = (policy_loss + value_loss) / 2 # + todo regularization
         return total_loss, policy_loss, value_loss
 
@@ -72,7 +85,6 @@ class MCTSPolicyImprovementTrainer:
         # batches
         predicted_probs, predicted_values = self.forward(observations) # legal actions or just all actions?
 
-
         loss, ploss, vloss = self.mcts_policy_improvement_loss(mcts_probs, predicted_probs, mcts_values, predicted_values)
 
         # Optimization step
@@ -85,10 +97,10 @@ class MCTSPolicyImprovementTrainer:
         print("loss: ", loss.item())
         # Logs
         # self.logger.record("mctstrain/entropy_loss", np.mean(entropy_losses))
-        self.model_free_agent.logger.record("mctstrain/policy_ce_loss", ploss.item())
-        self.model_free_agent.logger.record("mctstrain/value_mse_loss", vloss.item())
-        self.model_free_agent.logger.record("mctstrain/mcts_probs_entropy", np.mean(entropy(mcts_probs.detach().numpy(), base=model.max_num_actions(), axis=1)))
-        self.model_free_agent.logger.record("mctstrain/learned_probs_entropy", np.mean(entropy(predicted_probs.detach().numpy(), base=model.max_num_actions(), axis=1)))
+        self.log("mctstrain/policy_ce_loss", ploss.item())
+        self.log("mctstrain/value_mse_loss", vloss.item())
+        self.log("mctstrain/mcts_probs_entropy", np.mean(entropy(mcts_probs.detach().numpy(), base=self.mcts_agent.model.max_num_actions(), axis=1)))
+        self.log("mctstrain/learned_probs_entropy", np.mean(entropy(predicted_probs.detach().numpy(), base=self.mcts_agent.model.max_num_actions(), axis=1)))
 
         # self.logger.record("mctstrain/clip_fraction", np.mean(clip_fractions))
         # self.logger.record("mctstrain/loss", loss.item())
@@ -147,7 +159,7 @@ class MCTSPolicyImprovementTrainer:
     def train_parallel(self, policy_improvement_iterations=1000):
         for i in range(policy_improvement_iterations):
             print("collecting experience")
-            import multiprocess as mp
+
 
             pool = mp.Pool(mp.cpu_count())
             results = pool.starmap(self.collect_experience, [[]] * 8)
@@ -162,9 +174,9 @@ class MCTSPolicyImprovementTrainer:
                 avg_reward = r[3]
                 print("training", observations.shape, pi_mcts.shape, v_mcts.shape)
                 self.train_on_mcts_experiences(observations, pi_mcts, v_mcts)
-                self.model_free_agent.logger.record('mctstrain/ep_rew', avg_reward)
+                self.log('mctstrain/ep_rew', avg_reward)
 
-            self.model_free_agent.logger.record('mctstrain/policy_improvement_iter', i)
+            self.log('mctstrain/policy_improvement_iter', i)
 
             self.model_free_agent.logger.dump(step=i)
 
