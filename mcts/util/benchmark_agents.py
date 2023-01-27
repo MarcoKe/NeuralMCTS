@@ -117,24 +117,26 @@ def budget_analysis(env, agents, trials=15, render=True):
     return df
 
 
-def averaged_budget_analysis(env, agents, trials=10, num_repetitions=10):
+def averaged_budget_analysis(env, agents, trials=50, num_repetitions=40):
     dfs = []
     for i in range(num_repetitions):
         df = budget_analysis(env, agents, trials, render=False)
         dfs.append(df)
-        df.to_csv('df' + str(i) + '.csv')
+        # df.to_csv('df' + str(i) + '.csv')
 
     fig, ax = plt.subplots()
     clrs = sns.color_palette("Set2", 5)
     styles = ['o', '^', '<', 's', 'D', 'h']
+    max_gap = 0
     with sns.axes_style("darkgrid"):
         for i, agent in enumerate(agents):
             agent = str(agent)
             means =  np.array([np.mean(k) for k in zip(*[df[agent] for df in dfs])])
+            if max(means) > max_gap: max_gap = max(means)
             errors = np.array([np.std(k, ddof=1) / np.sqrt(np.size(k)) for k in zip(*[df[agent] for df in dfs])])
             ax.plot(dfs[0]['budget'], means, '-o', label=agent, c=clrs[i], marker=styles[i])
             ax.fill_between(dfs[0]['budget'], means-errors, means+errors ,alpha=0.3, facecolor=clrs[i])
-    plt.ylim([0.0, 1.4])
+    plt.ylim([0.0, max_gap*2.0])
     plt.title('TSP Distance Minimization')
     plt.xlabel('Simulation Budget')
     plt.ylabel('Optimality Gap')
