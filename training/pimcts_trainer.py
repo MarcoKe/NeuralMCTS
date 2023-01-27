@@ -166,7 +166,7 @@ if __name__ == '__main__':
     # agent = PPO.load("ppo_tsp_15_1e6.zip")
     policy_kwargs = dict(activation_fn=th.nn.modules.activation.Mish)
     # model_free_agent = PPO("MlpPolicy", env, verbose=1, tensorboard_log="stb3_tsp_tensorboard/", policy_kwargs=policy_kwargs)
-    model_free_agent = PPO.load('ppo_tsp_15_1e6_ent.zip', env=env)
+    model_free_agent = PPO.load('results/trained_agents/tsp/model_free/ppo_tsp_15_1e6_ent.zip', env=env)
     from mcts.tree_policies.tree_policy import UCTPolicy
     from mcts.tree_policies.exploration_terms.puct_term import PUCTTerm
     from mcts.tree_policies.exploitation_terms.avg_node_value import AvgNodeValueTerm
@@ -184,7 +184,7 @@ if __name__ == '__main__':
     trainer = MCTSPolicyImprovementTrainer(env, mcts_agent, model_free_agent)
     trainer.train_parallel()
 
-    model_free_agent.save('pimcts_15')
+    model_free_agent.save('results/trained_agents/tsp/nmcts/pimcts_15')
     #
     # num_experiences = 128
     #

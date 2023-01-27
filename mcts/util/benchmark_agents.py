@@ -174,7 +174,7 @@ if __name__ == '__main__':
     from stable_baselines3 import PPO
     from model_free.stb3_wrapper import Stb3ACAgent
 
-    model_free_agent = PPO.load("ppo_tsp_15_3e6_ent.zip")
+    model_free_agent = PPO.load("results/trained_agents/tsp/model_free/ppo_tsp_15_3e6_ent.zip")
     tp = UCTPolicy(AvgNodeValueTerm(), PUCTTerm(exploration_constant=1))
     ep = ExpansionPolicy(model=model)
     rp = NeuralValueEvalPolicy(model_free_agent=Stb3ACAgent(model_free_agent), model=model)
