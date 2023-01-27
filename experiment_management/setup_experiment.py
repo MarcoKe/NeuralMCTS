@@ -73,7 +73,7 @@ def time_stats(start, stop, steps):
 
 def setup_experiment(exp_name):
     general_config, exp_name, exp_config, agent_config, env_config = load_exp_config(exp_name)
-    # wandb_run = init_wandb(general_config, exp_name, exp_config, agent_config, env_config)
+    wandb_run = init_wandb(general_config, exp_name, exp_config, agent_config, env_config)
     #
     # seed = 64923
     # wandb_run.log({"agent_seed": seed})
@@ -120,8 +120,8 @@ def setup_experiment(exp_name):
     rp = NeuralRolloutPolicy(model_free_agent=Stb3ACAgent(model_free_agent), model=model)
     mcts_agent = MCTSAgent(model, tp, ep, rp, num_simulations=100)
 
-    trainer = MCTSPolicyImprovementTrainer(env, mcts_agent, model_free_agent, wandb_run=None)
-    trainer.train_parallel()
+    trainer = MCTSPolicyImprovementTrainer(env, mcts_agent, model_free_agent, wandb_run=wandb_run)
+    trainer.train()
 
 
     # wandb_run.finish()
