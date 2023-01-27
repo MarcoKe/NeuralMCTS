@@ -7,15 +7,18 @@ from mcts.tree_policies.tree_policy import TreePolicy
 from mcts.evaluation_policies.evaluation_policy import EvaluationPolicy
 from mcts.expansion_policies.expansion_policy import ExpansionPolicy
 from mcts.node import Node
+from model_free.stb3_wrapper import RLAgent
 
 
 class MCTSAgent:
-    def __init__(self, model, tree_policy: TreePolicy, expansion_policy: ExpansionPolicy, evaluation_policy: EvaluationPolicy,
+    def __init__(self, model, tree_policy: TreePolicy, expansion_policy: ExpansionPolicy,
+                 evaluation_policy: EvaluationPolicy, neural_net: RLAgent,
                  num_simulations=10, dirichlet_noise=False):
         self.model = model
         self.tree_policy = tree_policy
         self.expansion_policy = expansion_policy
         self.evaluation_policy = evaluation_policy
+        self.neural_net = neural_net
         self.num_simulations = num_simulations
         self.dirichlet_noise = dirichlet_noise
 
@@ -28,10 +31,10 @@ class MCTSAgent:
         done = False
 
         while not done:
-            new_children = self.expansion_policy.expand(n, s)
-            state_value, action_probs = self.evaluation_policy.evaluate(s)
+            new_children = self.expansion_policy.expand(n, s, model=self.model, neural_net=self.neural_net)
+            state_value, action_probs = self.evaluation_policy.evaluate(s, model=self.model, neural_net=self.neural_net)
             # children_states = [self.model.step(state, c.action)[0] for c in new_children]
-            children_state_values = self.evaluation_policy.agent.state_values(
+            children_state_values = self.neural_net.state_values(
                 [self.model.create_obs(self.model.step(s, c.action)[0]) for c in new_children])
 
             max_prior = -math.inf
@@ -69,10 +72,10 @@ class MCTSAgent:
                 s, terminal_reward, done = self.model.step(s, n.action)
 
             if not done:
-                new_children = self.expansion_policy.expand(n, s)
-                state_value, action_probs = self.evaluation_policy.evaluate(s)
+                new_children = self.expansion_policy.expand(n, s, model=self.model, neural_net=self.neural_net)
+                state_value, action_probs = self.evaluation_policy.evaluate(s, model=self.model, neural_net=self.neural_net)
                 # children_states = [self.model.step(state, c.action)[0] for c in new_children]
-                children_state_values = self.evaluation_policy.agent.state_values([self.model.create_obs(self.model.step(s, c.action)[0]) for c in new_children])
+                children_state_values = self.neural_net.state_values([self.model.create_obs(self.model.step(s, c.action)[0]) for c in new_children])
                 for i, c in enumerate(new_children):
                     c.prior_prob = action_probs[i]
                     c.update(children_state_values[i][0]) # maybe create a class to define how new children are initialized?
@@ -126,11 +129,11 @@ if __name__ == '__main__':
     from stable_baselines3 import PPO
     from model_free.stb3_wrapper import Stb3ACAgent
 
-    model_free_agent = PPO.load("results/trained_agents/tsp/model_free/ppo_tsp")
+    model_free_agent = PPO.load("results/trained_agents/tsp/model_free/ppo_tsp_15_3e6")
     tp = UCTPolicy(AvgNodeValueTerm(), PUCTTerm(exploration_constant=1))
-    ep = ExpansionPolicy(model=model)
-    rp = NeuralValueEvalPolicy(model_free_agent=Stb3ACAgent(model_free_agent), model=model)
-    agent = MCTSAgent(model, tp, ep, rp, num_simulations=1000, dirichlet_noise=True)
+    ep = ExpansionPolicy()
+    rp = NeuralValueEvalPolicy()
+    agent = MCTSAgent(model, tp, ep, rp, neural_net=Stb3ACAgent(model_free_agent), num_simulations=1000, dirichlet_noise=True)
 
     num_iter = 100
 

@@ -4,7 +4,7 @@ from torch.nn import functional as F
 from envs.TSP import TSPGym, TSP
 import numpy as np
 from stable_baselines3.common.policies import ActorCriticPolicy
-from mcts.mcts_main import MCTSAgent
+from mcts.mcts_agent import MCTSAgent
 from scipy.stats import entropy
 import multiprocess as mp
 import wandb
@@ -194,9 +194,9 @@ if __name__ == '__main__':
 
 
     tp = UCTPolicy(AvgNodeValueTerm(), PUCTTerm(exploration_constant=1))
-    ep = ExpansionPolicy(model=model)
-    rp = NeuralRolloutPolicy(model_free_agent=Stb3ACAgent(model_free_agent), model=model)
-    mcts_agent = MCTSAgent(model, tp, ep, rp, num_simulations=100)
+    ep = ExpansionPolicy()
+    rp = NeuralRolloutPolicy()
+    mcts_agent = MCTSAgent(model, tp, ep, rp, neural_net=Stb3ACAgent(model_free_agent), num_simulations=100)
 
     trainer = MCTSPolicyImprovementTrainer(env, mcts_agent, model_free_agent)
     trainer.train()

@@ -97,7 +97,7 @@ def setup_experiment(exp_name):
     from envs.TSP import TSPGym, TSP
     from stable_baselines3 import PPO
     import torch
-    from mcts.mcts_main import MCTSAgent
+    from mcts.mcts_agent import MCTSAgent
     from training.pimcts_trainer import MCTSPolicyImprovementTrainer
     num_cities = 15
     env = TSPGym(num_cities=num_cities)
@@ -116,9 +116,9 @@ def setup_experiment(exp_name):
     from model_free.stb3_wrapper import Stb3ACAgent
 
     tp = UCTPolicy(AvgNodeValueTerm(), PUCTTerm(exploration_constant=1))
-    ep = ExpansionPolicy(model=model)
-    rp = NeuralRolloutPolicy(model_free_agent=Stb3ACAgent(model_free_agent), model=model)
-    mcts_agent = MCTSAgent(model, tp, ep, rp, num_simulations=100)
+    ep = ExpansionPolicy()
+    rp = NeuralRolloutPolicy()
+    mcts_agent = MCTSAgent(model, tp, ep, rp, neural_net=Stb3ACAgent(model_free_agent), num_simulations=100)
 
     trainer = MCTSPolicyImprovementTrainer(env, mcts_agent, model_free_agent, wandb_run=wandb_run)
     trainer.train()

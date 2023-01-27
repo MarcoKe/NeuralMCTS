@@ -12,7 +12,7 @@ class TreePolicy:
 
 
 class RandomTreePolicy(TreePolicy):
-    def select(self, node: Node, state):
+    def select(self, node: Node, state, **kwargs):
         return random.choice(node.children)
 
     def __str__(self):

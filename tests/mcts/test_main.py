@@ -1,4 +1,4 @@
-from mcts.mcts_main import MCTSAgent
+from mcts.mcts_agent import MCTSAgent
 from pytest import approx
 
 

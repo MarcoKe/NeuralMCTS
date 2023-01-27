@@ -5,6 +5,9 @@ class RLAgent:
     def evaluate_actions(self, obs, actions):
         raise NotImplementedError
 
+    def state_values(self, observations):
+        raise NotImplementedError
+
 
 class Stb3ACAgent(RLAgent):
     def __init__(self, agent):
