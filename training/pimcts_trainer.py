@@ -98,6 +98,25 @@ class MCTSPolicyImprovementTrainer:
         # log policy entropy
         self.policy.set_training_mode(False)
 
+    def perform_episode(self):
+        state = self.env.reset()
+        done = False
+
+        observations = []
+        pi_mcts = []
+        v_mcts = []
+        num_steps = 0
+
+        while not done:
+            pi_mcts_, v_mcts_, action = self.mcts_agent.stochastic_policy(self.env.raw_state())
+            observations.append(state)
+            pi_mcts.append(pi_mcts_.tolist())
+            v_mcts.append(v_mcts_)
+            state, reward, done, _ = self.env.step(action)
+            num_steps += 1
+
+        return observations, pi_mcts, v_mcts, num_steps, reward
+
     def collect_experience(self, num_episodes=5):
         pi_mcts = []
         v_mcts = []
@@ -105,21 +124,13 @@ class MCTSPolicyImprovementTrainer:
         rewards_list = []
         rewards = 0
         for _ in range(num_episodes):
-            state = self.env.reset()
-            done = False
-
-            num_steps = 0
-            while not done:
-                pi_mcts_, v_mcts_, action = self.mcts_agent.stochastic_policy(self.env.raw_state())
-                observations.append(state)
-                pi_mcts.append(pi_mcts_.tolist())
-                v_mcts.append(v_mcts_)
-                state, reward, done, _ = self.env.step(action)
-                num_steps += 1
-
-            rewards_list.extend([reward] * num_steps)
+            o_, pi_mcts_, v_mcts_, num_steps, reward = self.perform_episode()
+            observations.extend(o_)
+            pi_mcts.extend(pi_mcts_)
+            v_mcts.extend(v_mcts_)
             rewards += reward
-        print("avg reward: ", rewards / num_episodes)
+            rewards_list.extend([reward] * num_steps)
+
         v_mcts = rewards_list
         return observations, pi_mcts, v_mcts, rewards / num_episodes
 
