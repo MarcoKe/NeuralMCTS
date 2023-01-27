@@ -94,11 +94,11 @@ class MCTSAgent:
 
     def stochastic_policy(self, state, temperature=0.9):
         root_node = self.mcts_search(state)
-        exponentiated_visit_counts = [0] * self.model.max_num_actions()
+        visit_counts = [0] * self.model.max_num_actions()
         for c in root_node.children:
-            exponentiated_visit_counts[c.action] = c.visits
+            visit_counts[c.action] = c.visits
 
-        exponentiated_visit_counts = np.array(exponentiated_visit_counts) / root_node.visits
+        exponentiated_visit_counts = np.array(visit_counts) / root_node.visits
         exponentiated_visit_counts = np.power(exponentiated_visit_counts, temperature)
         policy = np.exp(exponentiated_visit_counts) / sum(np.exp(exponentiated_visit_counts))
 

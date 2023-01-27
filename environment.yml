@@ -6,6 +6,7 @@ dependencies:
   - networkx
   - tqdm
   - seaborn
+  - pytest
   - pip
   - pip:
       - stable-baselines3

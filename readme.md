@@ -14,3 +14,8 @@ The starting point for all new branches is the main branch.
 Try to keep your changes to a local level as much as possible. 
 Changes that affect large portions of the code should be discussed first. 
 
+# Testing 
+
+Code should be tested with unit tests. We use the pytest package to do this. 
+Simply create a test in an appropriate place in the tests/ directory. 
+You can run the tests from the main directory with: ```python -m pytest```
