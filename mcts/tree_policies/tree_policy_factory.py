@@ -21,18 +21,18 @@ class ExplorationTermFactory(ObjectFactory):
         return self.create(key, **kwargs)
 
 
-exploration_factory = ExplorationTermFactory
+exploration_factory = ExplorationTermFactory()
 exploration_factory.register_builder('puct', PUCTTerm)
 exploration_factory.register_builder('uct', UCTTerm)
 
 
 class TreePolicyFactory(ObjectFactory):
     def get(self, key, **kwargs):
-        if 'exploitation_term' in kwargs:
-            kwargs['exploitation_term'] = exploitation_factory.get(kwargs['exploitation_term']['name'],
-                                                                   **kwargs['exploitation_term']['params'])
-            kwargs['exploration_term'] = exploration_factory.get(kwargs['exploration_term']['name'],
-                                                                 **kwargs['exploration_term']['params'])
+        if 'exploitation' in kwargs:
+            kwargs['exploitation'] = exploitation_factory.get(kwargs['exploitation']['name'],
+                                                                   **kwargs['exploitation']['params'])
+            kwargs['exploration'] = exploration_factory.get(kwargs['exploration']['name'],
+                                                                 **kwargs['exploration']['params'])
         return self.create(key, **kwargs)
 
 

@@ -7,5 +7,5 @@ class ExpansionPolicyFactory(ObjectFactory):
         return self.create(key, **kwargs)
 
 
-expansion_policies = ExpansionPolicyFactory()
-expansion_policies.register_builder('full_expansion', ExpansionPolicy)
+expansion_policy_factory = ExpansionPolicyFactory()
+expansion_policy_factory.register_builder('full_expansion', ExpansionPolicy)

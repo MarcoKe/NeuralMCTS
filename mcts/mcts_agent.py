@@ -13,7 +13,7 @@ from model_free.stb3_wrapper import RLAgent
 class MCTSAgent:
     def __init__(self, model, tree_policy: TreePolicy, expansion_policy: ExpansionPolicy,
                  evaluation_policy: EvaluationPolicy, neural_net: RLAgent,
-                 num_simulations=10, dirichlet_noise=False):
+                 num_simulations=10, dirichlet_noise=False, **kwargs):
         self.model = model
         self.tree_policy = tree_policy
         self.expansion_policy = expansion_policy

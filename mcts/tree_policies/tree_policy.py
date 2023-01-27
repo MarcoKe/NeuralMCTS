@@ -20,9 +20,9 @@ class RandomTreePolicy(TreePolicy):
 
 
 class UCTPolicy(TreePolicy):
-    def __init__(self, exploitation_term: ExploitationTerm, exploration_term: ExplorationTerm, dirichlet_alpha=0.03):
-        self.exploitation_term = exploitation_term
-        self.exploration_term = exploration_term
+    def __init__(self, exploitation: ExploitationTerm, exploration: ExplorationTerm, dirichlet_alpha=0.03):
+        self.exploitation_term = exploitation
+        self.exploration_term = exploration
 
     def select(self, node: Node, add_dirichlet: bool = False):
         best_uct, child = -math.inf, None

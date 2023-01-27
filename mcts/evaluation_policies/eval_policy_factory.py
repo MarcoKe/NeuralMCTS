@@ -8,6 +8,6 @@ class EvalPolicyFactory(ObjectFactory):
         return self.create(key, **kwargs)
 
 
-eval_policies = EvalPolicyFactory()
-eval_policies.register_builder('neural_rollout_eval', NeuralRolloutPolicy)
-eval_policies.register_builder('neural_value_eval', NeuralValueEvalPolicy)
+eval_policy_factory = EvalPolicyFactory()
+eval_policy_factory.register_builder('neural_rollout_eval', NeuralRolloutPolicy)
+eval_policy_factory.register_builder('neural_value_eval', NeuralValueEvalPolicy)
