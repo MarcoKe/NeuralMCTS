@@ -1,6 +1,7 @@
 import copy
 import math
 import torch
+import numpy as np
 from mcts.tree_policies.tree_policy import TreePolicy
 from mcts.evaluation_policies.evaluation_policy import EvaluationPolicy
 from mcts.expansion_policies.expansion_policy import ExpansionPolicy
@@ -91,12 +92,16 @@ class MCTSAgent:
 
         return action, value
 
-    def stochastic_policy(self, state):
+    def stochastic_policy(self, state, temperature=0.9):
         root_node = self.mcts_search(state)
-        policy = [0] * self.model.max_num_actions()
+        exponentiated_visit_counts = [0] * self.model.max_num_actions()
         for c in root_node.children:
-            policy[c.action] = c.visits
-        policy = torch.nn.functional.softmax(torch.Tensor(policy), dim=0) #todo change to exponentiated counts
+            exponentiated_visit_counts[c.action] = c.visits
+
+        exponentiated_visit_counts = np.array(exponentiated_visit_counts) / root_node.visits
+        exponentiated_visit_counts = np.power(exponentiated_visit_counts, temperature)
+        policy = np.exp(exponentiated_visit_counts) / sum(np.exp(exponentiated_visit_counts))
+
         value = root_node.returns / root_node.visits
         return policy, value, root_node.select_best_action()[0]
 
