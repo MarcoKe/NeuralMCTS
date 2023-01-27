@@ -184,7 +184,7 @@ if __name__ == '__main__':
     mcts_agent = MCTSAgent(model, tp, ep, rp, num_simulations=100)
 
     trainer = MCTSPolicyImprovementTrainer(env, mcts_agent, model_free_agent)
-    trainer.train_parallel()
+    trainer.train()
 
     model_free_agent.save('results/trained_agents/tsp/nmcts/pimcts_15')
     #
