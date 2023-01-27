@@ -9,6 +9,7 @@ import numpy as np
 import random
 from stable_baselines3.common.policies import ActorCriticPolicy
 from mcts.mcts_main import MCTSAgent
+from scipy.stats import entropy
 
 
 class MCTSPolicyImprovementTrainer:
@@ -32,7 +33,7 @@ class MCTSPolicyImprovementTrainer:
         mse between value estimates
         """
         policy_loss = th.mean(-th.sum(pi_mcts * th.log(pi_theta), dim=-1))
-        value_loss = F.mse_loss(v_mcts, v_theta) / 10
+        value_loss = F.mse_loss(v_mcts, v_theta) / 5
         print("ce loss: ", policy_loss, " mse: ", value_loss)
         total_loss = (policy_loss + value_loss) / 2 # + todo regularization
         return total_loss, policy_loss, value_loss
@@ -86,6 +87,9 @@ class MCTSPolicyImprovementTrainer:
         # self.logger.record("mctstrain/entropy_loss", np.mean(entropy_losses))
         self.model_free_agent.logger.record("mctstrain/policy_ce_loss", ploss.item())
         self.model_free_agent.logger.record("mctstrain/value_mse_loss", vloss.item())
+        self.model_free_agent.logger.record("mctstrain/mcts_probs_entropy", np.mean(entropy(mcts_probs.detach().numpy(), base=model.max_num_actions(), axis=1)))
+        self.model_free_agent.logger.record("mctstrain/learned_probs_entropy", np.mean(entropy(predicted_probs.detach().numpy(), base=model.max_num_actions(), axis=1)))
+
         # self.logger.record("mctstrain/clip_fraction", np.mean(clip_fractions))
         # self.logger.record("mctstrain/loss", loss.item())
         # # self.logger.record("mctstrain/explained_variance", explained_var)
@@ -98,20 +102,25 @@ class MCTSPolicyImprovementTrainer:
         pi_mcts = []
         v_mcts = []
         observations = []
+        rewards_list = []
         rewards = 0
         for _ in range(num_episodes):
             state = self.env.reset()
             done = False
 
+            num_steps = 0
             while not done:
                 pi_mcts_, v_mcts_, action = self.mcts_agent.stochastic_policy(self.env.raw_state())
                 observations.append(state)
                 pi_mcts.append(pi_mcts_.tolist())
                 v_mcts.append(v_mcts_)
                 state, reward, done, _ = self.env.step(action)
+                num_steps += 1
 
+            rewards_list.extend([reward] * num_steps)
             rewards += reward
         print("avg reward: ", rewards / num_episodes)
+        v_mcts = rewards_list
         return observations, pi_mcts, v_mcts, rewards / num_episodes
 
     def train(self, policy_improvement_iterations=100):
@@ -156,8 +165,8 @@ if __name__ == '__main__':
 
     # agent = PPO.load("ppo_tsp_15_1e6.zip")
     policy_kwargs = dict(activation_fn=th.nn.modules.activation.Mish)
-    model_free_agent = PPO("MlpPolicy", env, verbose=1, tensorboard_log="stb3_tsp_tensorboard/", policy_kwargs=policy_kwargs)
-
+    # model_free_agent = PPO("MlpPolicy", env, verbose=1, tensorboard_log="stb3_tsp_tensorboard/", policy_kwargs=policy_kwargs)
+    model_free_agent = PPO.load('ppo_tsp_15_1e6_ent.zip', env=env)
     from mcts.tree_policies.tree_policy import UCTPolicy
     from mcts.tree_policies.exploration_terms.puct_term import PUCTTerm
     from mcts.tree_policies.exploitation_terms.avg_node_value import AvgNodeValueTerm
