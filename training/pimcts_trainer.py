@@ -1,6 +1,3 @@
-import multiprocessing
-
-import stable_baselines3.common.utils
 from stable_baselines3 import PPO
 import torch as th
 from torch.nn import functional as F
@@ -11,6 +8,11 @@ from mcts.mcts_main import MCTSAgent
 from scipy.stats import entropy
 import multiprocess as mp
 import wandb
+from mcts.util.benchmark_agents import perform_episode as eval
+from mcts.util.benchmark_agents import opt_gap
+import copy
+from envs.tsp_solver import TSPSolver
+from mcts.util.benchmark_agents import MCTSAgentWrapper
 
 
 class MCTSPolicyImprovementTrainer:
@@ -33,7 +35,7 @@ class MCTSPolicyImprovementTrainer:
 
     def log(self, key, value):
         if self.wandb_run:
-            self.wandb_run.log({key: value})
+            self.wandb_run.log({key: value, 'policy_improvement_steps': self.policy_improvement_steps})
         else:
             self.model_free_agent.logger.record(key, value)
 
@@ -134,6 +136,7 @@ class MCTSPolicyImprovementTrainer:
 
     def train(self, policy_improvement_iterations=1000, workers=8):
         for i in range(policy_improvement_iterations):
+            self.policy_improvement_steps = i
             print("collecting experience")
 
             if workers > 1:
@@ -148,14 +151,26 @@ class MCTSPolicyImprovementTrainer:
                 pi_mcts = th.Tensor(r[1])
                 v_mcts = th.Tensor(r[2])
                 avg_reward = r[3]
-                print("training", observations.shape, pi_mcts.shape, v_mcts.shape)
                 self.train_on_mcts_experiences(observations, pi_mcts, v_mcts)
                 self.log('mctstrain/ep_rew', avg_reward)
 
             self.log('mctstrain/policy_improvement_iter', i)
 
+            self.evaluate()
             if not self.wandb_run:
                 self.model_free_agent.logger.dump(step=i)
+
+    def evaluate(self, eval_iterations=10):
+        opt_gaps = 0
+        for _ in range(eval_iterations):
+            state = copy.deepcopy(self.env.reset())
+            state_ = copy.deepcopy(self.env.raw_state())
+            opt = TSPSolver.solve(state_)
+            reward = eval(self.env, MCTSAgentWrapper(self.mcts_agent, self.env), state_, state)
+            opt_gaps += opt_gap(opt, -reward)
+
+        self.log('mctstrain/eval_optgap', opt_gaps / eval_iterations)
+
 
 
 if __name__ == '__main__':
