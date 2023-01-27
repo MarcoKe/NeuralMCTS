@@ -16,7 +16,7 @@ from mcts.util.benchmark_agents import MCTSAgentWrapper
 
 
 class MCTSPolicyImprovementTrainer:
-    def __init__(self, env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.03, learning_rate=1e-5, wandb_run=None):
+    def __init__(self, env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.0005, learning_rate=1e-5, wandb_run=None):
         """
         :mcts_agent: is the agent generating experiences by performing mcts searches
         :model_free_agent: is the model free agent that is being trained using these collected experiences
@@ -46,7 +46,7 @@ class MCTSPolicyImprovementTrainer:
         mse between value estimates
         """
         policy_loss = th.mean(-th.sum(pi_mcts * th.log(pi_theta), dim=-1))
-        value_loss = F.mse_loss(v_mcts, v_theta) / 5 #todo
+        value_loss = F.mse_loss(v_mcts, v_theta) / 2 #todo
         total_loss = (policy_loss + value_loss) / 2
         return total_loss, policy_loss, value_loss
 
