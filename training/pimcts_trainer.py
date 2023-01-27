@@ -5,19 +5,16 @@ from stable_baselines3 import PPO
 import torch as th
 from torch.nn import functional as F
 from envs.TSP import TSPGym, TSP
-import gym
-from stable_baselines3.common.utils import explained_variance
 import numpy as np
-import random
 from stable_baselines3.common.policies import ActorCriticPolicy
 from mcts.mcts_main import MCTSAgent
 from scipy.stats import entropy
 import multiprocess as mp
-mp.set_start_method('fork')
 import wandb
 
+
 class MCTSPolicyImprovementTrainer:
-    def __init__(self, env, mcts_agent: MCTSAgent, model_free_agent, wandb_run=None):
+    def __init__(self, env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.03, learning_rate=1e-5, wandb_run=None):
         """
         :mcts_agent: is the agent generating experiences by performing mcts searches
         :model_free_agent: is the model free agent that is being trained using these collected experiences
@@ -27,12 +24,12 @@ class MCTSPolicyImprovementTrainer:
         self.model_free_agent = model_free_agent
         self.policy: ActorCriticPolicy = model_free_agent.policy
         self.mcts_agent = mcts_agent
-        self.model_free_agent.learn(total_timesteps=1)
-        self.policy.optimizer.weight_decay = 0.03
-        self.policy.optimizer.learning_rate = 1e-5
+        self.policy.optimizer.weight_decay = weight_decay
+        self.policy.optimizer.learning_rate = learning_rate
         self.wandb_run = wandb_run
-        self.wandb_run = wandb.init(
-            project="neural_mcts")
+
+        if not self.wandb_run:
+            self.model_free_agent.learn(total_timesteps=1)
 
     def log(self, key, value):
         if self.wandb_run:
@@ -47,8 +44,8 @@ class MCTSPolicyImprovementTrainer:
         mse between value estimates
         """
         policy_loss = th.mean(-th.sum(pi_mcts * th.log(pi_theta), dim=-1))
-        value_loss = F.mse_loss(v_mcts, v_theta) / 5
-        total_loss = (policy_loss + value_loss) / 2 # + todo regularization
+        value_loss = F.mse_loss(v_mcts, v_theta) / 5 #todo
+        total_loss = (policy_loss + value_loss) / 2
         return total_loss, policy_loss, value_loss
 
     def forward(self, obs: th.Tensor):
@@ -81,8 +78,8 @@ class MCTSPolicyImprovementTrainer:
         # Switch to train mode (this affects batch norm / dropout)
         self.policy.set_training_mode(True)
 
-        # train for n_epochs epochs
-        # batches
+        # todo train for n_epochs epochs
+        # todo batches
         predicted_probs, predicted_values = self.forward(observations) # legal actions or just all actions?
 
         loss, ploss, vloss = self.mcts_policy_improvement_loss(mcts_probs, predicted_probs, mcts_values, predicted_values)
@@ -91,23 +88,12 @@ class MCTSPolicyImprovementTrainer:
         self.policy.optimizer.zero_grad()
         loss.backward()
         self.policy.optimizer.step()
-        #
-        # # explained_var = explained_variance(self.rollout_buffer.values.flatten(), self.rollout_buffer.returns.flatten())
-        #
-        print("loss: ", loss.item())
-        # Logs
-        # self.logger.record("mctstrain/entropy_loss", np.mean(entropy_losses))
+
         self.log("mctstrain/policy_ce_loss", ploss.item())
         self.log("mctstrain/value_mse_loss", vloss.item())
         self.log("mctstrain/mcts_probs_entropy", np.mean(entropy(mcts_probs.detach().numpy(), base=self.mcts_agent.model.max_num_actions(), axis=1)))
         self.log("mctstrain/learned_probs_entropy", np.mean(entropy(predicted_probs.detach().numpy(), base=self.mcts_agent.model.max_num_actions(), axis=1)))
 
-        # self.logger.record("mctstrain/clip_fraction", np.mean(clip_fractions))
-        # self.logger.record("mctstrain/loss", loss.item())
-        # # self.logger.record("mctstrain/explained_variance", explained_var)
-        # if hasattr(self.policy, "log_std"):
-        #     self.logger.record("mctstrain/std", th.exp(self.policy.log_std).mean().item())
-        # log policy entropy
         self.policy.set_training_mode(False)
 
     def perform_episode(self):
@@ -146,27 +132,17 @@ class MCTSPolicyImprovementTrainer:
         v_mcts = rewards_list
         return observations, pi_mcts, v_mcts, rewards / num_episodes
 
-    def train(self, policy_improvement_iterations=100):
-        for _ in range(policy_improvement_iterations):
-            print("collecting experience")
-            observations, pi_mcts, v_mcts = self.collect_experience()
-            observations = th.Tensor(observations)
-            pi_mcts = th.Tensor(pi_mcts)
-            v_mcts = th.Tensor(v_mcts)
-            print("training", observations.shape, pi_mcts.shape, v_mcts.shape)
-            self.train_on_mcts_experiences(observations, pi_mcts, v_mcts)
-
-    def train_parallel(self, policy_improvement_iterations=1000):
+    def train(self, policy_improvement_iterations=1000, workers=8):
         for i in range(policy_improvement_iterations):
             print("collecting experience")
 
+            if workers > 1:
+                pool = mp.Pool(mp.cpu_count())
+                results = pool.starmap(self.collect_experience, [[]] * workers)
+                pool.close()
+            else:
+                results = [self.collect_experience()]
 
-            pool = mp.Pool(mp.cpu_count())
-            results = pool.starmap(self.collect_experience, [[]] * 8)
-
-
-
-            pool.close()
             for r in results:
                 observations = th.Tensor(r[0])
                 pi_mcts = th.Tensor(r[1])
@@ -178,10 +154,13 @@ class MCTSPolicyImprovementTrainer:
 
             self.log('mctstrain/policy_improvement_iter', i)
 
-            self.model_free_agent.logger.dump(step=i)
+            if not self.wandb_run:
+                self.model_free_agent.logger.dump(step=i)
 
 
 if __name__ == '__main__':
+    wandb.require("service")
+
     num_cities = 15
     env = TSPGym(num_cities=num_cities)
     model = TSP(num_cities=15)
