@@ -18,7 +18,10 @@ def create_env(env_config):
 
 def create_agent(env, model, agent_config):
     agent_config = agent_config['params']
-    model_free_agent = PPO.load(agent_config['learned_policy']['location'], env=env)
+    if agent_config['learned_policy']['location']:
+        model_free_agent = PPO.load(agent_config['learned_policy']['location'], env=env)
+    else:
+        model_free_agent = PPO('MlpPolicy', env, policy_kwargs=dict(activation_fn=torch.nn.modules.Mish))
     neural_net = Stb3ACAgent(model_free_agent)
 
     tp = tree_policy_factory.get(agent_config['tree_policy']['name'], **agent_config['tree_policy']['params'])
