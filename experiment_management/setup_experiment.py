@@ -35,7 +35,7 @@ def init_wandb(general_config, exp_name, exp_config, agent_config, env_config):
 
     run = wandb.init(
         project=general_config['wandb']['project'],
-        # config=config,
+        config=config,
         # sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
         # monitor_gym=True,  # auto-upload the videos of agents playing the game
         # save_code=True,  # optional

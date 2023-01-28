@@ -1,3 +1,5 @@
+from collections import namedtuple, deque
+import random
 from stable_baselines3 import PPO
 import torch as th
 from torch.nn import functional as F
@@ -13,6 +15,40 @@ from mcts.util.benchmark_agents import opt_gap
 import copy
 from envs.tsp_solver import TSPSolver
 from mcts.util.benchmark_agents import MCTSAgentWrapper
+import torch
+import tqdm
+
+Sample = namedtuple('Transition', ('obs', 'mcts_probs', 'outcomes'))
+
+class ReplayMemory:
+    def __init__(self, obs_dim, probs_dim, size):
+        self.obs_buf = np.zeros((size, obs_dim), dtype=np.float32)
+        self.probs_buf = np.zeros((size, probs_dim), dtype=np.float32)
+        self.outcomes_buf = np.zeros(size, dtype=np.float32)
+        self.ptr, self.size, self.max_size = 0, 0, size
+
+    def store(self, obs, probs, outcomes):
+        for o, p, z in zip(obs, probs, outcomes):
+            self.store_(o, p, z)
+
+    def store_(self, ob, prob, outcome):
+        self.obs_buf[self.ptr] = ob
+        self.probs_buf[self.ptr] = prob
+        self.outcomes_buf[self.ptr] = outcome
+
+        self.ptr = (self.ptr+1) % self.max_size
+        self.size = min(self.size+1, self.max_size)
+
+    def sample_batch(self, batch_size=32):
+        idxs = np.random.randint(0, self.size, size=batch_size)
+        batch = dict(obs=self.obs_buf[idxs],
+                     mcts_probs=self.probs_buf[idxs],
+                     outcomes=self.outcomes_buf[idxs],
+                     )
+        return {k: torch.as_tensor(v, dtype=torch.float32) for k,v in batch.items()}
+
+    def __len__(self):
+        return self.size
 
 
 class MCTSPolicyImprovementTrainer:
@@ -29,6 +65,9 @@ class MCTSPolicyImprovementTrainer:
         self.policy.optimizer.weight_decay = weight_decay
         self.policy.optimizer.learning_rate = learning_rate
         self.wandb_run = wandb_run
+        self.memory = ReplayMemory(env.observation_space.shape[0], mcts_agent.model.max_num_actions(), 10000)
+        self.batch_size = 256
+        self.num_epochs = 1
 
         if not self.wandb_run:
             self.model_free_agent.learn(total_timesteps=1)
@@ -68,8 +107,7 @@ class MCTSPolicyImprovementTrainer:
         action_probs = th.nn.functional.softmax(action_logits, dim=1)
         return action_probs, values
 
-    def train_on_mcts_experiences(self, observations: th.Tensor, mcts_probs: th.Tensor,
-              mcts_values: th.Tensor) -> None:
+    def train_on_mcts_experiences(self) -> None:
         """
         Update policy using the results from mcts searches.
         :observations: [num_experiences, obs_size]
@@ -77,24 +115,29 @@ class MCTSPolicyImprovementTrainer:
         :mcts_probs: [num_experiences, num_actions]
         :mcts_values: [num_experiences, 1]
         """
+
+        if len(self.memory) < self.batch_size: return
+
         # Switch to train mode (this affects batch norm / dropout)
         self.policy.set_training_mode(True)
 
-        # todo train for n_epochs epochs
-        # todo batches
-        predicted_probs, predicted_values = self.forward(observations) # legal actions or just all actions?
+        for training_iter in range(self.num_epochs * int(len(self.memory) / self.batch_size)):
+            print("training, batch", training_iter, " size memory buffer", len(self.memory))
+            batch = self.memory.sample_batch(self.batch_size)
 
-        loss, ploss, vloss = self.mcts_policy_improvement_loss(mcts_probs, predicted_probs, mcts_values, predicted_values)
+            predicted_probs, predicted_values = self.forward(batch['obs']) # legal actions or just all actions?
 
-        # Optimization step
-        self.policy.optimizer.zero_grad()
-        loss.backward()
-        self.policy.optimizer.step()
+            loss, ploss, vloss = self.mcts_policy_improvement_loss(batch['mcts_probs'], predicted_probs, batch['outcomes'], predicted_values)
 
-        self.log("mctstrain/policy_ce_loss", ploss.item())
-        self.log("mctstrain/value_mse_loss", vloss.item())
-        self.log("mctstrain/mcts_probs_entropy", np.mean(entropy(mcts_probs.detach().numpy(), base=self.mcts_agent.model.max_num_actions(), axis=1)))
-        self.log("mctstrain/learned_probs_entropy", np.mean(entropy(predicted_probs.detach().numpy(), base=self.mcts_agent.model.max_num_actions(), axis=1)))
+            # Optimization step
+            self.policy.optimizer.zero_grad()
+            loss.backward()
+            self.policy.optimizer.step()
+
+            self.log("mctstrain/policy_ce_loss", ploss.item())
+            self.log("mctstrain/value_mse_loss", vloss.item())
+            self.log("mctstrain/mcts_probs_entropy", np.mean(entropy(batch['mcts_probs'].detach().numpy(), base=self.mcts_agent.model.max_num_actions(), axis=1)))
+            self.log("mctstrain/learned_probs_entropy", np.mean(entropy(predicted_probs.detach().numpy(), base=self.mcts_agent.model.max_num_actions(), axis=1)))
 
         self.policy.set_training_mode(False)
 
@@ -131,8 +174,7 @@ class MCTSPolicyImprovementTrainer:
             rewards += reward
             rewards_list.extend([reward] * num_steps)
 
-        v_mcts = rewards_list
-        return observations, pi_mcts, v_mcts, rewards / num_episodes
+        return observations, pi_mcts, rewards_list, rewards / num_episodes
 
     def train(self, policy_improvement_iterations=1000, workers=8):
         for i in range(policy_improvement_iterations):
@@ -149,10 +191,12 @@ class MCTSPolicyImprovementTrainer:
             for r in results:
                 observations = th.Tensor(r[0])
                 pi_mcts = th.Tensor(r[1])
-                v_mcts = th.Tensor(r[2])
+                outcomes = th.Tensor(r[2])
                 avg_reward = r[3]
-                self.train_on_mcts_experiences(observations, pi_mcts, v_mcts)
+                self.memory.store(observations, pi_mcts, outcomes)
                 self.log('mctstrain/ep_rew', avg_reward)
+
+            self.train_on_mcts_experiences()
 
             self.log('mctstrain/policy_improvement_iter', i)
 
@@ -201,7 +245,7 @@ if __name__ == '__main__':
     trainer = MCTSPolicyImprovementTrainer(env, mcts_agent, model_free_agent)
     trainer.train()
 
-    model_free_agent.save('results/trained_agents/tsp/nmcts/pimcts_15')
+    # model_free_agent.save('results/trained_agents/tsp/nmcts/pimcts_15')
     #
     # num_experiences = 128
     #
