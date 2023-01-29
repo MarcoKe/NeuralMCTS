@@ -65,7 +65,7 @@ class MCTSPolicyImprovementTrainer:
         self.policy.optimizer.weight_decay = weight_decay
         self.policy.optimizer.learning_rate = learning_rate
         self.wandb_run = wandb_run
-        self.memory = ReplayMemory(env.observation_space.shape[0], mcts_agent.model.max_num_actions(), 10000)
+        self.memory = ReplayMemory(env.observation_space.shape[0], mcts_agent.model.max_num_actions(), 50000)
         self.batch_size = 256
         self.num_epochs = 1
 
@@ -176,13 +176,13 @@ class MCTSPolicyImprovementTrainer:
 
         return observations, pi_mcts, rewards_list, rewards / num_episodes
 
-    def train(self, policy_improvement_iterations=1000, workers=8):
+    def train(self, policy_improvement_iterations=2000, workers=8):
         for i in range(policy_improvement_iterations):
             self.policy_improvement_steps = i
             print("collecting experience")
 
             if workers > 1:
-                pool = mp.Pool(mp.cpu_count())
+                pool = mp.Pool(workers)
                 results = pool.starmap(self.collect_experience, [[]] * workers)
                 pool.close()
             else:
