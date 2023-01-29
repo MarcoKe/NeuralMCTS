@@ -1,4 +1,4 @@
-name: 'mcts_from_scratch'
+name: 'mcts_from_scratch_50000replay'
 params:
   num_simulations: 100
   learned_policy:
