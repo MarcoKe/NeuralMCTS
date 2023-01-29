@@ -1,5 +1,3 @@
-from collections import namedtuple, deque
-import random
 from stable_baselines3 import PPO
 import torch as th
 from torch.nn import functional as F
@@ -16,9 +14,7 @@ import copy
 from envs.tsp_solver import TSPSolver
 from mcts.util.benchmark_agents import MCTSAgentWrapper
 import torch
-import tqdm
 
-Sample = namedtuple('Transition', ('obs', 'mcts_probs', 'outcomes'))
 
 class ReplayMemory:
     def __init__(self, obs_dim, probs_dim, size):
@@ -52,11 +48,19 @@ class ReplayMemory:
 
 
 class MCTSPolicyImprovementTrainer:
-    def __init__(self, env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.0005, learning_rate=1e-5, wandb_run=None):
+    def __init__(self, env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.0005, learning_rate=1e-5,
+                 buffer_size=50000, batch_size=256, num_epochs=1, policy_improvement_iterations=2000, workers=8,
+                 num_episodes=5, wandb_run=None):
         """
         :mcts_agent: is the agent generating experiences by performing mcts searches
         :model_free_agent: is the model free agent that is being trained using these collected experiences
-        typically, the policy and/or value function of the model free agent are also a part of the mcts agent
+                     typically, the policy and/or value function of the model free agent are also a part of the mcts agent
+        :batch_size: batches of this size will be sampled from the replay buffer during training
+        :num_epochs: after experience has been collected and deposited to the replay buffer, we will train for this
+                     number of epochs on the data in the buffer
+        :policy_improvement_iterations: number of (collect experience) -> (train) iterations
+        :workers: how many workers will collect experience in parallel
+        :num_episodes: how many episodes of experience EACH worker will collect
         """
         self.env = env
         self.model_free_agent = model_free_agent
@@ -65,9 +69,12 @@ class MCTSPolicyImprovementTrainer:
         self.policy.optimizer.weight_decay = weight_decay
         self.policy.optimizer.learning_rate = learning_rate
         self.wandb_run = wandb_run
-        self.memory = ReplayMemory(env.observation_space.shape[0], mcts_agent.model.max_num_actions(), 50000)
-        self.batch_size = 256
-        self.num_epochs = 1
+        self.memory = ReplayMemory(env.observation_space.shape[0], mcts_agent.model.max_num_actions(), buffer_size)
+        self.batch_size = batch_size
+        self.num_epochs = num_epochs
+        self.policy_improvement_iterations = policy_improvement_iterations
+        self.workers = workers
+        self.num_episodes = num_episodes
 
         if not self.wandb_run:
             self.model_free_agent.learn(total_timesteps=1)
@@ -122,7 +129,7 @@ class MCTSPolicyImprovementTrainer:
         self.policy.set_training_mode(True)
 
         for training_iter in range(self.num_epochs * int(len(self.memory) / self.batch_size)):
-            print("training, batch", training_iter, " size memory buffer", len(self.memory))
+            print("training, batch", training_iter, " size memory buffer", len(self.memory), " / ", self.memory.max_size)
             batch = self.memory.sample_batch(self.batch_size)
 
             predicted_probs, predicted_values = self.forward(batch['obs']) # legal actions or just all actions?
@@ -160,13 +167,13 @@ class MCTSPolicyImprovementTrainer:
 
         return observations, pi_mcts, v_mcts, num_steps, reward
 
-    def collect_experience(self, num_episodes=5):
+    def collect_experience(self):
         pi_mcts = []
         v_mcts = []
         observations = []
         rewards_list = []
         rewards = 0
-        for _ in range(num_episodes):
+        for _ in range(self.num_episodes):
             o_, pi_mcts_, v_mcts_, num_steps, reward = self.perform_episode()
             observations.extend(o_)
             pi_mcts.extend(pi_mcts_)
@@ -174,22 +181,22 @@ class MCTSPolicyImprovementTrainer:
             rewards += reward
             rewards_list.extend([reward] * num_steps)
 
-        return observations, pi_mcts, rewards_list, rewards / num_episodes
+        return observations, pi_mcts, rewards_list, rewards / self.num_episodes
 
-    def train(self, policy_improvement_iterations=2000, workers=8):
-        for i in range(policy_improvement_iterations):
+    def train(self):
+        for i in range(self.policy_improvement_iterations):
             self.policy_improvement_steps = i
             print("collecting experience")
 
-            if workers > 1:
-                pool = mp.Pool(workers)
-                results = pool.starmap(self.collect_experience, [[]] * workers)
+            if self.workers > 1:
+                pool = mp.Pool(self.workers)
+                results = pool.starmap(self.collect_experience, [[]] * self.workers)
                 pool.close()
             else:
                 results = [self.collect_experience()]
 
             for r in results:
-                observations = th.Tensor(r[0])
+                observations = th.Tensor(r[0]) #todo: we are converting between different datastructures in this file. is all of it necessary?
                 pi_mcts = th.Tensor(r[1])
                 outcomes = th.Tensor(r[2])
                 avg_reward = r[3]
@@ -204,6 +211,8 @@ class MCTSPolicyImprovementTrainer:
             if not self.wandb_run:
                 self.model_free_agent.logger.dump(step=i)
 
+        model_free_agent.save('results/trained_agents/tsp/nmcts/pimcts_15') #todo automatically name according to experimetn
+
     def evaluate(self, eval_iterations=10):
         opt_gaps = 0
         for _ in range(eval_iterations):
@@ -214,7 +223,6 @@ class MCTSPolicyImprovementTrainer:
             opt_gaps += opt_gap(opt, -reward)
 
         self.log('mctstrain/eval_optgap', opt_gaps / eval_iterations)
-
 
 
 if __name__ == '__main__':

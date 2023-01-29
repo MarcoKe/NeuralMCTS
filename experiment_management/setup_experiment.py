@@ -18,7 +18,6 @@ def create_env(env_config):
 
 
 def create_agent(env, model, agent_config):
-    agent_config = agent_config['params']
     if len(agent_config['learned_policy']['location']) > 0:
         model_free_agent = PPO.load(agent_config['learned_policy']['location'], env=env)
     else:
@@ -62,10 +61,11 @@ def setup_experiment(exp_name):
     env, model = create_env(env_config)
 
     mcts_agent, model_free_agent = create_agent(env, model, agent_config)
-    trainer = MCTSPolicyImprovementTrainer(env, mcts_agent, model_free_agent, wandb_run=wandb_run)
+    trainer = MCTSPolicyImprovementTrainer(env, mcts_agent, model_free_agent, wandb_run=wandb_run, **agent_config['training'])
     trainer.train()
 
     wandb_run.finish()
+
 
 if __name__ == '__main__':
     setup_experiment("20230128_exp_001")
