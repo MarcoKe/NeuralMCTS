@@ -2,7 +2,7 @@ name: 'mcts_from_scratch'
 params:
   num_simulations: 100
   learned_policy:
-    location: None
+    location: ''
   tree_policy:
     name: 'uct'
     params:

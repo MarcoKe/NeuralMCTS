@@ -1,4 +1,5 @@
 import wandb
+import torch
 from envs.env_factory import env_factory, model_factory
 from experiment_management.config_handling.load_exp_config import load_exp_config
 from stable_baselines3 import PPO
@@ -18,7 +19,7 @@ def create_env(env_config):
 
 def create_agent(env, model, agent_config):
     agent_config = agent_config['params']
-    if agent_config['learned_policy']['location']:
+    if len(agent_config['learned_policy']['location']) > 0:
         model_free_agent = PPO.load(agent_config['learned_policy']['location'], env=env)
     else:
         model_free_agent = PPO('MlpPolicy', env, policy_kwargs=dict(activation_fn=torch.nn.modules.Mish))
@@ -67,4 +68,4 @@ def setup_experiment(exp_name):
     wandb_run.finish()
 
 if __name__ == '__main__':
-    setup_experiment("exp_001")
+    setup_experiment("20230128_exp_001")
