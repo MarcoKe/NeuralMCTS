@@ -1,16 +1,32 @@
-from collections import namedtuple
-
-Operation = namedtuple("Operation", ["job_id", "op_id", "machine_type", "duration"])
+from envs.minimal_jsp_env.entities import Operation
+import random
 
 
 class JobShopModel:
     @staticmethod
+    def random_problem(num_jobs, num_machines, max_duration=10):
+        remaining_operations = []
+        for j in range(num_jobs):
+            job = []
+            for m in range(num_machines):
+                job.append(Operation(j, m, random.randint(0, num_machines-1), random.randint(0, max_duration-1)))
+
+            remaining_operations.append(job)
+
+        schedule = [[] for i in range(num_machines)]
+        return {'remaining_operations': remaining_operations, 'schedule': schedule}
+
+    @staticmethod
     def _schedule_op(job_id, remaining_operations, schedule):
-        op = remaining_operations[job_id].pop(0)
-        machine = op.machine_type
-        start_time = JobShopModel._determine_start_time(op, schedule)
-        schedule[machine].append((op, start_time, start_time + op.duration))
-        return remaining_operations, schedule
+        possible = False
+
+        if len(remaining_operations[job_id]) > 0:
+            op = remaining_operations[job_id].pop(0)
+            machine = op.machine_type
+            start_time = JobShopModel._determine_start_time(op, schedule)
+            schedule[machine].append((op, start_time, start_time + op.duration))
+            possible = True
+        return remaining_operations, schedule, possible
 
     @staticmethod
     def _determine_start_time(op: Operation, schedule):
@@ -47,12 +63,13 @@ class JobShopModel:
 
     @staticmethod
     def step(state, action):
-        remaining_ops, schedule = JobShopModel._schedule_op(action, state['remaining_operations'], state['schedule'])
+        remaining_ops, schedule, possible = JobShopModel._schedule_op(action, state['remaining_operations'], state['schedule'])
 
         reward = 0
+        if not possible: reward = -100
         done = JobShopModel._is_done(remaining_ops)
         if done:
-            reward = JobShopModel._makespan(schedule)
+            reward = - JobShopModel._makespan(schedule)
         return {'remaining_operations': remaining_ops, 'schedule': schedule}, reward, done
 
 
@@ -72,8 +89,10 @@ if __name__ == '__main__':
 
     schedule = [[] for i in range(num_machines)]
     remaining_operations = jobs
-
     model = JobShopModel()
+    state = model.random_problem(3, 3)
+    remaining_operations = state['remaining_operations']
+    schedule = state['schedule']
 
     print(schedule, remaining_operations)
     state = {'remaining_operations': remaining_operations, 'schedule': schedule}
