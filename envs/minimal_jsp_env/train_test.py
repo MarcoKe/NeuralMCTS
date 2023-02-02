@@ -10,6 +10,7 @@ from envs.minimal_jsp_env.reward_functions.opt_gap import OptimalityGapReward
 instance_path = 'C:/gitrepos/jsp_env/data/jsp_instances/6x6x6/'
 jsp_generator = MultipleInstanceGenerator(instance_path, 'samsonov')
 env = OptimalityGapReward(NaiveActionSpace(NaiveObservationSpace(JobShopEnv(jsp_generator))))
+
 # env = TSPGym(num_cities=15)
 
 

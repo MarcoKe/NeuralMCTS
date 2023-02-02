@@ -7,6 +7,7 @@ class JobShopEnv(gym.Env):
     def __init__(self, jsp_generator: JSPGenerator):
         self.jsp_generator = jsp_generator
         self.model = JobShopModel()
+
         self.reset()
 
     def _generate_instance(self):
@@ -23,12 +24,12 @@ class JobShopEnv(gym.Env):
     def reset(self):
         self.done = False
         self.state = self._generate_instance()
-        self.actions = []
+
         return self.state
 
     def step(self, action):
         self.state, reward, self.done = self.model.step(self.state, action)
-        self.actions.append(action)
+
         return self.state, reward, self.done, {}
 
     def render(self):

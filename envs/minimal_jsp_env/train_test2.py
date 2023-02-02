@@ -3,6 +3,7 @@ from stable_baselines3 import PPO
 from pathlib import Path
 from envs.minimal_jsp_env.jsp_env import JobShopEnv
 from envs.minimal_jsp_env.action_spaces.naive import NaiveActionSpace
+
 from envs.minimal_jsp_env.observation_spaces.naive_obs_space import NaiveObservationSpace
 from envs.minimal_jsp_env.util.jsp_generation.multiple_instance_generator import MultipleInstanceGenerator
 

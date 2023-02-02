@@ -14,8 +14,21 @@ class JobShopModel:
             remaining_operations.append(job)
 
         schedule = [[] for i in range(num_machines)]
+
         last_job_ops = [-1 for _ in range(num_jobs)]
         return {'remaining_operations': remaining_operations, 'schedule': schedule, 'last_job_ops': last_job_ops}
+
+    @staticmethod
+    def _schedule_op(job_id, remaining_operations, schedule):
+        possible = False
+
+        if len(remaining_operations[job_id]) > 0:
+            op = remaining_operations[job_id].pop(0)
+            machine = op.machine_type
+            start_time = JobShopModel._determine_start_time(op, schedule)
+            schedule[machine].append((op, start_time, start_time + op.duration))
+            possible = True
+        return remaining_operations, schedule, possible
 
     @staticmethod
     def _schedule_op(job_id, remaining_operations, schedule, last_job_ops):
@@ -75,7 +88,6 @@ class JobShopModel:
         if done:
             reward = - JobShopModel._makespan(schedule)
         return {'remaining_operations': remaining_ops, 'schedule': schedule, 'last_job_ops': last_job_ops}, reward, done
-
 
 def print_state(state):
     print(state['remaining_operations'])
@@ -163,6 +175,9 @@ if __name__ == '__main__':
     state = {'remaining_operations': remaining_operations, 'schedule': schedule, 'last_job_ops': last_job_ops}
 
     model = JobShopModel()
+    state = model.random_problem(3, 3)
+    remaining_operations = state['remaining_operations']
+    schedule = state['schedule']
 
     for a in [4, 3, 0, 4, 1, 1, 5, 5, 0, 4, 5, 3, 4, 0, 2, 5, 5, 2, 4, 3, 0, 1, 0, 4, 2, 1, 4, 4, 1, 3, 4, 5, 1, 4, 1, 5, 4, 4, 3, 1, 4, 4, 2, 4, 0, 5, 0, 0, 3, 4, 0, 4, 1, 3, 1, 2, 5, 2]:
         state, reward, done = model.step(state, a)
