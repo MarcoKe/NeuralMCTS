@@ -3,24 +3,20 @@ import torch
 
 
 class NeuralRolloutPolicy(EvaluationPolicy):
-    def __init__(self, model_free_agent, model):
-        self.agent = model_free_agent
-        self.model = model
-
-    def evaluate(self, state):
+    def evaluate(self, state, neural_net=None, model=None):
         done = False
 
         priors = None
         first_iteration = True
         while not done:
-            legal_actions = self.model.legal_actions(state)
-            _, action_probs = self.agent.evaluate_actions(self.model.create_obs(state), legal_actions)
+            legal_actions = model.legal_actions(state)
+            _, action_probs = neural_net.evaluate_actions(model.create_obs(state), legal_actions)
             if first_iteration:
                 priors = action_probs
                 first_iteration = False
 
             action = torch.argmax(action_probs)
-            state, reward, done = self.model.step(state, action)
+            state, reward, done = model.step(state, action)
 
         return reward, priors
 

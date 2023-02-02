@@ -1,0 +1,21 @@
+name: 'mcts'
+num_simulations: 100
+learned_policy:
+  location: 'results/trained_agents/tsp/model_free/ppo_tsp_15_3e6_ent'
+tree_policy:
+  name: 'uct'
+  params:
+    exploitation:
+      name: 'avg_node_value'
+      params: {}
+    exploration:
+      name: 'puct'
+      params:
+        exploration_constant: 1
+expansion_policy:
+  name: 'full_expansion'
+  params: {}
+eval_policy:
+  name: 'neural_rollout_eval'
+  params: {}
+

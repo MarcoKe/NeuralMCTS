@@ -4,8 +4,8 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 
-from stable_baselines3 import PPO
-from mcts.mcts_main import MCTSAgent
+from envs.tsp_solver import TSPSolver
+from mcts.mcts_agent import MCTSAgent
 import matplotlib.pyplot as plt
 
 
@@ -90,8 +90,7 @@ def budget_analysis(env, agents, trials=15, render=True):
     df = pd.DataFrame(columns=['budget'] + [str(a) for a in agents])
     df['budget'] = trials
 
-    from envs.tsp_solver import solve as solve_exactly
-    optimum = solve_exactly(state_['unscheduled'])
+    optimum = TSPSolver.solve_exactly(state_)
     print('optimum: ', optimum)
 
     # df['optimum'] = [optimum] * len(trials)
@@ -176,14 +175,14 @@ if __name__ == '__main__':
 
     model_free_agent = PPO.load("results/trained_agents/tsp/model_free/ppo_tsp_15_3e6_ent.zip")
     tp = UCTPolicy(AvgNodeValueTerm(), PUCTTerm(exploration_constant=1))
-    ep = ExpansionPolicy(model=model)
-    rp = NeuralValueEvalPolicy(model_free_agent=Stb3ACAgent(model_free_agent), model=model)
-    agent = MCTSAgentWrapper(MCTSAgent(model, tp, ep, rp, num_simulations=1000), env)
+    ep = ExpansionPolicy()
+    rp = NeuralValueEvalPolicy()
+    agent = MCTSAgentWrapper(MCTSAgent(model, tp, ep, rp, neural_net=Stb3ACAgent(model_free_agent), num_simulations=1000), env)
 
     tp2 = UCTPolicy(MaxNodeValueTerm(), PUCTTerm(exploration_constant=1))
-    ep2 = ExpansionPolicy(model=model)
-    rp2 = NeuralRolloutPolicy(model_free_agent=Stb3ACAgent(model_free_agent), model=model)
-    agent2 = MCTSAgentWrapper(MCTSAgent(model, tp2, ep2, rp2, num_simulations=1000), env)
+    ep2 = ExpansionPolicy()
+    rp2 = NeuralRolloutPolicy()
+    agent2 = MCTSAgentWrapper(MCTSAgent(model, tp2, ep2, rp2, neural_net=Stb3ACAgent(model_free_agent), num_simulations=1000), env)
 
     # tp2 = UCTPolicy(MaxNodeValueTerm(), PUCTTerm(exploration_constant=1))
     # ep2 = ExpansionPolicy(model=model)
@@ -191,9 +190,9 @@ if __name__ == '__main__':
     # agent2 = MCTSAgentWrapper(MCTSAgent(model, tp2, ep2, rp2, num_simulations=1000), env)
 
     tp3 = UCTPolicy(MaxNodeValueTerm(), PUCTTerm(exploration_constant=1))
-    ep3 = ExpansionPolicy(model=model)
-    rp3 = NeuralValueEvalPolicy(model_free_agent=Stb3ACAgent(model_free_agent), model=model)
-    agent3 = MCTSAgentWrapper(MCTSAgent(model, tp3, ep3, rp3, num_simulations=1000), env)
+    ep3 = ExpansionPolicy()
+    rp3 = NeuralValueEvalPolicy()
+    agent3 = MCTSAgentWrapper(MCTSAgent(model, tp3, ep3, rp3, neural_net=Stb3ACAgent(model_free_agent), num_simulations=1000), env)
 
     ppo_agent = Stb3AgentWrapper(model_free_agent)
     agents = [ppo_agent, agent, agent2, agent3]

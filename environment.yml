@@ -7,9 +7,9 @@ dependencies:
   - tqdm
   - seaborn
   - pytest
-  - wandb
   - pip
   - pip:
+      - wandb
       - stable-baselines3
       - python-tsp
       - multiprocess
