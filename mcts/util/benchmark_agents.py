@@ -90,7 +90,7 @@ def budget_analysis(env, agents, trials=15, render=True):
     df = pd.DataFrame(columns=['budget'] + [str(a) for a in agents])
     df['budget'] = trials
 
-    optimum = TSPSolver.solve_exactly(state_)
+    optimum = TSPSolver.solve(state_)
     print('optimum: ', optimum)
 
     # df['optimum'] = [optimum] * len(trials)
@@ -156,11 +156,19 @@ def plot_budget_analysis(df):
 
 
 if __name__ == '__main__':
-    from envs.tsp.TSP import TSPGym, TSP
+    from envs.minimal_jsp_env.util.jsp_generation.multiple_instance_generator import MultipleInstanceGenerator
+    from envs.minimal_jsp_env.jsp_env import JobShopEnv
+    from envs.minimal_jsp_env.jsp_model import JobShopModel
 
-    env = TSPGym(num_cities=15)
-    model = TSP(num_cities=15)
+    from envs.minimal_jsp_env.observation_spaces.naive import NaiveObservationSpace
+    from envs.minimal_jsp_env.action_spaces.naive import NaiveActionSpace
+    from envs.minimal_jsp_env.reward_functions.opt_gap import OptimalityGapReward
 
+
+    instance_path = 'C:/gitrepos/jsp_env/data/jsp_instances/6x6x6/'
+    jsp_generator = MultipleInstanceGenerator(instance_path, 'samsonov')
+    env = OptimalityGapReward(NaiveActionSpace(NaiveObservationSpace(JobShopEnv(jsp_generator))))
+    model = JobShopModel()
     from mcts.tree_policies.tree_policy import UCTPolicy
     from mcts.tree_policies.exploration_terms.puct_term import PUCTTerm
     from mcts.tree_policies.exploitation_terms.avg_node_value import AvgNodeValueTerm
@@ -172,16 +180,16 @@ if __name__ == '__main__':
     from stable_baselines3 import PPO
     from model_free.stb3_wrapper import Stb3ACAgent
 
-    model_free_agent = PPO.load("results/trained_agents/tsp/model_free/ppo_tsp_15_3e6_ent.zip")
+    model_free_agent = PPO.load("results/trained_agents/minimal_jsp/model_free/ppo_jsp_6x6_3e6_multi.zip")
     tp = UCTPolicy(AvgNodeValueTerm(), PUCTTerm(exploration_constant=1))
     ep = ExpansionPolicy()
     rp = NeuralValueEvalPolicy()
-    agent = MCTSAgentWrapper(MCTSAgent(model, tp, ep, rp, neural_net=Stb3ACAgent(model_free_agent), num_simulations=1000), env)
+    agent = MCTSAgentWrapper(MCTSAgent(env, model, tp, ep, rp, neural_net=Stb3ACAgent(model_free_agent), num_simulations=1000), env)
 
     tp2 = UCTPolicy(MaxNodeValueTerm(), PUCTTerm(exploration_constant=1))
     ep2 = ExpansionPolicy()
     rp2 = NeuralRolloutPolicy()
-    agent2 = MCTSAgentWrapper(MCTSAgent(model, tp2, ep2, rp2, neural_net=Stb3ACAgent(model_free_agent), num_simulations=1000), env)
+    agent2 = MCTSAgentWrapper(MCTSAgent(env, model, tp2, ep2, rp2, neural_net=Stb3ACAgent(model_free_agent), num_simulations=1000), env)
 
     # tp2 = UCTPolicy(MaxNodeValueTerm(), PUCTTerm(exploration_constant=1))
     # ep2 = ExpansionPolicy(model=model)
@@ -191,7 +199,7 @@ if __name__ == '__main__':
     tp3 = UCTPolicy(MaxNodeValueTerm(), PUCTTerm(exploration_constant=1))
     ep3 = ExpansionPolicy()
     rp3 = NeuralValueEvalPolicy()
-    agent3 = MCTSAgentWrapper(MCTSAgent(model, tp3, ep3, rp3, neural_net=Stb3ACAgent(model_free_agent), num_simulations=1000), env)
+    agent3 = MCTSAgentWrapper(MCTSAgent(env, model, tp3, ep3, rp3, neural_net=Stb3ACAgent(model_free_agent), num_simulations=1000), env)
 
     ppo_agent = Stb3AgentWrapper(model_free_agent)
     agents = [ppo_agent, agent, agent2, agent3]
