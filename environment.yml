@@ -13,5 +13,6 @@ dependencies:
       - stable-baselines3
       - python-tsp
       - multiprocess
+      - scipy
   - tensorboard
 
