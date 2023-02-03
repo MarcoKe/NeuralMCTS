@@ -3,6 +3,9 @@ import random
 
 
 class JobShopModel:
+    def __init__(self, **kwargs):
+        pass
+
     @staticmethod
     def random_problem(num_jobs, num_machines, max_duration=10):
         remaining_operations = []
@@ -88,6 +91,13 @@ class JobShopModel:
         if done:
             reward = - JobShopModel._makespan(schedule)
         return {'remaining_operations': remaining_ops, 'schedule': schedule, 'last_job_ops': last_job_ops}, reward, done
+
+    @staticmethod
+    def legal_actions(state):
+        return [job_id for job_id in range(len(state['remaining_operations'])) if len(state['remaining_operations'][job_id]) > 0]
+
+
+
 
 def print_state(state):
     print(state['remaining_operations'])

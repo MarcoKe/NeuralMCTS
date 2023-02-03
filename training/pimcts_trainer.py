@@ -1,7 +1,7 @@
 from stable_baselines3 import PPO
 import torch as th
 from torch.nn import functional as F
-from envs.TSP import TSPGym, TSP
+from envs.tsp.TSP import TSPGym, TSP
 import numpy as np
 from stable_baselines3.common.policies import ActorCriticPolicy
 from mcts.mcts_agent import MCTSAgent
@@ -11,7 +11,7 @@ import wandb
 from mcts.util.benchmark_agents import perform_episode as eval
 from mcts.util.benchmark_agents import opt_gap
 import copy
-from envs.tsp_solver import TSPSolver
+from envs.tsp.tsp_solver import TSPSolver
 from mcts.util.benchmark_agents import MCTSAgentWrapper
 import torch
 
@@ -69,7 +69,7 @@ class MCTSPolicyImprovementTrainer:
         self.policy.optimizer.weight_decay = weight_decay
         self.policy.optimizer.learning_rate = learning_rate
         self.wandb_run = wandb_run
-        self.memory = ReplayMemory(env.observation_space.shape[0], mcts_agent.model.max_num_actions(), buffer_size)
+        self.memory = ReplayMemory(env.observation_space.shape[0], env.max_num_actions(), buffer_size)
         self.batch_size = batch_size
         self.num_epochs = num_epochs
         self.policy_improvement_iterations = policy_improvement_iterations
@@ -240,7 +240,6 @@ if __name__ == '__main__':
     from mcts.tree_policies.exploration_terms.puct_term import PUCTTerm
     from mcts.tree_policies.exploitation_terms.avg_node_value import AvgNodeValueTerm
     from mcts.expansion_policies.expansion_policy import ExpansionPolicy
-    from mcts.evaluation_policies.neural_value_eval import NeuralValueEvalPolicy
     from mcts.evaluation_policies.neural_rollout_policy import NeuralRolloutPolicy
     from model_free.stb3_wrapper import Stb3ACAgent
 

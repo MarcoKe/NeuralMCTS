@@ -1,6 +1,5 @@
 import copy
 import math
-import torch
 import numpy as np
 from typing import List
 from mcts.tree_policies.tree_policy import TreePolicy
@@ -11,9 +10,10 @@ from model_free.stb3_wrapper import RLAgent
 
 
 class MCTSAgent:
-    def __init__(self, model, tree_policy: TreePolicy, expansion_policy: ExpansionPolicy,
+    def __init__(self, env, model, tree_policy: TreePolicy, expansion_policy: ExpansionPolicy,
                  evaluation_policy: EvaluationPolicy, neural_net: RLAgent,
                  num_simulations=10, dirichlet_noise=False, **kwargs):
+        self.env = env
         self.model = model
         self.tree_policy = tree_policy
         self.expansion_policy = expansion_policy
@@ -32,10 +32,10 @@ class MCTSAgent:
 
         while not done:
             new_children = self.expansion_policy.expand(n, s, model=self.model, neural_net=self.neural_net)
-            state_value, action_probs = self.evaluation_policy.evaluate(s, model=self.model, neural_net=self.neural_net)
+            state_value, action_probs = self.evaluation_policy.evaluate(s, model=self.model, env=self.env, neural_net=self.neural_net)
             # children_states = [self.model.step(state, c.action)[0] for c in new_children]
             children_state_values = self.neural_net.state_values(
-                [self.model.create_obs(self.model.step(s, c.action)[0]) for c in new_children])
+                [self.env.observation(self.model.step(s, c.action)[0]) for c in new_children])
 
             max_prior = -math.inf
             best_child = None
@@ -73,9 +73,9 @@ class MCTSAgent:
 
             if not done:
                 new_children = self.expansion_policy.expand(n, s, model=self.model, neural_net=self.neural_net)
-                state_value, action_probs = self.evaluation_policy.evaluate(s, model=self.model, neural_net=self.neural_net)
+                state_value, action_probs = self.evaluation_policy.evaluate(s, model=self.model, env=self.env, neural_net=self.neural_net)
                 # children_states = [self.model.step(state, c.action)[0] for c in new_children]
-                children_state_values = self.neural_net.state_values([self.model.create_obs(self.model.step(s, c.action)[0]) for c in new_children])
+                children_state_values = self.neural_net.state_values([self.env.observation(self.model.step(s, c.action)[0]) for c in new_children])
                 for i, c in enumerate(new_children):
                     c.prior_prob = action_probs[i]
                     c.update(children_state_values[i][0]) # maybe create a class to define how new children are initialized?
@@ -104,7 +104,7 @@ class MCTSAgent:
 
     def stochastic_policy(self, state, temperature: float = 0.9):
         root_node = self.mcts_search(state)
-        visit_counts = [0] * self.model.max_num_actions()
+        visit_counts = [0] * self.env.max_num_actions()
         for c in root_node.children:
             visit_counts[c.action] = c.visits
 
@@ -117,7 +117,7 @@ class MCTSAgent:
 
 
 if __name__ == '__main__':
-    from envs.TSP import TSPGym, TSP
+    from envs.tsp.TSP import TSPGym, TSP
     env = TSPGym(num_cities=15)
     model = TSP(num_cities=15)
 

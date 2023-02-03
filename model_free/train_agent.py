@@ -1,7 +1,7 @@
 import torch
 from stable_baselines3 import PPO
 
-from envs.TSP import TSPGym
+from envs.tsp.TSP import TSPGym
 
 env = TSPGym(num_cities=15)
 

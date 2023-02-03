@@ -4,8 +4,8 @@ import gym
 from copy import deepcopy
 
 class JobShopEnv(gym.Env):
-    def __init__(self, jsp_generator: JSPGenerator):
-        self.jsp_generator = jsp_generator
+    def __init__(self, instance_generator: JSPGenerator, **kwargs):
+        self.jsp_generator = instance_generator
         self.model = JobShopModel()
 
         self.reset()
@@ -34,3 +34,9 @@ class JobShopEnv(gym.Env):
 
     def render(self):
         pass
+
+    def raw_state(self):
+        return self.state
+
+    def max_num_actions(self):
+        return len(self.state['remaining_operations'])

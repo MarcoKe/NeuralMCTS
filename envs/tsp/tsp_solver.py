@@ -1,7 +1,7 @@
 from python_tsp.exact import solve_tsp_dynamic_programming
 import numpy as np
 import math
-from envs.solver import Solver
+from envs.tsp.solver import Solver
 
 
 class TSPSolver(Solver):

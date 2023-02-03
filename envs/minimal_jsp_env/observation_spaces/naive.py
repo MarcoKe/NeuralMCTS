@@ -42,14 +42,3 @@ class NaiveObservationSpace(gym.ObservationWrapper):
 
     def normalize(self, val, min, max):
         return val - min / (max - min)
-
-    def normalize_observation(self, machines_remaining_processing_time, machines_queue_time, operations_dur_sums,
-                              next_operation_dur, next_machine_type, current_time):
-        machines_remaining_processing_time = [e / self.sim.max_op_time() for e in machines_remaining_processing_time]
-        machines_queue_time = [e / (self.sim.num_jobs() * self.sim.max_op_time()) for e in machines_queue_time]
-        operations_dur_sums = [e / (self.sim.max_op_time() * self.sim.max_ops_per_job()) for e in operations_dur_sums]
-        next_operation_dur = [e / self.sim.max_op_time() for e in next_operation_dur]
-        next_machine_type = [e / (self.sim.num_machines() - 1) for e in next_machine_type]
-        current_time = current_time / (self.sim.num_jobs() * self.sim.max_ops_per_job() * self.sim.max_op_time())
-
-        return machines_remaining_processing_time, machines_queue_time, operations_dur_sums, next_operation_dur, next_machine_type, current_time

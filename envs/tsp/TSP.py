@@ -2,10 +2,10 @@ import math
 import random
 import gym
 import numpy as np
-import torch
+
 
 class TSP:
-    def __init__(self, num_cities=5):
+    def __init__(self, num_cities=5, **kwargs):
         self.num_cities = num_cities
 
     def initial_problem(self):
@@ -58,26 +58,16 @@ class TSP:
 
         return x, y
 
-    def create_obs(self, state):
-        unscheduled = state['unscheduled'][:]
-        tour = state['tour'][:]
-        unscheduled.extend([(-1, -1)] * (self.num_cities - len(unscheduled)))
-        tour.extend([(-1, -1)] * (self.num_cities - len(tour)))
-
-        obs = unscheduled + tour
-
-        obs = [item for t in obs for item in t]
-
-        return obs
-
     def max_num_actions(self):
         return self.num_cities
 
 
 
 
+
+
 class TSPGym(gym.Env, TSP):
-    def __init__(self, num_cities=5):
+    def __init__(self, num_cities=5, **kwargs):
         self.num_cities = num_cities
         self.observation_space = gym.spaces.Box(low=-1, high=1, shape=[4*num_cities], dtype=np.float32)
         self.action_space = gym.spaces.Discrete(num_cities)
@@ -101,10 +91,24 @@ class TSPGym(gym.Env, TSP):
 
         return self.create_obs(self.state), reward, done, dict()
 
-
     def render(self):
-        from envs.tour_plotter import plot_state
+        from envs.tsp.tour_plotter import plot_state
         plot_state(self.state['tour'])
+
+    def create_obs(self, state):
+        unscheduled = state['unscheduled'][:]
+        tour = state['tour'][:]
+        unscheduled.extend([(-1, -1)] * (self.num_cities - len(unscheduled)))
+        tour.extend([(-1, -1)] * (self.num_cities - len(tour)))
+
+        obs = unscheduled + tour
+
+        obs = [item for t in obs for item in t]
+
+        return obs
+
+    def observation(self, state):
+        return self.create_obs(state)
 
 
 

@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 
-from envs.tsp_solver import TSPSolver
+from envs.tsp.tsp_solver import TSPSolver
 from mcts.mcts_agent import MCTSAgent
 import matplotlib.pyplot as plt
 
@@ -156,14 +156,13 @@ def plot_budget_analysis(df):
 
 
 if __name__ == '__main__':
-    from envs.TSP import TSPGym, TSP
+    from envs.tsp.TSP import TSPGym, TSP
 
     env = TSPGym(num_cities=15)
     model = TSP(num_cities=15)
 
     from mcts.tree_policies.tree_policy import UCTPolicy
     from mcts.tree_policies.exploration_terms.puct_term import PUCTTerm
-    from mcts.tree_policies.exploration_terms.uct_term import UCTTerm
     from mcts.tree_policies.exploitation_terms.avg_node_value import AvgNodeValueTerm
     from mcts.tree_policies.exploitation_terms.max_node_value import MaxNodeValueTerm
 
