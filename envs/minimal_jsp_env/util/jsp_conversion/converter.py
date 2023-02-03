@@ -1,4 +1,4 @@
-from envs.jsp_env.src.modules.sim.entities import JSPInstance
+from envs.minimal_jsp_env.entities import JSPInstance
 
 
 class JSPReader:
