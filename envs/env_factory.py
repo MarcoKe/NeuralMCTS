@@ -9,6 +9,7 @@ from envs.tsp.observation_spaces.factory import observation_spaces as tsp_observ
 from envs.tsp.action_spaces.factory import action_spaces as tsp_action_spaces
 from envs.tsp.reward_functions.factory import reward_functions as tsp_reward_functions
 from envs.minimal_jsp_env.util.jsp_generation.instance_generator_factory import jsp_generators
+from envs.minimal_jsp_env.util.jsp_solver import jsp_solvers
 
 class EnvironmentFactory(ObjectFactory):
     def get(self, key, **kwargs):
@@ -40,6 +41,11 @@ class InstanceFactoryFactory(ClassFactory):
         return self.get_class(key, **kwargs)
 
 
+class SolverFactoryFactory(ClassFactory):
+    def get(self, key, **kwargs):
+        return self.get_class(key, **kwargs)
+
+
 env_factory = EnvironmentFactory()
 env_factory.register_builder('tsp', TSPGym)
 env_factory.register_builder('jsp_minimal', JobShopEnv)
@@ -65,4 +71,8 @@ reward_factories.register_class('tsp', tsp_reward_functions)
 
 instance_factories = InstanceFactoryFactory()
 instance_factories.register_class('jsp_minimal', jsp_generators)
-instance_factories.register_class('tsp', None)
+instance_factories.register_class('tsp', None) #todo
+
+solver_factories = SolverFactoryFactory()
+solver_factories.register_class('jsp_minimal', jsp_solvers)
+solver_factories.register_class('tsp', None) #todo

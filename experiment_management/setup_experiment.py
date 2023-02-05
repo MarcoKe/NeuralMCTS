@@ -1,6 +1,7 @@
 import wandb
 import torch
-from envs.env_factory import env_factory, model_factory, instance_factories, observation_factories, action_factories, reward_factories
+from envs.env_factory import env_factory, model_factory, instance_factories, observation_factories, action_factories, \
+    reward_factories, solver_factories
 from experiment_management.config_handling.load_exp_config import load_exp_config
 from stable_baselines3 import PPO
 from mcts.mcts_agent import MCTSAgent
@@ -73,7 +74,11 @@ def setup_experiment(exp_name):
     env, model = create_env(env_config)
 
     mcts_agent, model_free_agent = create_agent(env, model, agent_config)
-    trainer = MCTSPolicyImprovementTrainer(env, mcts_agent, model_free_agent, wandb_run=wandb_run, **agent_config['training'])
+
+    solver_factory = solver_factories.get(env_config['name'])
+    solver = solver_factory.get('opt')  # todo
+    trainer = MCTSPolicyImprovementTrainer(env, mcts_agent, model_free_agent, wandb_run=wandb_run, solver=solver,
+                                           **agent_config['training'])
     trainer.train()
 
     wandb_run.finish()

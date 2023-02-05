@@ -3,7 +3,7 @@ params:
   instance_generator:
     name: 'multiple'
     params:
-      path: 'C:/gitrepos/jsp_env/data/jsp_instances/6x6x6/'
+      path: 'data/jsp_instances/6x6x6/'
       format: 'samsonov'
   observation_space:
     name: 'naive'

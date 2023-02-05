@@ -25,5 +25,5 @@ training:
   batch_size: 256
   num_epochs: 1
   num_episodes: 5
-  workers: 1
+  workers: 8
 

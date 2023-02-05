@@ -50,7 +50,7 @@ class ReplayMemory:
 class MCTSPolicyImprovementTrainer:
     def __init__(self, env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.0005, learning_rate=1e-5,
                  buffer_size=50000, batch_size=256, num_epochs=1, policy_improvement_iterations=2000, workers=8,
-                 num_episodes=5, wandb_run=None):
+                 num_episodes=5, solver=None, wandb_run=None):
         """
         :mcts_agent: is the agent generating experiences by performing mcts searches
         :model_free_agent: is the model free agent that is being trained using these collected experiences
@@ -75,6 +75,7 @@ class MCTSPolicyImprovementTrainer:
         self.policy_improvement_iterations = policy_improvement_iterations
         self.workers = workers
         self.num_episodes = num_episodes
+        self.solver = solver
 
         if not self.wandb_run:
             self.model_free_agent.learn(total_timesteps=1)
@@ -218,7 +219,7 @@ class MCTSPolicyImprovementTrainer:
         for _ in range(eval_iterations):
             state = copy.deepcopy(self.env.reset())
             state_ = copy.deepcopy(self.env.raw_state())
-            opt = TSPSolver.solve(state_)
+            opt = self.solver.solve(self.env.current_instance())
             reward = eval(self.env, MCTSAgentWrapper(self.mcts_agent, self.env), state_, state)
             opt_gaps += opt_gap(opt, -reward)
 

@@ -38,5 +38,8 @@ class JobShopEnv(gym.Env):
     def raw_state(self):
         return self.state
 
+    def current_instance(self):
+        return self.instance
+    
     def max_num_actions(self):
         return len(self.state['remaining_operations'])
