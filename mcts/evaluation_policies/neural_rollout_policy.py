@@ -15,7 +15,9 @@ class NeuralRolloutPolicy(EvaluationPolicy):
                 priors = action_probs
                 first_iteration = False
 
-            action = torch.argmax(action_probs)
+            all_action_probs = torch.Tensor([0.0 for _ in range(env.max_num_actions())])
+            all_action_probs[legal_actions] = action_probs
+            action = torch.argmax(all_action_probs)
             state, reward, done = model.step(state, action)
 
         return reward, priors
