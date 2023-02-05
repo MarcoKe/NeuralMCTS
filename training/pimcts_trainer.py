@@ -143,8 +143,8 @@ class MCTSPolicyImprovementTrainer:
 
             self.log("mctstrain/policy_ce_loss", ploss.item())
             self.log("mctstrain/value_mse_loss", vloss.item())
-            self.log("mctstrain/mcts_probs_entropy", np.mean(entropy(batch['mcts_probs'].detach().numpy(), base=self.mcts_agent.model.max_num_actions(), axis=1)))
-            self.log("mctstrain/learned_probs_entropy", np.mean(entropy(predicted_probs.detach().numpy(), base=self.mcts_agent.model.max_num_actions(), axis=1)))
+            self.log("mctstrain/mcts_probs_entropy", np.mean(entropy(batch['mcts_probs'].detach().numpy(), base=self.mcts_agent.env.max_num_actions(), axis=1)))
+            self.log("mctstrain/learned_probs_entropy", np.mean(entropy(predicted_probs.detach().numpy(), base=self.mcts_agent.env.max_num_actions(), axis=1)))
 
         self.policy.set_training_mode(False)
 
@@ -173,7 +173,7 @@ class MCTSPolicyImprovementTrainer:
         observations = []
         rewards_list = []
         rewards = 0
-        for _ in range(self.num_episodes):
+        for ep in range(self.num_episodes):
             o_, pi_mcts_, v_mcts_, num_steps, reward = self.perform_episode()
             observations.extend(o_)
             pi_mcts.extend(pi_mcts_)
