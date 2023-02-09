@@ -185,7 +185,7 @@ class JSSPGym(JSSP, gym.Env, EzPickle):
         return self.state
 
     def step(self, action):
-        self.state, reward, done, info = super().step(self, self.state, action)
+        self.state, reward, done, info = super().step(self.state, action)
         return self.state, reward, done, info
 
     def raw_state(self):
