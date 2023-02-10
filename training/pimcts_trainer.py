@@ -199,19 +199,32 @@ class MCTSPolicyImprovementTrainer:
         self.model_free_agent.save(model_path)
 
     def evaluate(self, eval_iterations=10):
+        if self.workers > 1:
+            pool = mp.Pool(eval_iterations)
+            results = pool.starmap(self.evaluate_single, [[]] * eval_iterations)
+            pool.close()
+        else:
+            results = [self.evaluate_single()]
+
         opt_gaps = 0
         reward_diffs = 0
-        for _ in range(eval_iterations):
-            state = copy.deepcopy(self.env.reset())
-            state_ = copy.deepcopy(self.env.raw_state())
-            opt = self.solver.solve(self.env.current_instance())
-            reward_mcts = eval(self.env, MCTSAgentWrapper(self.mcts_agent, self.env), state_, state)
-            opt_gaps += opt_gap(opt, -reward_mcts)
-            reward_model_free = eval(self.env, Stb3AgentWrapper(self.model_free_agent), state_, state)
-            reward_diffs += reward_mcts - reward_model_free
+        for r in results:
+            opt_gaps += r[0]
+            reward_diffs += r[1]
 
         self.log('mctstrain/eval_optgap', opt_gaps / eval_iterations)
         self.log('mctstrain/diff_mcts_model_free', reward_diffs / eval_iterations)
+
+    def evaluate_single(self):
+        state = copy.deepcopy(self.env.reset())
+        state_ = copy.deepcopy(self.env.raw_state())
+        opt = self.solver.solve(self.env.current_instance())
+        reward_mcts = eval(self.env, MCTSAgentWrapper(self.mcts_agent, self.env), state_, state)
+        gap = opt_gap(opt, -reward_mcts)
+        reward_model_free = eval(self.env, Stb3AgentWrapper(self.model_free_agent), state_, state)
+        reward_diff = reward_mcts - reward_model_free
+
+        return gap, reward_diff
 
 
 
