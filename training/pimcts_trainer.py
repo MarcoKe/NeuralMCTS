@@ -1,51 +1,20 @@
-from stable_baselines3 import PPO
+import copy
 import torch as th
-from torch.nn import functional as F
-from envs.tsp.TSP import TSPGym, TSP
 import numpy as np
-from stable_baselines3.common.policies import ActorCriticPolicy
-from mcts.mcts_agent import MCTSAgent
 from scipy.stats import entropy
 import multiprocess as mp
 import wandb
+from torch.nn import functional as F
+from stable_baselines3.common.policies import ActorCriticPolicy
+from stable_baselines3 import PPO
+
+from envs.tsp.TSP import TSPGym, TSP
+from mcts.mcts_agent import MCTSAgent
 from mcts.util.benchmark_agents import perform_episode as eval
 from mcts.util.benchmark_agents import opt_gap
-import copy
-from envs.tsp.tsp_solver import TSPSolver
 from mcts.util.benchmark_agents import MCTSAgentWrapper
-import torch
-
-
-class ReplayMemory:
-    def __init__(self, obs_dim, probs_dim, size):
-        self.obs_buf = np.zeros((size, obs_dim), dtype=np.float32)
-        self.probs_buf = np.zeros((size, probs_dim), dtype=np.float32)
-        self.outcomes_buf = np.zeros(size, dtype=np.float32)
-        self.ptr, self.size, self.max_size = 0, 0, size
-
-    def store(self, obs, probs, outcomes):
-        for o, p, z in zip(obs, probs, outcomes):
-            self.store_(o, p, z)
-
-    def store_(self, ob, prob, outcome):
-        self.obs_buf[self.ptr] = ob
-        self.probs_buf[self.ptr] = prob
-        self.outcomes_buf[self.ptr] = outcome
-
-        self.ptr = (self.ptr+1) % self.max_size
-        self.size = min(self.size+1, self.max_size)
-
-    def sample_batch(self, batch_size=32):
-        idxs = np.random.randint(0, self.size, size=batch_size)
-        batch = dict(obs=self.obs_buf[idxs],
-                     mcts_probs=self.probs_buf[idxs],
-                     outcomes=self.outcomes_buf[idxs],
-                     )
-        return {k: torch.as_tensor(v, dtype=torch.float32) for k,v in batch.items()}
-
-    def __len__(self):
-        return self.size
-
+from training.replay_buffer import ReplayMemory
+from training.schedule import LinearSchedule
 
 class MCTSPolicyImprovementTrainer:
     def __init__(self, env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.0005, learning_rate=1e-5,
@@ -79,6 +48,8 @@ class MCTSPolicyImprovementTrainer:
 
         if not self.wandb_run:
             self.model_free_agent.learn(total_timesteps=1)
+
+        self.temp_schedule = LinearSchedule(0.9, 1.0, self.policy_improvement_iterations)
 
     def log(self, key, value):
         if self.wandb_run:
@@ -159,10 +130,9 @@ class MCTSPolicyImprovementTrainer:
         num_steps = 0
 
         while not done:
-            temperature = 0.9
-            if self.policy_improvement_steps / self.policy_improvement_iterations > 0.9:
-                temperature = self.policy_improvement_steps / self.policy_improvement_iterations
-            pi_mcts_, v_mcts_, action = self.mcts_agent.stochastic_policy(self.env.raw_state(), temperature=temperature)
+            temp = self.temp_schedule.value(self.policy_improvement_steps)
+            self.log('mctstrain/temp', temp)
+            pi_mcts_, v_mcts_, action = self.mcts_agent.stochastic_policy(self.env.raw_state(), temperature=temp)
             observations.append(state)
             pi_mcts.append(pi_mcts_.tolist())
             v_mcts.append(v_mcts_)
@@ -255,36 +225,3 @@ if __name__ == '__main__':
 
     trainer = MCTSPolicyImprovementTrainer(env, mcts_agent, model_free_agent)
     trainer.train()
-
-    # model_free_agent.save('results/trained_agents/tsp/nmcts/pimcts_15')
-    #
-    # num_experiences = 128
-    #
-    # obs = []
-    # mcts_probs = []
-    # mcts_values = []
-    # for _ in range(num_experiences):
-    #     obs.append(env.reset())
-    #     mcts_values.append(random.random())
-    #
-    # mcts_probs = np.random.dirichlet(np.ones(num_cities), size=num_experiences)
-    #
-    # obs_tensor = th.Tensor(obs)
-    # mcts_probs_tensor = th.Tensor(mcts_probs)
-    # mcts_values_tensor = th.Tensor(mcts_values)
-    # mcts_values_tensor = mcts_values_tensor[:, None]
-    #
-    # print("obs size", obs_tensor.shape)
-    # print("probs size", mcts_probs_tensor.shape)
-    # print("values size", mcts_values_tensor.shape)
-    # # agent = PPO.load("ppo_tsp_15_1e6.zip")
-    # # print(agent.get_parameters())
-    # # print(agent.policy)
-    #
-    # # model = MCTSActorCriticPolicy(env.observation_space, env.action_space, stable_baselines3.common.utils.constant_fn(0.3))
-    # # model.load_state_dict(th.load("ppo_tsp_15_1e6/policy.pth"))
-    # agent = PPO.load("ppo_tsp_15_1e6.zip")
-    # trainer = MCTSPolicyImprovementTrainer(agent.policy)
-    #
-    #
-    # trainer.train_on_mcts_experiences(obs_tensor, mcts_probs_tensor, mcts_values_tensor)
