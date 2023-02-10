@@ -79,7 +79,8 @@ def setup_experiment(exp_name):
     solver_factory = solver_factories.get(env_config['name'])
     solver = solver_factory.get('opt')  # todo
     trainer = MCTSPolicyImprovementTrainer(exp_config['name'], env, mcts_agent, model_free_agent, wandb_run=wandb_run, solver=solver,
-                                           **agent_config['training'])
+                                           **agent_config['training'], policy_improvement_iterations=exp_config['policy_improvement_iterations'])
+
     trainer.train()
 
     wandb_run.finish()

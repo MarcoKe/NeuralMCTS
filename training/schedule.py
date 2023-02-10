@@ -10,4 +10,4 @@ class Schedule:
 
 class LinearSchedule(Schedule):
     def value(self, step):
-        return step * (self.end - self.start) / self.steps
+        return self.start + step * (self.end - self.start) / self.steps
