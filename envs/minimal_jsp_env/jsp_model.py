@@ -97,103 +97,28 @@ class JobShopModel:
         return [job_id for job_id in range(len(state['remaining_operations'])) if len(state['remaining_operations'][job_id]) > 0]
 
 
-
-
-def print_state(state):
-    print(state['remaining_operations'])
-    print("\n")
-    for machine, machine_schedule in enumerate(state['schedule']):
-        print("machine ", machine, " ", machine_schedule)
-
-
 if __name__ == '__main__':
-    # num_machines = 3
-    # num_jobs = 3
-    # jobs = [[Operation(0, 1, 0, 3), Operation(0, 2, 2, 4), Operation(0, 3, 1, 2)],
-    #         [Operation(1, 1, 1, 3), Operation(1, 2, 2, 4), Operation(1, 3, 0, 2)],
-    #         [Operation(2, 1, 0, 1), Operation(2, 2, 2, 4), Operation(2, 3, 1, 2)]]
-    #
-    # schedule = [[] for i in range(num_machines)]
-    # remaining_operations = jobs
-    # model = JobShopModel()
-    # state = model.random_problem(3, 3)
-    # remaining_operations = state['remaining_operations']
-    # schedule = state['schedule']
-    #
-    # print(schedule, remaining_operations)
-    # state = {'remaining_operations': remaining_operations, 'schedule': schedule}
-    # state, reward, done = model.step(state, 0)
-    # print_state(state)
-    # print("\n reward: ", reward, done)
-    #
-    # state, reward, done = model.step(state, 0)
-    # print_state(state)
-    # print("\n reward: ", reward, done)
-    #
-    # state, reward, done = model.step(state, 1)
-    # print_state(state)
-    # print("\n reward: ", reward, done)
-    #
-    # state, reward, done = model.step(state, 0)
-    # print_state(state)
-    # print("\n reward: ", reward, done)
-    #
-    # state, reward, done = model.step(state, 2)
-    # print_state(state)
-    # print("\n reward: ", reward, done)
-    #
-    # state, reward, done = model.step(state, 2)
-    # print_state(state)
-    # print("\n reward: ", reward, done)
-    #
-    # state, reward, done = model.step(state, 1)
-    # print_state(state)
-    # print("\n reward: ", reward, done)
-    #
-    # state, reward, done = model.step(state, 1)
-    # print_state(state)
-    # print("\n reward: ", reward, done)
-    #
-    # state, reward, done = model.step(state, 2)
-    # print_state(state)
-    # print("\n reward: ", reward, done)
-    #
-    #
-    # jobs = [[],
-    #         [],
-    #         [],
-    #         [],
-    #         [],
-    #         [Operation(5, 1, 0, 11)]]
-    #
-    # schedule = [[], [(Operation(5, 0, 1, 6), 0, 6)], [(Operation(3, 0, 2, 10), 0, 10)], [], [(Operation(3, 1, 4, 10), 10, 20)], []]
-    # remaining_operations = jobs
-    # model = JobShopModel()
-    #
-    # print(schedule, remaining_operations)
-    # state = {'remaining_operations': remaining_operations, 'schedule': schedule}
-    # state, reward, done = model.step(state, 5)
-    # print_state(state)
-    # print("\n reward: ", reward, done)
-
-    schedule = [[] for i in range(6)]
-    last_job_ops = [-1 for _ in range(6)]
-
-    jobs = [[Operation(job_id=0, op_id=0, machine_type=0, duration=10), Operation(job_id=0, op_id=1, machine_type=1, duration=7), Operation(job_id=0, op_id=2, machine_type=2, duration=9), Operation(job_id=0, op_id=3, machine_type=4, duration=7), Operation(job_id=0, op_id=4, machine_type=3, duration=7), Operation(job_id=0, op_id=5, machine_type=5, duration=3)], [Operation(job_id=1, op_id=0, machine_type=3, duration=8), Operation(job_id=1, op_id=1, machine_type=5, duration=8), Operation(job_id=1, op_id=2, machine_type=4, duration=4), Operation(job_id=1, op_id=3, machine_type=2, duration=3), Operation(job_id=1, op_id=4, machine_type=1, duration=3), Operation(job_id=1, op_id=5, machine_type=0, duration=4)], [Operation(job_id=2, op_id=0, machine_type=3, duration=4), Operation(job_id=2, op_id=1, machine_type=4, duration=1), Operation(job_id=2, op_id=2, machine_type=0, duration=8), Operation(job_id=2, op_id=3, machine_type=2, duration=8), Operation(job_id=2, op_id=4, machine_type=5, duration=2), Operation(job_id=2, op_id=5, machine_type=1, duration=5)], [Operation(job_id=3, op_id=0, machine_type=4, duration=10), Operation(job_id=3, op_id=1, machine_type=0, duration=6), Operation(job_id=3, op_id=2, machine_type=2, duration=7), Operation(job_id=3, op_id=3, machine_type=5, duration=8), Operation(job_id=3, op_id=4, machine_type=3, duration=11), Operation(job_id=3, op_id=5, machine_type=1, duration=6)], [Operation(job_id=4, op_id=0, machine_type=3, duration=6), Operation(job_id=4, op_id=1, machine_type=5, duration=7), Operation(job_id=4, op_id=2, machine_type=0, duration=1), Operation(job_id=4, op_id=3, machine_type=2, duration=5), Operation(job_id=4, op_id=4, machine_type=1, duration=9), Operation(job_id=4, op_id=5, machine_type=4, duration=8)], [Operation(job_id=5, op_id=0, machine_type=3, duration=2), Operation(job_id=5, op_id=1, machine_type=0, duration=11), Operation(job_id=5, op_id=2, machine_type=1, duration=4), Operation(job_id=5, op_id=3, machine_type=5, duration=4), Operation(job_id=5, op_id=4, machine_type=2, duration=11), Operation(job_id=5, op_id=5, machine_type=4, duration=5)]]
-
-    remaining_operations = jobs
-    state = {'remaining_operations': remaining_operations, 'schedule': schedule, 'last_job_ops': last_job_ops}
-
     model = JobShopModel()
-    state = model.random_problem(3, 3)
-    remaining_operations = state['remaining_operations']
-    schedule = state['schedule']
 
-    for a in [4, 3, 0, 4, 1, 1, 5, 5, 0, 4, 5, 3, 4, 0, 2, 5, 5, 2, 4, 3, 0, 1, 0, 4, 2, 1, 4, 4, 1, 3, 4, 5, 1, 4, 1, 5, 4, 4, 3, 1, 4, 4, 2, 4, 0, 5, 0, 0, 3, 4, 0, 4, 1, 3, 1, 2, 5, 2]:
-        state, reward, done = model.step(state, a)
 
-    print(model._makespan(schedule))
+    import time
+    start_time = time.time()
+    steps = 0
+    for _ in range(1000):
+        done = False
+        state = model.random_problem(100, 100)
+        remaining_operations = state['remaining_operations']
+        schedule = state['schedule']
+        while not done:
+            legal_actions = model.legal_actions(state)
 
-    from envs.minimal_jsp_env.util.visualization.gantt_visualizer import create_gantt
+            steps += 1
+            action = random.choice(legal_actions)
 
-    create_gantt(schedule)
+            state, reward, done = model.step(state, action)
+
+    duration = time.time() - start_time
+    print("duration: ", duration, " time per step: ", duration / steps)
+    # from envs.minimal_jsp_env.util.visualization.gantt_visualizer import create_gantt
+
+    # create_gantt(schedule)

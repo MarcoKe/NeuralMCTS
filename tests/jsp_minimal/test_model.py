@@ -25,3 +25,9 @@ def test_legal_actions():
     legal_actions = model.legal_actions(state)
     assert legal_actions == []
 
+
+def test_is_done():
+    model = JobShopModel()
+
+    remaining_ops = [[], [], [], [], [], []]
+    assert model._is_done(remaining_ops) == True
