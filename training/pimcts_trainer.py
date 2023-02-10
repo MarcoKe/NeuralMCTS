@@ -5,6 +5,7 @@ from scipy.stats import entropy
 import multiprocess as mp
 import wandb
 import os
+import time
 from torch.nn import functional as F
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3 import PPO
@@ -163,6 +164,7 @@ class MCTSPolicyImprovementTrainer:
         for i in range(self.policy_improvement_iterations):
             self.policy_improvement_steps = i
             print("collecting experience")
+            start_time = time.time()
 
             if self.workers > 1:
                 pool = mp.Pool(self.workers)
@@ -178,12 +180,16 @@ class MCTSPolicyImprovementTrainer:
                 avg_reward = r[3]
                 self.memory.store(observations, pi_mcts, outcomes)
                 self.log('mctstrain/ep_rew', avg_reward)
+                self.log('time/collecting', time.time() - start_time)
 
+            start_time = time.time()
             self.train_on_mcts_experiences()
 
             self.log('mctstrain/policy_improvement_iter', i)
-
+            self.log('time/training', time.time()-start_time)
+            start_time = time.time()
             self.evaluate()
+            self.log('time/evaluation', time.time() - start_time)
             if not self.wandb_run:
                 self.model_free_agent.logger.dump(step=i)
 
