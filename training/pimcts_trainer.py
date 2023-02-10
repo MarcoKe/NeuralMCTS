@@ -13,7 +13,7 @@ from envs.tsp.TSP import TSPGym, TSP
 from mcts.mcts_agent import MCTSAgent
 from mcts.util.benchmark_agents import perform_episode as eval
 from mcts.util.benchmark_agents import opt_gap
-from mcts.util.benchmark_agents import MCTSAgentWrapper
+from mcts.util.benchmark_agents import MCTSAgentWrapper, Stb3AgentWrapper
 from training.replay_buffer import ReplayMemory
 from training.schedule import LinearSchedule
 
@@ -194,14 +194,19 @@ class MCTSPolicyImprovementTrainer:
 
     def evaluate(self, eval_iterations=10):
         opt_gaps = 0
+        reward_diffs = 0
         for _ in range(eval_iterations):
             state = copy.deepcopy(self.env.reset())
             state_ = copy.deepcopy(self.env.raw_state())
             opt = self.solver.solve(self.env.current_instance())
-            reward = eval(self.env, MCTSAgentWrapper(self.mcts_agent, self.env), state_, state)
-            opt_gaps += opt_gap(opt, -reward)
+            reward_mcts = eval(self.env, MCTSAgentWrapper(self.mcts_agent, self.env), state_, state)
+            opt_gaps += opt_gap(opt, -reward_mcts)
+            reward_model_free = eval(self.env, Stb3AgentWrapper(self.model_free_agent), state_, state)
+            reward_diffs += reward_mcts - reward_model_free
 
         self.log('mctstrain/eval_optgap', opt_gaps / eval_iterations)
+        self.log('mctstrain/diff_mcts_model_free', reward_diffs / eval_iterations)
+
 
 
 if __name__ == '__main__':
