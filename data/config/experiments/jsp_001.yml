@@ -1,3 +1,4 @@
 name: jsp_from_scratch_with_replay
 env: jsp_minimal_001
 agent: mcts_from_scratch_001
+policy_improvement_iterations: 500
