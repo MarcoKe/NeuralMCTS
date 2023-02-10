@@ -159,7 +159,10 @@ class MCTSPolicyImprovementTrainer:
         num_steps = 0
 
         while not done:
-            pi_mcts_, v_mcts_, action = self.mcts_agent.stochastic_policy(self.env.raw_state())
+            temperature = 0.9
+            if self.policy_improvement_steps / self.policy_improvement_iterations > 0.9:
+                temperature = self.policy_improvement_steps / self.policy_improvement_iterations
+            pi_mcts_, v_mcts_, action = self.mcts_agent.stochastic_policy(self.env.raw_state(), temperature=temperature)
             observations.append(state)
             pi_mcts.append(pi_mcts_.tolist())
             v_mcts.append(v_mcts_)
