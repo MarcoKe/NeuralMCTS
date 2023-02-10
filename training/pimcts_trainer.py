@@ -4,6 +4,7 @@ import numpy as np
 from scipy.stats import entropy
 import multiprocess as mp
 import wandb
+import os
 from torch.nn import functional as F
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3 import PPO
@@ -171,7 +172,7 @@ class MCTSPolicyImprovementTrainer:
                 results = [self.collect_experience()]
 
             for r in results:
-                observations = th.Tensor(r[0]) #todo: we are converting between different datastructures in this file. is all of it necessary?
+                observations = th.Tensor(np.array(r[0])) #todo: we are converting between different datastructures in this file. is all of it necessary?
                 pi_mcts = th.Tensor(r[1])
                 outcomes = th.Tensor(r[2])
                 avg_reward = r[3]
@@ -186,7 +187,10 @@ class MCTSPolicyImprovementTrainer:
             if not self.wandb_run:
                 self.model_free_agent.logger.dump(step=i)
 
-        model_free_agent.save('results/trained_agents/' + self.exp_name) #todo automatically name according to experimetn
+        model_path = 'results/trained_agents/' + self.exp_name
+        if self.wandb_run:
+            model_path = os.path.join(self.wandb_run.dir, self.exp_name)
+        self.model_free_agent.save(model_path)
 
     def evaluate(self, eval_iterations=10):
         opt_gaps = 0
