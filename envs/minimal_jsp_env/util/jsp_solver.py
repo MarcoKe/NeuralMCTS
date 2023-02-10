@@ -15,6 +15,9 @@ class JSPSolver(Solver):
         else:
             return 0 # todo
 
+class SPTSolver(Solver):
+    def solve(self, instance):
+        pass
 
 jsp_solvers = JSPSolverFactory()
 jsp_solvers.register_builder('opt', JSPSolver)
