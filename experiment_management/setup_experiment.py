@@ -52,6 +52,7 @@ def init_wandb(general_config, exp_name, exp_config, agent_config, env_config):
     run = wandb.init(
         project=general_config['wandb']['project'],
         config=config,
+        name=exp_config['name']
         # sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
         # monitor_gym=True,  # auto-upload the videos of agents playing the game
         # save_code=True,  # optional
@@ -77,7 +78,7 @@ def setup_experiment(exp_name):
 
     solver_factory = solver_factories.get(env_config['name'])
     solver = solver_factory.get('opt')  # todo
-    trainer = MCTSPolicyImprovementTrainer(env, mcts_agent, model_free_agent, wandb_run=wandb_run, solver=solver,
+    trainer = MCTSPolicyImprovementTrainer(exp_config['name'], env, mcts_agent, model_free_agent, wandb_run=wandb_run, solver=solver,
                                            **agent_config['training'])
     trainer.train()
 

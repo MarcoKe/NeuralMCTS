@@ -17,7 +17,7 @@ from training.replay_buffer import ReplayMemory
 from training.schedule import LinearSchedule
 
 class MCTSPolicyImprovementTrainer:
-    def __init__(self, env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.0005, learning_rate=1e-5,
+    def __init__(self, exp_name, env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.0005, learning_rate=1e-5,
                  buffer_size=50000, batch_size=256, num_epochs=1, policy_improvement_iterations=2000, workers=8,
                  num_episodes=5, solver=None, wandb_run=None):
         """
@@ -31,6 +31,7 @@ class MCTSPolicyImprovementTrainer:
         :workers: how many workers will collect experience in parallel
         :num_episodes: how many episodes of experience EACH worker will collect
         """
+        self.exp_name = exp_name
         self.env = env
         self.model_free_agent = model_free_agent
         self.policy: ActorCriticPolicy = model_free_agent.policy
@@ -185,7 +186,7 @@ class MCTSPolicyImprovementTrainer:
             if not self.wandb_run:
                 self.model_free_agent.logger.dump(step=i)
 
-        model_free_agent.save('results/trained_agents/tsp/nmcts/pimcts_15') #todo automatically name according to experimetn
+        model_free_agent.save('results/trained_agents/' + self.exp_name) #todo automatically name according to experimetn
 
     def evaluate(self, eval_iterations=10):
         opt_gaps = 0
