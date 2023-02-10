@@ -34,4 +34,3 @@ def test_is_done():
 
     remaining_ops = [[Operation(job_id=1, op_id=0, machine_type=3, duration=8)], [], [], [], [], []]
     assert model._is_done(remaining_ops) is False
-    
