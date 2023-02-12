@@ -188,7 +188,7 @@ class MCTSPolicyImprovementTrainer:
             self.log('mctstrain/policy_improvement_iter', i)
             self.log('time/training', time.time()-start_time)
             start_time = time.time()
-            if i % 1 == 0:
+            if i % 10 == 0:
                 self.evaluate()
             self.log('time/evaluation', time.time() - start_time)
             if not self.wandb_run:
@@ -199,7 +199,7 @@ class MCTSPolicyImprovementTrainer:
             model_path = os.path.join(self.wandb_run.dir, self.exp_name)
         self.model_free_agent.save(model_path)
 
-    def evaluate(self, eval_iterations=1):
+    def evaluate(self, eval_iterations=10):
         if self.workers > 1:
             pool = mp.Pool(eval_iterations)
             results = pool.starmap(self.evaluate_single, [[]] * eval_iterations)
@@ -213,6 +213,9 @@ class MCTSPolicyImprovementTrainer:
             opt_gaps += r[0]
             self.log('eval/opt_gap', r[0])
             self.log('eval/diff_mcts_model_free', r[1])
+            self.log('eval/rew_mcts', r[2])
+            self.log('eval/rew_learned_policy', r[3])
+
             reward_diffs += r[1]
 
 
@@ -231,7 +234,7 @@ class MCTSPolicyImprovementTrainer:
         gap = opt_gap(opt, -reward_mcts)
         reward_diff = reward_mcts - reward_model_free
 
-        return gap, reward_diff
+        return gap, reward_diff, reward_mcts, reward_model_free
 
 
 
