@@ -31,3 +31,8 @@ class Stb3ACAgent(RLAgent):
 
         return values.tolist()
 
+    def select_action(self, obs, legal_actions):
+        _, dist = self.evaluate_actions(obs, legal_actions)
+
+        return legal_actions[torch.argmax(dist)]
+

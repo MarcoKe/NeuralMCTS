@@ -188,7 +188,8 @@ class MCTSPolicyImprovementTrainer:
             self.log('mctstrain/policy_improvement_iter', i)
             self.log('time/training', time.time()-start_time)
             start_time = time.time()
-            self.evaluate()
+            if i % 1 == 0:
+                self.evaluate()
             self.log('time/evaluation', time.time() - start_time)
             if not self.wandb_run:
                 self.model_free_agent.logger.dump(step=i)
@@ -198,7 +199,7 @@ class MCTSPolicyImprovementTrainer:
             model_path = os.path.join(self.wandb_run.dir, self.exp_name)
         self.model_free_agent.save(model_path)
 
-    def evaluate(self, eval_iterations=10):
+    def evaluate(self, eval_iterations=1):
         if self.workers > 1:
             pool = mp.Pool(eval_iterations)
             results = pool.starmap(self.evaluate_single, [[]] * eval_iterations)
@@ -210,7 +211,10 @@ class MCTSPolicyImprovementTrainer:
         reward_diffs = 0
         for r in results:
             opt_gaps += r[0]
+            self.log('eval/opt_gap', r[0])
+            self.log('eval/diff_mcts_model_free', r[1])
             reward_diffs += r[1]
+
 
         self.log('mctstrain/eval_optgap', opt_gaps / eval_iterations)
         self.log('mctstrain/diff_mcts_model_free', reward_diffs / eval_iterations)
@@ -218,10 +222,13 @@ class MCTSPolicyImprovementTrainer:
     def evaluate_single(self):
         state = copy.deepcopy(self.env.reset())
         state_ = copy.deepcopy(self.env.raw_state())
-        opt = self.solver.solve(self.env.current_instance())
+
+        reward_model_free = eval(self.env, Stb3AgentWrapper(self.model_free_agent, self.env, self.mcts_agent.model), copy.deepcopy(state_), copy.deepcopy(state))
+
         reward_mcts = eval(self.env, MCTSAgentWrapper(self.mcts_agent, self.env), state_, state)
+        opt = self.solver.solve(self.env.current_instance())
+
         gap = opt_gap(opt, -reward_mcts)
-        reward_model_free = eval(self.env, Stb3AgentWrapper(self.model_free_agent), state_, state)
         reward_diff = reward_mcts - reward_model_free
 
         return gap, reward_diff

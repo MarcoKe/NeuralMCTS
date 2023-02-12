@@ -90,7 +90,7 @@ class MCTSAgent:
 
         return root_node
 
-    def select_action(self, state, mode='max'):
+    def select_action(self, state, mode='mean'):
         root_node = self.mcts_search(state, mode)
         action, value = root_node.select_best_action(mode)
 

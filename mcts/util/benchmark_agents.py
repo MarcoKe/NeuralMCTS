@@ -7,7 +7,7 @@ import seaborn as sns
 from envs.tsp.tsp_solver import TSPSolver
 from mcts.mcts_agent import MCTSAgent
 import matplotlib.pyplot as plt
-
+from model_free.stb3_wrapper import Stb3ACAgent
 
 class Agent:
     def select_action(self, obs):
@@ -15,12 +15,14 @@ class Agent:
 
 
 class Stb3AgentWrapper(Agent):
-    def __init__(self, agent):
-        self.agent = agent
+    def __init__(self, agent, env, model):
+        self.agent = Stb3ACAgent(agent)
+        self.env = env
+        self.model = model
 
     def select_action(self, obs):
-        action, _ = self.agent.predict(obs, deterministic=True)
-        return action
+        legal_actions = self.model.legal_actions(self.env.raw_state())
+        return self.agent.select_action(obs, legal_actions)
 
     def __str__(self):
         return "PPO"
@@ -32,7 +34,8 @@ class MCTSAgentWrapper(Agent):
         self.env = env
 
     def select_action(self, obs):
-        action, value = self.agent.select_action(self.env.raw_state())
+        state = self.env.raw_state()
+        action, value = self.agent.select_action(state)
         return action
 
     def __str__(self):
@@ -53,7 +56,7 @@ def perform_episode(env, agent, hstate=None, obs=None):
     if not hstate:
         state = env.reset()
     else:
-        env.state = hstate
+        env.set_state(hstate)
         state = obs
 
     done = False

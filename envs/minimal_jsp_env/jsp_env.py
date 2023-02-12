@@ -27,6 +27,11 @@ class JobShopEnv(gym.Env):
 
         return self.state
 
+    def set_state(self, state):
+        self.state = state
+        if len(state['remaining_operations']) > 0:
+            self.done = False
+
     def step(self, action):
         self.state, reward, self.done = self.model.step(self.state, action)
 
