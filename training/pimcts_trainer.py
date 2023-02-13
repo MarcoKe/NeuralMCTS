@@ -133,9 +133,8 @@ class MCTSPolicyImprovementTrainer:
         num_steps = 0
 
         while not done:
-            temp = self.temp_schedule.value(self.policy_improvement_steps)
-            self.log('mctstrain/temp', temp)
-            pi_mcts_, v_mcts_, action = self.mcts_agent.stochastic_policy(self.env.raw_state(), temperature=temp)
+
+            pi_mcts_, v_mcts_, action = self.mcts_agent.stochastic_policy(self.env.raw_state(), temperature=self.temp)
             observations.append(state)
             pi_mcts.append(pi_mcts_.tolist())
             v_mcts.append(v_mcts_)
@@ -163,6 +162,8 @@ class MCTSPolicyImprovementTrainer:
     def train(self):
         for i in range(self.policy_improvement_iterations):
             self.policy_improvement_steps = i
+            temp = self.temp_schedule.value(self.policy_improvement_steps)
+            self.log('mctstrain/temp', temp)
             print("collecting experience")
             start_time = time.time()
 
