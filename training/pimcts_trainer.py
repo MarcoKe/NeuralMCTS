@@ -162,8 +162,8 @@ class MCTSPolicyImprovementTrainer:
     def train(self):
         for i in range(self.policy_improvement_iterations):
             self.policy_improvement_steps = i
-            temp = self.temp_schedule.value(self.policy_improvement_steps)
-            self.log('mctstrain/temp', temp)
+            self.temp = self.temp_schedule.value(self.policy_improvement_steps)
+            self.log('mctstrain/temp', self.temp)
             print("collecting experience")
             start_time = time.time()
 
