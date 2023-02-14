@@ -31,7 +31,7 @@ class MCTSAgent:
         done = False
 
         while not done:
-            new_children = self.expansion_policy.expand(n, s, model=self.model, neural_net=self.neural_net)
+            new_children = self.expansion_policy.expand(n, s, model=self.model, env=self.env, neural_net=self.neural_net)
             state_value, action_probs = self.evaluation_policy.evaluate(s, model=self.model, env=self.env, neural_net=self.neural_net)
             # children_states = [self.model.step(state, c.action)[0] for c in new_children]
             children_state_values = self.neural_net.state_values(
@@ -72,7 +72,7 @@ class MCTSAgent:
                 s, terminal_reward, done = self.model.step(s, n.action)
 
             if not done:
-                new_children = self.expansion_policy.expand(n, s, model=self.model, neural_net=self.neural_net)
+                new_children = self.expansion_policy.expand(n, s, model=self.model, env=self.env, neural_net=self.neural_net)
                 state_value, action_probs = self.evaluation_policy.evaluate(s, model=self.model, env=self.env, neural_net=self.neural_net)
                 # children_states = [self.model.step(state, c.action)[0] for c in new_children]
                 children_state_values = self.neural_net.state_values([self.env.observation(self.model.step(s, c.action)[0]) for c in new_children])
