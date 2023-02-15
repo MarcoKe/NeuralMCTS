@@ -19,7 +19,11 @@ class Stb3ACAgent(RLAgent):
 
         with torch.no_grad():
             obs_tensor = self.agent.policy.obs_to_tensor(obs)[0]
-            value, logprob, entropy = self.agent.policy.evaluate_actions(obs_tensor, torch.tensor(actions))
+            try:
+                value, logprob, entropy = self.agent.policy.evaluate_actions(obs_tensor, torch.tensor(actions))
+            except ValueError as e:
+                print(e)
+                print("obs_tensor: ", obs_tensor, " actions: ", torch.tensor(actions), actions)
 
         return value, torch.nn.functional.softmax(logprob, dim=0)
 
