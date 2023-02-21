@@ -57,8 +57,14 @@ class RandomJSPGeneratorOperationDistirbution(JSPGenerator):
     def generate(self, operation_distribution: List):
         assert len(operation_distribution) <= self.pool_size, "The size of the operation_distribution list does not match the pool_size."
 
-        random_operations = [(random.randint(0, self.num_operations - 1), random.randint(1, self.max_op_duration)) for i in range(0, len(operation_distribution))] # generate len(operation_distribution) random operations (type, duration)
+        # make sure that the random operations are unique
         
+        random_operations = set()
+        while len(random_operations) < len(operation_distribution):
+            random_operations.add((random.randint(0, self.num_operations - 1), random.randint(1, self.max_op_duration)))
+        random_operations = list(random_operations)
+
+
         operations_pool = []
         for distr, operation in zip(operation_distribution, random_operations):
             operations_pool += int(self.pool_size*distr)*[operation]

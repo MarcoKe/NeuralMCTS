@@ -5,6 +5,7 @@ import collections
 import numpy as np
 import pandas as pd
 from ortools.sat.python import cp_model
+from typing import List
 
 
 class JSPSolverFactory(ObjectFactory):
@@ -14,18 +15,16 @@ class JSPSolverFactory(ObjectFactory):
 
 class JSPSolver(Solver):
     
-    def solve(self, instance):
-        if instance.opt_time:
-            return instance.opt_time
-        else:
-            # Getting job format compatible with Google OR input
-            google_or_instance_format = []
-            for job in instance.jobs:
-                job_ops = [[i.machine_type, i.duration] for i in job]
-                google_or_instance_format.append(job_ops)
+    def solve(self, job_list: List):
 
-            instance.opt_time = self._solve_jsp(google_or_instance_format)
-            return instance.opt_time
+        # Getting job format compatible with Google OR input
+        google_or_instance_format = []
+        for job in job_list:
+            job_ops = [[i.machine_type, i.duration] for i in job]
+            google_or_instance_format.append(job_ops)
+
+        opt_time = self._solve_jsp(google_or_instance_format)
+        return opt_time
 
 
     @staticmethod
