@@ -43,7 +43,8 @@ def create_agent(env, model, agent_config):
     mcts_agent = MCTSAgent(env, model, tp, ep, rp, neural_net=neural_net,
                            num_simulations=agent_config['num_simulations'],
                            evaluate_leaf_children=agent_config['evaluate_leaf_children'],
-                           value_initialization=agent_config['value_initialization'])
+                           value_initialization=agent_config['value_initialization'],
+                           initialize_tree=agent_config['initialize_tree'])
 
     return mcts_agent, model_free_agent
 

@@ -2,6 +2,7 @@ name: 'mcts_from_scratch_100000replay'
 num_simulations: 100
 evaluate_leaf_children: False
 value_initialization: True
+initialize_tree: True
 learned_policy:
   location: ''
 tree_policy:

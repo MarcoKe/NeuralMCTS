@@ -16,7 +16,8 @@ from envs.model import ModelStepCounter
 class MCTSAgent:
     def __init__(self, env, model, tree_policy: TreePolicy, expansion_policy: ExpansionPolicy,
                  evaluation_policy: EvaluationPolicy, neural_net: RLAgent,
-                 num_simulations=10, dirichlet_noise=False, evaluate_leaf_children=False, value_initialization=True, **kwargs):
+                 num_simulations=10, dirichlet_noise=False, evaluate_leaf_children=False, value_initialization=True,
+                 initialize_tree=True, **kwargs):
         self.env = env
         self.model = model
         self.tree_policy = tree_policy
@@ -25,9 +26,9 @@ class MCTSAgent:
         self.neural_net = neural_net
         self.num_simulations = num_simulations
         self.dirichlet_noise = dirichlet_noise
-        self.evaluate_leaf_children = evaluate_leaf_children  # if False, apply evaluation policy to encountered leaf. If True, apply evaluation policy to expanded children of leaf
+        self.evaluate_leaf_children = evaluate_leaf_children   # if False, apply evaluation policy to encountered leaf. If True, apply evaluation policy to expanded children of leaf
         self.value_initialization = value_initialization  # this only matters if evaluate_leaf_children is False
-
+        self.initialize_tree = initialize_tree  # whether to populate tree with greedy neural net rollout
     def init_tree(self, n, s):
         """
         create a path from the root of the tree to a terminal node by greedily choosing nodes with the learned policy
@@ -66,7 +67,7 @@ class MCTSAgent:
         neural_net = EvalCounterWrapper(self.neural_net)
         root_node = Node(None, None)
 
-        self.init_tree(root_node, copy.deepcopy(state))
+        if self.initialize_tree: self.init_tree(root_node, copy.deepcopy(state))
 
         simulation_count = 0
         while simulation_count < self.num_simulations:
