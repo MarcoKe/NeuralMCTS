@@ -1,8 +1,10 @@
+import copy
+from envs.model import Model
 from envs.minimal_jsp_env.entities import Operation
 import random
 
 
-class JobShopModel:
+class JobShopModel(Model):
     def __init__(self, **kwargs):
         pass
 
@@ -99,26 +101,27 @@ class JobShopModel:
 
 if __name__ == '__main__':
     model = JobShopModel()
-
-
-    import time
-    start_time = time.time()
-    steps = 0
-    for _ in range(1000):
-        done = False
-        state = model.random_problem(100, 100)
-        remaining_operations = state['remaining_operations']
-        schedule = state['schedule']
-        while not done:
-            legal_actions = model.legal_actions(state)
-
-            steps += 1
-            action = random.choice(legal_actions)
-
-            state, reward, done = model.step(state, action)
-
-    duration = time.time() - start_time
-    print("duration: ", duration, " time per step: ", duration / steps)
+    #
+    #
+    # import time
+    # start_time = time.time()
+    # steps = 0
+    # for _ in range(1000):
+    #     done = False
+    #     state = model.random_problem(6, 6)
+    #     remaining_operations = state['remaining_operations']
+    #     schedule = state['schedule']
+    #     while not done:
+    #         legal_actions = model.legal_actions(state)
+    #
+    #         steps += 1
+    #         action = random.choice(legal_actions)
+    #
+    #         state, reward, done = model.step(state, action)
+    #
+    # duration = time.time() - start_time
+    # print("duration: ", duration, " time per step: ", duration / steps)
+    # print("calls to step: ", model.step.calls)
     # from envs.minimal_jsp_env.util.visualization.gantt_visualizer import create_gantt
 
     # create_gantt(schedule)

@@ -18,6 +18,7 @@ from mcts.util.benchmark_agents import MCTSAgentWrapper, Stb3AgentWrapper
 from training.replay_buffer import ReplayMemory
 from training.schedule import LinearSchedule
 
+
 class MCTSPolicyImprovementTrainer:
     def __init__(self, exp_name, env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.0005, learning_rate=1e-5,
                  buffer_size=50000, batch_size=256, num_epochs=1, policy_improvement_iterations=2000, workers=8,
@@ -45,6 +46,8 @@ class MCTSPolicyImprovementTrainer:
         self.batch_size = batch_size
         self.num_epochs = num_epochs
         self.policy_improvement_iterations = policy_improvement_iterations
+        self.total_model_steps = 0
+        self.total_neural_net_calls = 0
         self.workers = workers
         self.num_episodes = num_episodes
         self.solver = solver
@@ -131,17 +134,21 @@ class MCTSPolicyImprovementTrainer:
         pi_mcts = []
         v_mcts = []
         num_steps = 0
+        model_steps = 0
+        neural_net_calls = 0
 
         while not done:
 
-            pi_mcts_, v_mcts_, action = self.mcts_agent.stochastic_policy(self.env.raw_state(), temperature=self.temp)
+            pi_mcts_, v_mcts_, action, stats = self.mcts_agent.stochastic_policy(self.env.raw_state(), temperature=self.temp)
             observations.append(state)
             pi_mcts.append(pi_mcts_.tolist())
             v_mcts.append(v_mcts_)
             state, reward, done, _ = self.env.step(action)
             num_steps += 1
+            model_steps += stats['model_steps']
+            neural_net_calls += stats['neural_net_calls']
 
-        return observations, pi_mcts, v_mcts, num_steps, reward
+        return observations, pi_mcts, v_mcts, num_steps, reward, model_steps, neural_net_calls
 
     def collect_experience(self):
         pi_mcts = []
@@ -149,15 +156,19 @@ class MCTSPolicyImprovementTrainer:
         observations = []
         rewards_list = []
         rewards = 0
+        model_steps_sum = 0
+        neural_net_calls_sum = 0
         for ep in range(self.num_episodes):
-            o_, pi_mcts_, v_mcts_, num_steps, reward = self.perform_episode()
+            o_, pi_mcts_, v_mcts_, num_steps, reward, model_steps, neural_net_calls = self.perform_episode()
             observations.extend(o_)
             pi_mcts.extend(pi_mcts_)
             v_mcts.extend(v_mcts_)
             rewards += reward
             rewards_list.extend([reward] * num_steps)
+            model_steps_sum += model_steps
+            neural_net_calls_sum += neural_net_calls
 
-        return observations, pi_mcts, rewards_list, rewards / self.num_episodes
+        return observations, pi_mcts, rewards_list, rewards / self.num_episodes, model_steps_sum, neural_net_calls_sum
 
     def train(self):
         for i in range(self.policy_improvement_iterations):
@@ -179,9 +190,15 @@ class MCTSPolicyImprovementTrainer:
                 pi_mcts = th.Tensor(r[1])
                 outcomes = th.Tensor(r[2])
                 avg_reward = r[3]
+                self.total_model_steps += r[4]
+                self.total_neural_net_calls += r[5]
                 self.memory.store(observations, pi_mcts, outcomes)
                 self.log('mctstrain/ep_rew', avg_reward)
-                self.log('time/collecting', time.time() - start_time)
+
+            self.log('mctstrain/model_steps', self.total_model_steps)
+            self.log('mctstrain/neural_net_calls', self.total_neural_net_calls)
+
+            self.log('time/collecting', time.time() - start_time)
 
             start_time = time.time()
             self.train_on_mcts_experiences()

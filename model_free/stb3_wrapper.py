@@ -8,6 +8,9 @@ class RLAgent:
     def state_values(self, observations):
         raise NotImplementedError
 
+    def select_action(self, obs, legal_actions):
+        raise NotImplementedError
+
 
 class Stb3ACAgent(RLAgent):
     def __init__(self, agent):
@@ -39,4 +42,25 @@ class Stb3ACAgent(RLAgent):
         _, dist = self.evaluate_actions(obs, legal_actions)
 
         return legal_actions[torch.argmax(dist)]
+
+
+class EvalCounterWrapper(RLAgent):
+    def __init__(self, rl_agent):
+        self.rl_agent = rl_agent
+        self.count = 0
+
+    def __getattr__(self, name):
+        return getattr(self.model, name)
+
+    def evaluate_actions(self, obs, actions):
+        self.count += 1
+        return self.rl_agent.evaluate_actions(obs, actions)
+
+    def state_values(self, observations):
+        self.count += 1
+        return self.rl_agent.state_values(observations)
+
+    def select_action(self, obs, legal_actions):
+        self.count += 1
+        return self.rl_agent.select_action(obs, legal_actions)
 
