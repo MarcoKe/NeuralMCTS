@@ -1,51 +1,54 @@
-import math
-
-
-from mcts.node import Node
 import random
-from numpy import log as ln
+import numpy as np
+import math
+from mcts.node import Node
+from mcts.tree_policies.exploitation_terms.exploitation_term import ExploitationTerm
+from mcts.tree_policies.exploration_terms.exploration_term import ExplorationTerm
 
 
 class TreePolicy:
     def select(self, node: Node, state):
         raise NotImplementedError
 
-    def get_action_probs(self, obs, actions):
-        return [1 / len(actions) for _ in actions]
-
 
 class RandomTreePolicy(TreePolicy):
-    def select(self, node: Node, state):
+    def select(self, node: Node, state, **kwargs):
         return random.choice(node.children)
 
     def __str__(self):
         return "RandTree"
 
+
 class UCTPolicy(TreePolicy):
-    # "Upper Confidence bounds applied to Trees"
-    def __init__(self, exploration_const):
-        self.exp_const = exploration_const
+    def __init__(self, exploitation: ExploitationTerm, exploration: ExplorationTerm, dirichlet_alpha=0.03):
+        self.exploitation_term = exploitation
+        self.exploration_term = exploration
 
-    def Q(self, child):
-        return child.returns / child.visits
+    def select(self, node: Node, add_dirichlet: bool = False):
+        best_uct, child = -math.inf, None
 
-    def U(self, node, child, state):
-        return self.exp_const * math.sqrt(ln(node.visits) / child.visits)
+        dirichlet_noise = None
+        if add_dirichlet:
+            dirichlet_noise = np.random.dirichlet([self.exploration_term.dirichlet_alpha]*len(node.children))
 
-    def select(self, node: Node, state):
-        # Find the child with the best upper confidence bound
-        best_uct, child = -1e7, None
-        for c in node.children:
-            if c.visits > 0 and node.visits > 0:
-                uct = self.Q(c) + self.U(node, c, state)
+        for i, c in enumerate(node.children):
+            # if c.visits > 0 and node.visits > 0:
+                uct = self.exploitation_term.val(c)
+                if add_dirichlet:
+                    uct += self.exploration_term.val(c, dirichlet_noise=dirichlet_noise[i])
+                else:
+                    uct += self.exploration_term.val(c)
+
                 if uct > best_uct:
                     best_uct = uct
                     child = c
+                if uct == math.inf:
+                    return child
+
         if not child:
-            # print("here")
             child = random.choice(node.children)
 
         return child
 
     def __str__(self):
-        return "UCT"
+        return str(self.exploitation_term) + str(self.exploration_term)

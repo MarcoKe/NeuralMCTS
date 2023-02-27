@@ -1,0 +1,9 @@
+input:
+  agent_configs: 'data/config/agents'
+  environment_configs: 'data/config/envs'
+  experiment_configs: 'data/config/experiments'
+output:
+  tensorboard_logs: 'results/tb'
+  saved_agents: 'results/trained_agents'
+wandb:
+  project: 'neural_mcts'

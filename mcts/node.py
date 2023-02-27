@@ -1,8 +1,9 @@
+import math
+
 class Node:
     def __init__(self, action, parent):
-        self.action, self.parent, self.children = action, parent, []  # action is the action that led to this node from the parent
-        self.visits, self.returns, self.max_return = 0, 0, -1e7
-        self.action_prob = 0
+        self.action, self.parent, self.children = action, parent, [] # action is the action that led to this node from the parent
+        self.visits, self.returns, self.max_return = 0, 0, -math.inf
 
     def expand(self, actions):
         for a in actions:
@@ -17,11 +18,17 @@ class Node:
     def is_leaf(self):
         return len(self.children) == 0
 
+    def is_root(self):
+        if self.parent:
+            return False
+
+        return True
+
     def has_parent(self):
         return self.parent is not None
 
     def select_best_action(self, mode='mean'):
-        best_action, best_value = 0, -1e7
+        best_action, best_value = 0, -math.inf
         for c in self.children:
             if c.visits > 0:
                 if mode == 'mean':
