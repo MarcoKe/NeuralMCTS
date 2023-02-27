@@ -1,4 +1,6 @@
+import copy
 import random
+import torch
 
 
 class EvaluationPolicy:
@@ -9,9 +11,9 @@ class EvaluationPolicy:
         values = []
         priors = []
         for s in states:
-            value, priors_ = self.evaluate(s, **kwargs)
+            value, priors_ = self.evaluate(copy.deepcopy(s), **kwargs)
             values.append(value)
-            if priors_:
+            if torch.is_tensor(priors_) or priors_:
                 priors.append(priors_)
 
         if len(priors) == 0:

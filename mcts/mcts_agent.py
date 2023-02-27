@@ -93,7 +93,7 @@ class MCTSAgent:
         terminal_reward = None
         while not n.is_leaf():
             n = self.tree_policy.select(n, add_dirichlet=(n.is_root() and self.dirichlet_noise))
-            s, terminal_reward, done = model.step(s, n.action)
+            s, terminal_reward, done = model.step(s, n.action) #todo: check if model reward should go through reward fun wrapper
 
         return n, s, terminal_reward, done
 
@@ -112,8 +112,19 @@ class MCTSAgent:
         This is in contrast to evaluation of all leaf children with a learned value function.
         """
         if self.evaluate_leaf_children:
-            states = [model.step(s, c.action)[0] for c in new_children]
-            state_values, action_probs = self.evaluation_policy.evaluate_multiple(states, model=model, env=self.env,
+            state_values = []
+            states = []
+            for c in new_children:
+                s_, reward_, done_ = model.step(copy.deepcopy(s), c.action)
+                states.append(s_)
+
+                # with this strategy, we need to check if the episodes are done at this point. otherwise, we will pass
+                # a terminal state to the evaluation policy
+                if done_:
+                    state_values.append(reward_)
+
+            if len(state_values) == 0:
+                state_values, action_probs = self.evaluation_policy.evaluate_multiple(copy.deepcopy(states), model=model, env=self.env,
                                                                                   neural_net=neural_net)
 
             for i, value in enumerate(state_values):
@@ -121,14 +132,14 @@ class MCTSAgent:
                 self.backpropagation_phase(child, value)
 
                 # initialize action priors if the evaluation policy computed them automatically.
-                if torch.is_tensor(action_probs) or action_probs:
-                    child.prior_prob = action_probs[i]
-                else:  # otherwise compute them only if the tree policy requires them
-                    self.tree_policy.exploration_term.init_prior(new_children, s, self.env, neural_net)
+                # if torch.is_tensor(action_probs) or action_probs:
+                #     child.prior_prob = action_probs[i]
+                # else:  # otherwise compute them only if the tree policy requires them
+                self.tree_policy.exploration_term.init_prior(new_children, copy.deepcopy(s), self.env, neural_net)
 
 
         else:
-            state_value, action_probs = self.evaluation_policy.evaluate(s, model=model, env=self.env,
+            state_value, action_probs = self.evaluation_policy.evaluate(copy.deepcopy(s), model=model, env=self.env,
                                                                         neural_net=neural_net)
             self.backpropagation_phase(n, state_value)
 
@@ -136,11 +147,11 @@ class MCTSAgent:
                 for i, c in enumerate(new_children):
                     c.prior_prob = action_probs[i]
             else:
-                self.tree_policy.exploration_term.init_prior(new_children, s, self.env, neural_net)
+                self.tree_policy.exploration_term.init_prior(new_children, copy.deepcopy(s), self.env, neural_net)
 
             if self.value_initialization:
                 children_state_values = neural_net.state_values(
-                    [self.env.observation(model.step(s, c.action)[0]) for c in new_children])
+                    [self.env.observation(model.step(copy.deepcopy(s), c.action)[0]) for c in new_children])
                 children_state_values = [c[0] for c in children_state_values]
             else:
                 children_state_values = [math.inf for _ in new_children]
