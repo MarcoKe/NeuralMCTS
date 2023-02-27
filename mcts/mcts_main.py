@@ -117,24 +117,22 @@ if __name__ == '__main__':
     n = 1000  # number of iterations
     i = 0
     prev = time.time()
-    while i < n:
+    for i in range(n):
+        done = False
+        env = env.reset()
         while not (env.m == model.m).all():
-            env.reset()  # only for testing, generally the model should be resetted and not the environment
-        # print("select action")
-        # prev = time.time()
-        action, _ = agent.select_action(env.raw_state())
-        print("action:", action)
-        # print(time.time() - prev)
-        obs, reward, done, _ = env.step(action)
-        # print(state['tour'])
-        if done:
-            print("iteration " + str(i))
-            print("time: " + str(time.time() - prev))
-            prev = time.time()
-            print("reward: " + str(reward))
-            rewards += reward
-            env.reset()
-            i += 1
+            model.reset()
+
+        while not done:
+            action, _ = agent.select_action(env.raw_state())
+            print("action:", action)
+            obs, reward, done, _ = env.step(action)
+
+        print("iteration " + str(i))
+        print("time: " + str(time.time() - prev))
+        prev = time.time()
+        print("reward: " + str(reward))
+        rewards += reward
 
     # env.render()
     print("avg rew: ", rewards / n)

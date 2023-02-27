@@ -1,3 +1,4 @@
+import numpy as np
 from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 import gym
@@ -16,19 +17,17 @@ class GNNExtractor(BaseFeaturesExtractor):
 
     def __init__(self, observation_space: gym.spaces.Dict, num_layers: int = 3, num_mlp_layers: int = 2,
                  hidden_dim: int = 64, graph_pool: str = "avg", device: str = "auto"):
-        super().__init__(observation_space=observation_space, features_dim=5)
+        super().__init__(observation_space=observation_space, features_dim=64)
 
         assert len(observation_space.spaces.keys()) == 2 and list(observation_space.spaces.keys())[0] == "adj_matrix" \
                and list(observation_space.spaces.keys())[1] == "features", (
             "The observation space should consist of a graph adjacency matrix and node features"
         )
 
+        self.graph_pool = graph_pool
         self.device = get_device(device)
         self.num_layers = num_layers
-        adj_matrix_space = list(observation_space.spaces.values())[0]
         feature_space = list(observation_space.spaces.values())[1]
-        self.graph_pool = self.g_pool_cal(graph_pool, batch_size=(1, 1), n_nodes=adj_matrix_space.shape[0],
-                                          device=self.device)
         input_dim = feature_space.shape[1]
 
         # List of MLPs
@@ -46,15 +45,14 @@ class GNNExtractor(BaseFeaturesExtractor):
         self.mlps = self.mlps.to(self.device)
         self.batch_norms = self.batch_norms.to(self.device)
 
-        # output should be batch size x features_dim!
-        self.linear = nn.Linear(hidden_dim, 1).to(self.device)  # 1 should be batch size?
-
     def next_layer(self, h, layer, adj_block=None):
         pooled = th.mm(adj_block, h)
         if self.graph_pool == "avg":
             # If average pooling
             degree = th.mm(adj_block, th.ones((adj_block.shape[0], 1)).to(self.device))
             pooled = pooled / degree
+        else:
+            raise NotImplementedError()
         # representation of neighboring and center nodes
         pooled_rep = self.mlps[layer](pooled)
         h = self.batch_norms[layer](pooled_rep)
@@ -63,37 +61,30 @@ class GNNExtractor(BaseFeaturesExtractor):
         return h
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
-        adj_block = list(observations.values())[0][0]  # TODO make compatible with batches of obs
-        x_concat = list(observations.values())[1][0]
+        adj_block = th.stack([th.from_numpy(np.copy(l)).to_sparse() for l in
+                              list(observations.values())[0]])
+        n_tasks = adj_block.shape[1]
+        adj_block_concat = self.aggr_obs(adj_block, n_tasks)
+        fea_concat = th.stack([th.from_numpy(np.copy(l)) for l in list(observations.values())[1]])
+        fea_concat = fea_concat.reshape(-1, fea_concat.size(-1))
+        h = fea_concat  # list of hidden representations at each layer (including input)
 
-        # list of hidden representation at each layer (including input)
-        h = x_concat
-
-        print("gnn forward")
-        print("adj_block shape", adj_block.shape)
-        print("x_concat shape", x_concat.shape)
+        graph_pool_cal = self.g_pool_cal(self.graph_pool,
+                                         batch_size=adj_block.shape,
+                                         n_nodes=n_tasks,
+                                         device=self.device)
 
         for layer in range(self.num_layers - 1):
-            h = self.next_layer(h, layer, adj_block)
+            h = self.next_layer(h, layer, adj_block_concat)
 
-        h_nodes = h.clone()#.reshape(1, -1)  # 4x64 before reshape, 1x256 after
-        pooled_h = th.sparse.mm(self.graph_pool, h)  # 1x64
+        pooled_h = th.sparse.mm(graph_pool_cal, h)
 
-        h_cat = th.cat((pooled_h, h_nodes), dim=0)  # 5x64
-        h_cat = th.transpose(self.linear(h_cat), 0, 1)
-
-        # print("gnn forward")
-        # print("adj_block shape", adj_block.shape)
-        # print("x_concat shape", x_concat.shape)
-        print("h_cat shape", h_cat.shape)
-        print("len obs", len(list(observations.values())[0]))
-
-        return h_cat  # should be obs.dim x 5
+        return pooled_h
 
     def g_pool_cal(self, graph_pool_type, batch_size, n_nodes, device):
         # batch_size is the shape of batch
         # for graph pool sparse matrix
-        if graph_pool_type == 'average':
+        if graph_pool_type == 'avg':
             elem = th.full(size=(batch_size[0] * n_nodes, 1),
                            fill_value=1 / n_nodes,
                            dtype=th.float32,
@@ -111,6 +102,19 @@ class GNNExtractor(BaseFeaturesExtractor):
         graph_pool = th.sparse.FloatTensor(idx, elem, th.Size([batch_size[0], n_nodes * batch_size[0]])).to(device)
 
         return graph_pool
+
+    def aggr_obs(self, obs_mb, n_nodes):
+        idxs = obs_mb.coalesce().indices()
+        vals = obs_mb.coalesce().values()
+        new_idx_row = idxs[1] + idxs[0] * n_nodes
+        new_idx_col = idxs[2] + idxs[0] * n_nodes
+        idx_mb = th.stack((new_idx_row, new_idx_col))
+        adj_batch = th.sparse.FloatTensor(indices=idx_mb,
+                                          values=vals,
+                                          size=th.Size([obs_mb.shape[0] * n_nodes,
+                                                        obs_mb.shape[0] * n_nodes]),
+                                          ).to(obs_mb.device)
+        return adj_batch
 
 
 class MLP(nn.Module):
@@ -154,5 +158,7 @@ class MLP(nn.Module):
             # If MLP
             h = x
             for layer in range(self.num_layers - 1):
-                h = th.nn.functional.relu(self.batch_norms[layer](self.linears[layer](h)))
+                h = self.linears[layer](h)
+                h = self.batch_norms[layer](h)
+                h = th.nn.functional.relu(h)
             return self.linears[self.num_layers - 1](h)
