@@ -12,7 +12,11 @@ class NeuralExpansionPolicy(ExpansionPolicy):
         new_children = []
 
         legal_actions = model.legal_actions(state)
-        _, action_probs = neural_net.evaluate_actions(env.observation(state), legal_actions) #todo this is already called in the main mcts code. remove redundancy!
+        # todo the following is already called in the main mcts code. remove redundancy!
+        # but: evaluate_actions always return probs summing to 1. if we compute probs for all legal actions
+        # and then discard some of them, the remaining set will not sum to 1 anymore. rescaling them might still be
+        # faster than calling the neural net again
+        _, action_probs = neural_net.evaluate_actions(env.observation(state), legal_actions)
 
         selected_actions = self.select_actions(action_probs, legal_actions)
 
