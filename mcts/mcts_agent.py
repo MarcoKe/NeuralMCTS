@@ -148,7 +148,8 @@ class MCTSAgent:
                 for i, c in enumerate(new_children):
                     c.prior_prob = action_probs[i]
             else:
-                self.tree_policy.exploration_term.init_prior(new_children, copy.deepcopy(s), self.env, neural_net)
+                self.tree_policy.exploration_term.init_prior(new_children, state=copy.deepcopy(s), env=self.env,
+                                                             neural_net=neural_net)
 
             if self.value_initialization:
                 children_state_values = neural_net.state_values(
