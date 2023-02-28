@@ -16,7 +16,7 @@ class PUCTTerm(UCTTerm):
 
         return self.exploration_constant * prior * (math.sqrt(node.parent.visits) / (1 + node.visits))
 
-    def init_prior(self, children, state, env, neural_net):
+    def init_prior(self, children, state=None, env=None, neural_net=None):
         if not children[0].prior_prob:
             _, action_probs = neural_net.evaluate_actions(env.observation(state), [c.action for c in children])
             for c, p in zip(children, action_probs):

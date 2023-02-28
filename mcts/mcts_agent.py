@@ -135,7 +135,8 @@ class MCTSAgent:
                 # if torch.is_tensor(action_probs) or action_probs:
                 #     child.prior_prob = action_probs[i]
                 # else:  # otherwise compute them only if the tree policy requires them
-                self.tree_policy.exploration_term.init_prior(new_children, copy.deepcopy(s), self.env, neural_net)
+                self.tree_policy.exploration_term.init_prior(new_children, state=copy.deepcopy(s), env=self.env,
+                                                             neural_net=neural_net)
 
 
         else:
