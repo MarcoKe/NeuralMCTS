@@ -1,0 +1,4 @@
+name: jsp_uct_full_expansion_neural_rollout_eval_evaluate_leaf_children
+env: jsp_minimal_001
+agent: uct_full_expansion_neural_rollout_eval_evaluate_leaf_children
+policy_improvement_iterations: 250

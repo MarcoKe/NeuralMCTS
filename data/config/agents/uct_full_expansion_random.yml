@@ -1,5 +1,7 @@
 name: uct_full_expansion_random
 num_simulations: 100
+initialize_tree: false
+value_initialization: false
 learned_policy:
   location: ''
 training:
@@ -26,3 +28,4 @@ expansion_policy:
 eval_policy:
   name: random
   params: {}
+evaluate_leaf_children: false
