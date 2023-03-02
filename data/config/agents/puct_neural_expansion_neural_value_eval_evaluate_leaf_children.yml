@@ -25,7 +25,7 @@ tree_policy:
 expansion_policy:
   name: neural_expansion
   params:
-    threshold: 0.8
+    threshold: 0.9
 eval_policy:
   name: neural_value_eval
   params: {}
