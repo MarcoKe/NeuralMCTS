@@ -69,8 +69,8 @@ class MCTSPolicyImprovementTrainer:
         cross entropy between model free policy prediction and mcts policy
         mse between value estimates
         """
-        policy_loss = th.mean(-th.sum(pi_mcts * th.log(pi_theta), dim=-1))
-        value_loss = F.mse_loss(v_mcts, v_theta) / 2 #todo
+        policy_loss = th.mean(-th.sum(pi_mcts * th.log(pi_theta + 1e-9), dim=-1))
+        value_loss = F.mse_loss(v_mcts, v_theta)
         total_loss = (policy_loss + value_loss) / 2
         return total_loss, policy_loss, value_loss
 
@@ -111,7 +111,6 @@ class MCTSPolicyImprovementTrainer:
             batch = self.memory.sample_batch(self.batch_size)
 
             predicted_probs, predicted_values = self.forward(batch['obs']) # legal actions or just all actions?
-
             loss, ploss, vloss = self.mcts_policy_improvement_loss(batch['mcts_probs'], predicted_probs, batch['outcomes'], predicted_values)
 
             # Optimization step
