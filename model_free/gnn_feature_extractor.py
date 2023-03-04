@@ -21,8 +21,7 @@ class GNNExtractor(BaseFeaturesExtractor):
 
         assert len(observation_space.spaces.keys()) == 2 and list(observation_space.spaces.keys())[0] == "adj_matrix" \
                and list(observation_space.spaces.keys())[1] == "features", (
-            "The observation space should consist of a graph adjacency matrix and node features"
-        )
+            "The observation space should consist of a graph adjacency matrix and node features")
 
         self.graph_pool = graph_pool
         self.device = get_device(device)

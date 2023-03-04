@@ -1,8 +1,14 @@
 import gym
 import numpy as np
 from gym.utils import EzPickle
-from envs.param_parser import configs
-from envs.permissibleLS import permissibleLeftShift
+from envs.gnn_jsp_env.permissibleLS import permissibleLeftShift
+
+# Parameters previoulsy taken from the param_parser TODO take from arguments
+high = 99  # duration upper bound
+low = 1  # duration lower bound
+init_quality_flag = False  # flag of whether init state quality is 0, True for 0
+et_normalize_coef = 1000  # normalizing constant for feature LBs (end time), normalization way: fea/constant
+rewardscale = 0.  # reward scale for positive rewards
 
 
 class JSSP:
@@ -24,11 +30,10 @@ class JSSP:
 
     def reset(self):
         # JSSP instance (processing times and machine orders for the operations)
-        data = self.uni_instance_gen(n_j=self.number_of_jobs, n_m=self.number_of_machines, low=configs.low,
-                                     high=configs.high)
+        data = self.uni_instance_gen(n_j=self.number_of_jobs, n_m=self.number_of_machines, low=low, high=high)
         step_count = 0
         # np array holding the machine order in which each job's operations have to be carried out
-        self.m = data[-1]
+        self.m = data[1]
         # np array holding the durations of each job's operations
         self.dur = data[0].astype(np.single)
         dur_cp = np.copy(self.dur)
@@ -53,14 +58,12 @@ class JSSP:
 
         # initialize features
         LBs = np.cumsum(self.dur, axis=1, dtype=np.single)
-        initQuality = LBs.max() if not configs.init_quality_flag else 0
+        initQuality = LBs.max() if not init_quality_flag else 0
         max_endTime = initQuality
         finished_mark = np.zeros_like(self.m, dtype=np.single)  # 0 for unfinished, 1 for finished
 
         # action (node) features: normalized end time lower bounds and binary indicator of whether the action has been scheduled
-        fea = np.concatenate((LBs.reshape(-1, 1)/configs.et_normalize_coef,  # et_normalize_coef default is 1000
-                              # self.dur.reshape(-1, 1)/configs.high,
-                              # wkr.reshape(-1, 1)/configs.wkr_normalize_coef,
+        fea = np.concatenate((LBs.reshape(-1, 1)/et_normalize_coef,  # et_normalize_coef default is 1000
                               finished_mark.reshape(-1, 1)), axis=1)  # 1 if scheduled, 0 otherwise
         # initialize feasible omega (the next operations for each job)
         omega = self.first_col.astype(np.int64)
@@ -69,7 +72,7 @@ class JSSP:
         mask = np.full(shape=self.number_of_jobs, fill_value=0, dtype=bool)
 
         # start time of operations on machines
-        mchsStartTimes = -configs.high * np.ones_like(self.dur.transpose(), dtype=np.int32)
+        mchsStartTimes = -high * np.ones_like(self.dur.transpose(), dtype=np.int32)
         # Ops ID on machines
         opIDsOnMchs = -self.number_of_jobs * np.ones_like(self.dur.transpose(), dtype=np.int32)
 
@@ -124,11 +127,11 @@ class JSSP:
                 state['adj_matrix'][succd, precd] = 0
 
         # prepare for return
-        state['features'] = np.concatenate((state['LBs'].reshape(-1, 1) / configs.et_normalize_coef,
+        state['features'] = np.concatenate((state['LBs'].reshape(-1, 1) / et_normalize_coef,
                                             state['finished_mark'].reshape(-1, 1)), axis=1)
         reward = - (state['LBs'].max() - state['max_endTime'])
         if reward == 0:
-            reward = configs.rewardscale
+            reward = rewardscale
             state['posRewards'] += reward
         state['max_endTime'] = state['LBs'].max()
 
@@ -175,9 +178,12 @@ class JSSP:
 class JSSPGym(JSSP, gym.Env, EzPickle):
     def __init__(self, n_j, n_m):
         super().__init__(n_j, n_m)
+        low_bounds = np.tile(np.array([low, 0], dtype=np.float32), (self.number_of_tasks, 1))
+        high_bounds = np.tile(np.array([high, 1], dtype=np.float32), (self.number_of_tasks, 1))
         self.observation_space = gym.spaces.Dict(
-            {"adj_matrix": gym.spaces.Box(low=-1, high=1, shape=self.state['adj_matrix'].shape, dtype=np.float32),
-             "features": gym.spaces.Box(low=-1, high=1, shape=self.state['features'].shape, dtype=np.float32)})
+            {"adj_matrix": gym.spaces.MultiBinary(n=self.state['adj_matrix'].shape),
+             "features": gym.spaces.Box(low=low_bounds, high=high_bounds,
+                                        shape=self.state['features'].shape, dtype=np.float32)})
         self.action_space = gym.spaces.Discrete(self.number_of_tasks)
 
     def reset(self):
@@ -227,7 +233,7 @@ def calEndTimeLB(temp1, dur_cp):
 
 def getActionNbghs(action, opIDsOnMchs):
     """
-    Finds a given action's predecessor and successor on the machine where the action is carried out (?)
+    Finds a given action's predecessor and successor on the machine where the action is carried out
     :param action
     :param opIDsOnMchs:
     :returns: action's predecessor and successor

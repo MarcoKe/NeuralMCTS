@@ -1,5 +1,6 @@
-from envs.param_parser import configs
 import numpy as np
+
+high = 99  # duration upper bound TODO take from arguments
 
 
 def permissibleLeftShift(a, durMat, mchMat, mchsStartTimes, opIDsOnMchs):
@@ -35,7 +36,7 @@ def permissibleLeftShift(a, durMat, mchMat, mchsStartTimes, opIDsOnMchs):
 def putInTheEnd(a, jobRdyTime_a, mchRdyTime_a, startTimesForMchOfa, opsIDsForMchOfa):
     # index = first position of -config.high in startTimesForMchOfa
     # print('Yes!OK!')
-    index = np.where(startTimesForMchOfa == -configs.high)[0][0]
+    index = np.where(startTimesForMchOfa == -high)[0][0]
     startTime_a = max(jobRdyTime_a, mchRdyTime_a)
     startTimesForMchOfa[index] = startTime_a
     opsIDsForMchOfa[index] = a  # modifies opIDsOnMchs
@@ -122,7 +123,7 @@ if __name__ == "__main__":
     print()
 
     # start time of operations on machines
-    mchsStartTimes = -configs.high * np.ones_like(data[0].transpose(), dtype=np.int32)
+    mchsStartTimes = -high * np.ones_like(data[0].transpose(), dtype=np.int32)
     # Ops ID on machines
     opIDsOnMchs = -n_j * np.ones_like(data[0].transpose(), dtype=np.int32)
 
