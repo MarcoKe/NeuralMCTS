@@ -56,6 +56,7 @@ class RandomJSPGeneratorOperationDistirbution(JSPGenerator):
     
     def generate(self, operation_distribution: List):
         assert len(operation_distribution) <= self.pool_size, "The size of the operation_distribution list does not match the pool_size."
+        assert self.num_operations*self.max_op_duration >= len(operation_distribution), "Not possible to generate unique operations list with given num_operations and max_op_duration"
 
         # make sure that the random operations are unique
         
