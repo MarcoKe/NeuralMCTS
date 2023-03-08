@@ -7,7 +7,7 @@ Operation = namedtuple("Operation", ["job_id", "op_id", "machine_type", "duratio
 
 class JSPInstance:
     def __init__(self, jobs: List, num_ops_per_job: int=None, max_op_time: int=None,
-                 id: str=None, opt_time: float=None):
+                 id: str=None, opt_time: float=None, calculate_opt_time=True):
         self.jobs = jobs
         self.num_jobs = len(jobs)
         self.num_ops_per_job = num_ops_per_job #todo infer if not given
@@ -16,7 +16,7 @@ class JSPInstance:
 
         if opt_time:
             self.opt_time = opt_time
-        else:
+        elif calculate_opt_time:
             self.opt_time = JSPSolver().solve_from_job_list(jobs)
 
         all_operations = collect_all_operations(jobs)
