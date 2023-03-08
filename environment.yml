@@ -15,5 +15,6 @@ dependencies:
       - multiprocess
       - scipy
       - ortools
+      - protobuf==3.20.0
   - tensorboard
 
