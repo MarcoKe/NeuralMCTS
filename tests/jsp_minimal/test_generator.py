@@ -1,4 +1,5 @@
-from envs.minimal_jsp_env.util.jsp_generation.random_generator import RandomJSPGeneratorOperationDistirbution
+from envs.minimal_jsp_env.util.jsp_generation.random_generator import RandomJSPGeneratorOperationDistirbution, RandomJSPGenerator
+from envs.minimal_jsp_env.util.jsp_solver import JSPSolver
 
 
 def test_min_entropy():
@@ -28,3 +29,9 @@ def test_6x6_entropies():
         entropy_distribution = eval(f"entropy0_{entropy_val}")
         instance = RandomJSPGeneratorOperationDistirbution(num_jobs=6, num_operations=6, max_op_duration=9).generate(entropy_distribution)
         assert abs(instance.relative_entropy-0.1*entropy_val)<=0.05
+
+def test_jsp_solver():
+
+    instance = RandomJSPGenerator(num_jobs=6, num_operations=6, max_op_duration=9).generate()
+    
+    assert type(instance.opt_time) == int or type(instance.opt_time) == float

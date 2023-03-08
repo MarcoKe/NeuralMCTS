@@ -1,25 +1,9 @@
 from collections import namedtuple
 from typing import List
 from envs.minimal_jsp_env.util.jsp_solver import JSPSolver
-
-from scipy.stats import entropy
-from collections import Counter
+from envs.minimal_jsp_env.util.jsp_generation.entropy_functions import calculate_entropy_from_operations_list, collect_all_operations
 
 Operation = namedtuple("Operation", ["job_id", "op_id", "machine_type", "duration"])
-
-def calculate_entropy_from_operations_list(operation_types: List) -> float:
-    counts = Counter(operation_types)
-    probabilities = [count/len(operation_types) for count in counts.values()]
-    entropy_val = entropy(probabilities)
-    return entropy_val
-
-def collect_all_operations(jobs: List[List[Operation]]) -> List[tuple]:
-    all_operations = []
-    for job in jobs:
-        job_operations = [(i.machine_type, i.duration) for i in job]
-        all_operations += job_operations
-    return all_operations
-
 
 class JSPInstance:
     def __init__(self, jobs: List, num_ops_per_job: int=None, max_op_time: int=None,
@@ -33,7 +17,7 @@ class JSPInstance:
         if opt_time:
             self.opt_time = opt_time
         else:
-            self.opt_time = JSPSolver().solve(jobs)
+            self.opt_time = JSPSolver().solve_from_job_list(jobs)
 
         all_operations = collect_all_operations(jobs)
         total_entropy = calculate_entropy_from_operations_list(all_operations)
