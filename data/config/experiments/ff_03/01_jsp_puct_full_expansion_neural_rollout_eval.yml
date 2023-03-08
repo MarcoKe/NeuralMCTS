@@ -1,4 +1,4 @@
 name: jsp_puct_full_expansion_neural_rollout_eval
 env: jsp_minimal_001
-agent: puct_full_expansion_neural_rollout_eval
+agent: ff_03/puct_full_expansion_neural_rollout_eval
 policy_improvement_iterations: 250
