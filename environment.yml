@@ -14,5 +14,6 @@ dependencies:
       - python-tsp
       - multiprocess
       - scipy
+      - ortools
   - tensorboard
 
