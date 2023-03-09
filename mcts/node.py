@@ -29,12 +29,15 @@ class Node:
     def has_parent(self):
         return self.parent is not None
 
+    def value(self):
+        return self.returns / self.visits
+
     def select_best_action(self, mode='mean'):
         best_action, best_value = 0, -math.inf
         for c in self.children:
             if c.visits > 0:
                 if mode == 'mean':
-                    val = c.returns / c.visits
+                    val = self.value()
                 else:
                     val = c.max_return
                 if val > best_value:

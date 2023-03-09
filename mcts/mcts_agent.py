@@ -29,6 +29,15 @@ class MCTSAgent:
         self.evaluate_leaf_children = evaluate_leaf_children   # if False, apply evaluation policy to encountered leaf. If True, apply evaluation policy to expanded children of leaf
         self.value_initialization = value_initialization  # this only matters if evaluate_leaf_children is False
         self.initialize_tree = initialize_tree  # whether to populate tree with greedy neural net rollout
+
+    def init_prior(self, action_probs, new_children, s):
+        if torch.is_tensor(action_probs) or action_probs:
+            for i, c in enumerate(new_children):
+                c.prior_prob = action_probs[i]
+        else:
+            self.tree_policy.exploration_term.init_prior(new_children, state=copy.deepcopy(s), env=self.env,
+                                                         neural_net=self.neural_net)
+
     def init_tree(self, n, s):
         """
         create a path from the root of the tree to a terminal node by greedily choosing nodes with the learned policy
@@ -44,13 +53,19 @@ class MCTSAgent:
             children_state_values = self.neural_net.state_values(
                 [self.env.observation(self.model.step(s, c.action)[0]) for c in new_children])
 
+            self.init_prior(action_probs, new_children, s)
             max_prior = -math.inf
             best_child = None
             for i, c in enumerate(new_children):
-                c.prior_prob = action_probs[i]
                 c.update(
                     children_state_values[i][0])  # maybe create a class to define how new children are initialized?
-                if c.prior_prob > max_prior:
+
+                if not c.prior_prob:  # this is ugly: if there are no prior probs, we just use the values instead
+                    if c.value() > max_prior:
+                        max_prior = c.value()
+                        best_child = c
+
+                elif c.prior_prob > max_prior:
                     max_prior = c.prior_prob
                     best_child = c
 
@@ -144,12 +159,7 @@ class MCTSAgent:
                                                                         neural_net=neural_net)
             self.backpropagation_phase(n, state_value)
 
-            if torch.is_tensor(action_probs) or action_probs:
-                for i, c in enumerate(new_children):
-                    c.prior_prob = action_probs[i]
-            else:
-                self.tree_policy.exploration_term.init_prior(new_children, state=copy.deepcopy(s), env=self.env,
-                                                             neural_net=neural_net)
+            self.init_prior(action_probs, new_children, s)
 
             if self.value_initialization:
                 children_state_values = neural_net.state_values(
