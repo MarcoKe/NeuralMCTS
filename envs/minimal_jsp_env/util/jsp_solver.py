@@ -14,7 +14,6 @@ class JSPSolverFactory(ObjectFactory):
 
 
 class JSPSolver(Solver):
-       
     def solve_from_job_list(self, job_list: List):
         # Getting job format compatible with Google OR input
         google_or_instance_format = []
@@ -25,13 +24,11 @@ class JSPSolver(Solver):
         opt_time = self._solve_jsp(google_or_instance_format)
         return opt_time
     
-    def solve(instance):
-
+    def solve(self, instance):
         if instance.opt_time:
             return instance.opt_time
         else:
-            return solve_from_job_list(instance.jobs)
-        
+            return self.solve_from_job_list(instance.jobs)
 
     @staticmethod
     def _solve_jsp(jobs_data, max_time_in_seconds=7200, verbose=False):
