@@ -7,5 +7,5 @@ class ActionSpaceFactory(ObjectFactory):
         return self.create(key, **kwargs)
 
 
-action_spaces = ActionSpaceFactory()
-action_spaces.register_builder('naive', NaiveActionSpace)
+gnn_action_spaces = ActionSpaceFactory()
+gnn_action_spaces.register_builder('naive', NaiveActionSpace)

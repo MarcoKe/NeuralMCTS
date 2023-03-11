@@ -1,5 +1,5 @@
 from envs.gnn_jsp_env.util.jsp_generation.jsp_generator import JSPGenerator
-from envs.gnn_jsp_env.jsp_model import JobShopModel, init_adj_matrix, init_features
+from envs.gnn_jsp_env.jsp_model import GNNJobShopModel
 import gym
 import numpy as np
 from copy import deepcopy
@@ -10,10 +10,10 @@ et_normalize_coef = 1000  # normalizing constant for feature LBs (end time), nor
 rewardscale = 0.  # reward scale for positive rewards
 
 
-class JobShopEnv(gym.Env):
+class GNNJobShopEnv(gym.Env):
     def __init__(self, instance_generator: JSPGenerator, **kwargs):
         self.jsp_generator = instance_generator
-        self.model = JobShopModel()
+        self.model = GNNJobShopModel()
 
         self.reset()
 
@@ -42,8 +42,8 @@ class JobShopEnv(gym.Env):
         # scheduled and 0 otherwise
         end_times = np.zeros_like(machine_start_times)
 
-        adj_matrix = init_adj_matrix(self.num_ops, self.num_jobs)
-        features = init_features(self.instance.jobs)
+        adj_matrix = self.model.init_adj_matrix(self.num_ops, self.num_jobs)
+        features = self.model.init_features(self.instance.jobs)
         schedule = [[] for _ in range(self.num_machines)]
         remaining_ops = deepcopy(self.instance.jobs)
 

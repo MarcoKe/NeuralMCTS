@@ -6,5 +6,5 @@ class ObservationSpaceFactory(ObjectFactory):
         return self.create(key, **kwargs)
 
 
-observation_spaces = ObservationSpaceFactory()
-observation_spaces.register_builder('naive', NaiveObservationSpace)
+gnn_observation_spaces = ObservationSpaceFactory()
+gnn_observation_spaces.register_builder('naive', NaiveObservationSpace)
