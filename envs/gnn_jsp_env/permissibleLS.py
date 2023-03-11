@@ -1,6 +1,6 @@
 import numpy as np
 
-high = 99  # duration upper bound TODO take from arguments
+high = 9  # duration upper bound TODO take from arguments
 
 
 def permissibleLeftShift(a, durMat, mchMat, mchsStartTimes, opIDsOnMchs):

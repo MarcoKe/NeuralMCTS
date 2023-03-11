@@ -3,8 +3,8 @@ import numpy as np
 from gym.utils import EzPickle
 from envs.gnn_jsp_env.permissibleLS import permissibleLeftShift
 
-# Parameters previoulsy taken from the param_parser TODO take from arguments
-high = 99  # duration upper bound
+# Parameters previously taken from the param_parser TODO take from arguments
+high = 9  # duration upper bound
 low = 1  # duration lower bound
 init_quality_flag = False  # flag of whether init state quality is 0, True for 0
 et_normalize_coef = 1000  # normalizing constant for feature LBs (end time), normalization way: fea/constant
@@ -19,9 +19,9 @@ class JSSP:
         self.number_of_jobs = n_j
         self.number_of_machines = n_m
         self.number_of_tasks = self.number_of_jobs * self.number_of_machines
-        # the task id for first column (array containing the first tasks for each job)
+        # task ids for first column (array containing the first tasks for each job)
         self.first_col = np.arange(start=0, stop=self.number_of_tasks, step=1).reshape(self.number_of_jobs, -1)[:, 0]
-        # the task id for last column (array containing the last tasks for each job)
+        # task ids for last column (array containing the last tasks for each job)
         self.last_col = np.arange(start=0, stop=self.number_of_tasks, step=1).reshape(self.number_of_jobs, -1)[:, -1]
         self.getEndTimeLB = calEndTimeLB  # function calculating the end time lower bounds for all operations
         self.getNghbs = getActionNbghs  # function returning the action's predecessor and successor
@@ -43,8 +43,8 @@ class JSSP:
         posRewards = 0
 
         # initialize adj matrix
-        # np array with 1s on the row above the main diagonal and 0s everywhere else
         # conjunctive arcs showing precedence relations between tasks of the same job
+        # np array with 1s on the row above the main diagonal and 0s everywhere else
         conj_nei_up_stream = np.eye(self.number_of_tasks, k=-1, dtype=np.single)
         # np array with 1s on the row below the main diagonal and 0s everywhere else
         conj_nei_low_stream = np.eye(self.number_of_tasks, k=1, dtype=np.single)
@@ -68,7 +68,7 @@ class JSSP:
         # initialize feasible omega (the next operations for each job)
         omega = self.first_col.astype(np.int64)
 
-        # initialize mask (indicates whether an operation of a job have been scheduled or not)
+        # initialize mask (indicates whether all operations of a job have been scheduled or not)
         mask = np.full(shape=self.number_of_jobs, fill_value=0, dtype=bool)
 
         # start time of operations on machines
@@ -87,7 +87,7 @@ class JSSP:
         return self.state
 
     def step(self, state, action):
-        # action is a int 0 - 224 for 15x15 for example
+        # action is an int 0 - 224 for 15x15 for example
         # redundant action makes no effect
         if action in self.legal_actions(state):
 
@@ -123,7 +123,8 @@ class JSSP:
                 state['adj_matrix'][action, action - 1] = 1
             state['adj_matrix'][action, precd] = 1
             state['adj_matrix'][succd, action] = 1
-            if flag and precd != action and succd != action:  # Remove the old arc when a new operation inserts between two operations
+            # remove the old arc when a new operation inserts between two operations
+            if flag and precd != action and succd != action:
                 state['adj_matrix'][succd, precd] = 0
 
         # prepare for return
@@ -207,6 +208,7 @@ def lastNonZero(arr, axis, invalid_val=-1):
     :returns: the indices of the last non-zero element
     """
     mask = arr != 0
+    # array containing the indices of the last non-zero elements for each axis
     val = arr.shape[axis] - np.flip(mask, axis=axis).argmax(axis=axis) - 1
     yAxis = np.where(mask.any(axis=axis), val, invalid_val)
     xAxis = np.arange(arr.shape[0], dtype=np.int64)
