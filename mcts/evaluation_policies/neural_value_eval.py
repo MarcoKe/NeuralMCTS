@@ -8,5 +8,10 @@ class NeuralValueEvalPolicy(EvaluationPolicy):
 
         return state_value, action_probs
 
+    def evaluate_multiple(self, states, neural_net=None, model=None, env=None):
+        state_values = neural_net.state_values([env.observation(s) for s in states])
+        state_values = [v[0] for v in state_values]
+        return state_values, None
+
     def __str__(self):
         return "NVRoll"

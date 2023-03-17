@@ -25,7 +25,7 @@ def create_env(env_config):
     environment = env_factory.get(env_config['name'], **env_config['params'])
     environment = action_spaces.get(env_config['params']['action_space']['name'], env=environment)
     environment = reward_functions.get(env_config['params']['reward_function']['name'], env=environment)
-    environment = observation_spaces.get(env_config['params']['observation_space']['name'], env=environment) # this one needs to be last
+    environment = observation_spaces.get(env_config['params']['observation_space']['name'], env=environment) # this one needs to be last, do not change
     model = model_factory.get(env_config['name'], **env_config['params'])
     return environment, model
 
@@ -40,7 +40,11 @@ def create_agent(env, model, agent_config):
     tp = tree_policy_factory.get(agent_config['tree_policy']['name'], **agent_config['tree_policy']['params'])
     ep = expansion_policy_factory.get(agent_config['expansion_policy']['name'], **agent_config['expansion_policy']['params'])
     rp = eval_policy_factory.get(agent_config['eval_policy']['name'], **agent_config['eval_policy']['params'])
-    mcts_agent = MCTSAgent(env, model, tp, ep, rp, neural_net=neural_net, num_simulations=agent_config['num_simulations'])
+    mcts_agent = MCTSAgent(env, model, tp, ep, rp, neural_net=neural_net,
+                           num_simulations=agent_config['num_simulations'],
+                           evaluate_leaf_children=agent_config['evaluate_leaf_children'],
+                           value_initialization=agent_config['value_initialization'],
+                           initialize_tree=agent_config['initialize_tree'])
 
     return mcts_agent, model_free_agent
 
@@ -88,4 +92,4 @@ def setup_experiment(exp_name):
 
 if __name__ == '__main__':
     # setup_experiment("20230128_exp_001")
-    setup_experiment("jsp_test")
+    setup_experiment("jsp_001")
