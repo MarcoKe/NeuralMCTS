@@ -20,7 +20,7 @@ class GNNJobShopEnv(gym.Env):
     def _generate_instance(self):
         self.instance = self.jsp_generator.generate()
         self.ops_per_job = self.instance.num_ops_per_job
-        self.num_machines = self.instance.num_ops_per_job
+        self.num_machines = self.instance.num_machines
         self.max_op_duration = self.instance.max_op_time
         self.num_jobs = self.instance.num_jobs
         self.num_ops = self.num_jobs * self.ops_per_job
@@ -29,28 +29,28 @@ class GNNJobShopEnv(gym.Env):
         possible_next_ops = np.arange(start=0, stop=self.num_ops, step=1).reshape(self.num_jobs, -1)[:, 0].astype(
             np.int64)
         # boolean values indicating whether all operations of a job have been scheduled or not
-        mask = np.full(shape=self.num_jobs, fill_value=0, dtype=bool)  # TODO fix?
-        # start times of operations on each machine
-        machine_start_times = -1 * np.ones((self.ops_per_job, self.num_jobs), dtype=np.int32)
-        # operation IDs on each machine
-        machine_op_ids = -1 * np.ones((self.ops_per_job, self.num_jobs), dtype=np.int32)
+        mask = np.full(shape=self.num_jobs, fill_value=0, dtype=bool)
+        # number of operations scheduled on each machine
+        ops_per_machine = [len([op for job in self.instance.jobs for op in job if op.machine_type == m]) for m in
+                           range(self.num_machines)]
+        # information for each machine: the ids of the operations scheduled on it (in the scheduled order), and the
+        # corresponding start and end times
+        machine_infos = {m: {'op_ids': -1 * np.ones(ops_per_machine[m], dtype=np.int32),
+                             'start_times': -1 * np.ones(ops_per_machine[m], dtype=np.int32),
+                             'end_times': -1 * np.ones(ops_per_machine[m], dtype=np.int32)} for m in range(self.num_machines)}
         # time at which the last scheduled operation ends for each job
         last_job_ops = [-1 for _ in range(self.num_jobs)]
         # time at which the last scheduled operation ends on each machine
         last_machine_ops = [-1 for _ in range(self.num_machines)]
-        # 2D array with the same shape as the instance jobs, containing operations' end times if they are already
-        # scheduled and 0 otherwise
-        end_times = np.zeros_like(machine_start_times)
 
         adj_matrix = self.model.init_adj_matrix(self.num_ops, self.num_jobs)
         features = self.model.init_features(self.instance.jobs)
         schedule = [[] for _ in range(self.num_machines)]
-        remaining_ops = deepcopy(self.instance.jobs)
+        remaining_ops = [op for job in deepcopy(self.instance.jobs) for op in job]  # flatten jobs
 
-        return {'remaining_ops': remaining_ops, 'schedule': schedule, 'end_times': end_times,
+        return {'remaining_ops': remaining_ops, 'schedule': schedule, 'machine_infos': machine_infos,
                 'last_job_ops': last_job_ops, 'last_mch_ops': last_machine_ops, 'adj_matrix': adj_matrix,
-                'features': features, 'possible_next_ops': possible_next_ops, 'mask': mask, 'jobs': self.instance.jobs,
-                'machine_start_times': machine_start_times, 'machine_op_ids': machine_op_ids}
+                'features': features, 'possible_next_ops': possible_next_ops, 'mask': mask, 'jobs': self.instance.jobs}
 
     def reset(self):
         self.done = False
@@ -66,7 +66,7 @@ class GNNJobShopEnv(gym.Env):
     def step(self, action):
         self.state, reward, self.done = self.model.step(self.state, action)
 
-        return self.state, reward, self.done, {}
+        return self.state, reward, self.done, dict()
 
     def render(self):
         pass

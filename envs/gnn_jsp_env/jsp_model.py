@@ -2,7 +2,7 @@ from copy import deepcopy
 from envs.model import Model
 from envs.gnn_jsp_env.entities import Operation
 from envs.gnn_jsp_env.scheduling_utils import get_legal_pos, put_in_the_end, put_in_between, get_op_nbghs, \
-    get_end_time_lbs, get_first_col, get_last_col
+    get_end_time_lbs, get_first_col, get_last_col, get_op_by_id
 import numpy as np
 import random
 
@@ -17,11 +17,12 @@ class GNNJobShopModel(Model):
     @staticmethod
     def random_problem(num_jobs, num_ops_per_job, num_machines, max_duration=10):
         remaining_operations = []
-        for j in range(num_jobs):
+        id = 0
+        for i in range(num_jobs):
             job = []
-            for m in range(num_ops_per_job):
-                job.append(Operation(j, m, random.randint(0, num_machines - 1), random.randint(0, max_duration - 1)))
-                # -> TODO op_ids not unique!
+            for j in range(num_ops_per_job):
+                job.append(Operation(i, id, random.randint(0, num_machines - 1), random.randint(0, max_duration - 1)))
+                id += 1
 
             remaining_operations.append(job)
 
@@ -32,38 +33,38 @@ class GNNJobShopModel(Model):
         # possible operations to choose from next for each job (initialize with the first tasks for each job)
         possible_next_ops = np.arange(start=0, stop=num_ops, step=1).reshape(num_jobs, -1)[:, 0].astype(np.int64)
         # boolean values indicating whether all operations of a job have been scheduled or not
-        mask = np.full(shape=num_jobs, fill_value=0, dtype=bool)  # TODO fix?
-        # start times of operations on each machine
-        machine_start_times = -1 * np.ones((num_ops_per_job, num_jobs), dtype=np.int32)
-        # operation IDs on each machine
-        machine_op_ids = -1 * np.ones((num_ops_per_job, num_jobs), dtype=np.int32)
+        mask = np.full(shape=num_jobs, fill_value=0, dtype=bool)
+        # number of operations scheduled on each machine
+        ops_per_machine = [len([op for job in remaining_operations for op in job if op.machine_type == m]) for m in
+                           range(num_machines)]
+        # information for each machine: the ids of the operations scheduled on it (in the scheduled order), and the
+        # corresponding start and end times
+        machine_infos = {m: {'op_ids': -1 * np.ones(ops_per_machine[m], dtype=np.int32),
+                             'start_times': -1 * np.ones(ops_per_machine[m], dtype=np.int32),
+                             'end_times': -1 * np.ones(ops_per_machine[m], dtype=np.int32)} for m in range(num_machines)}
         # time at which the last scheduled operation ends for each job
         last_job_ops = [-1 for _ in range(num_jobs)]
         # time at which the last scheduled operation ends on each machine
         last_machine_ops = [-1 for _ in range(num_machines)]
-        # 2D array with the same shape as the instance jobs, containing operations' end times if they are already
-        # scheduled and 0 otherwise
-        end_times = np.zeros_like(machine_start_times)
 
         adj_matrix = GNNJobShopModel.init_adj_matrix(num_ops, num_jobs)
         features = GNNJobShopModel.init_features(remaining_operations)
         jobs = deepcopy(remaining_operations)
 
-        return {'remaining_ops': remaining_operations, 'schedule': schedule, 'end_times': end_times,
+        return {'remaining_ops': remaining_operations, 'schedule': schedule, 'machine_infos': machine_infos,
                 'last_job_ops': last_job_ops, 'last_mch_ops': last_machine_ops, 'adj_matrix': adj_matrix,
-                'features': features, 'possible_next_ops': possible_next_ops, 'mask': mask, 'jobs': jobs,
-                'machine_start_times': machine_start_times, 'machine_op_ids': machine_op_ids}
+                'features': features, 'possible_next_ops': possible_next_ops, 'mask': mask, 'jobs': jobs}
 
     @staticmethod
-    def _schedule_op(job_id, state):
+    def _schedule_op(op_id, state):
         possible = False
 
-        if len(state['remaining_ops'][job_id]) > 0 \
-                and job_id in GNNJobShopModel._legal_actions(state['possible_next_ops'], state['mask']):
-            op = state['remaining_ops'][job_id].pop(0)
+        legal_actions = GNNJobShopModel._legal_actions(state['possible_next_ops'], state['mask'])
+        if len(state['remaining_ops']) > 0 and op_id in legal_actions:
+            op = get_op_by_id(op_id, state['remaining_ops'])
+            state['remaining_ops'].remove(op)
             start_time, flag = GNNJobShopModel._determine_start_time(op, state['schedule'], state['last_job_ops'],
-                                                                     state['last_mch_ops'], state['machine_op_ids'],
-                                                                     state['machine_start_times'])
+                                                                     state['last_mch_ops'], state['machine_infos'])
             # insert the operation at the correct position so that the entries remain sorted according to start_time
             state['schedule'][op.machine_type].append((op, start_time, start_time + op.duration))
             state['schedule'][op.machine_type] = sorted(state['schedule'][op.machine_type], key=lambda x: x[1])
@@ -82,7 +83,7 @@ class GNNJobShopModel(Model):
 
     @staticmethod
     def _update_adj_matrix(state, op, flag):
-        precd, succd = get_op_nbghs(op, state['machine_op_ids'])
+        precd, succd = get_op_nbghs(op, state['machine_infos'])
         state['adj_matrix'][op.op_id] = 0
         state['adj_matrix'][op.op_id, op.op_id] = 1
         state['adj_matrix'][op.op_id, precd] = 1
@@ -95,24 +96,28 @@ class GNNJobShopModel(Model):
 
     @staticmethod
     def _update_features(state, op):
-        if op not in get_last_col(state):  # TODO fix warning
-            state['possible_next_ops'][op.op_id // len(state['last_mch_ops'])] += 1
+        last_col = get_last_col(state)
+        if op.op_id not in last_col:
+            state['possible_next_ops'][op.op_id // len(state['last_mch_ops'])] += 1  # len(last_mch_ops) = num_machines
         else:
             state['mask'][op.op_id // len(state['last_mch_ops'])] = 1
-        lower_bounds = get_end_time_lbs(state['jobs'], state['end_times'])
+
+        lower_bounds = get_end_time_lbs(state['jobs'], state['machine_infos'])
         finished = np.array([f[1] if f[0] != op.op_id else 1 for f in state['features']])
         state['features'] = np.concatenate((lower_bounds.reshape(-1, 1) / et_normalize_coef,
                                             finished.reshape(-1, 1)), axis=1)
 
     @staticmethod
-    def _determine_start_time(op: Operation, schedule, last_job_ops, last_mch_ops, machine_op_ids,
-                              machine_start_times):
+    def _determine_start_time(op: Operation, schedule, last_job_ops, last_mch_ops, machine_infos):
         job_ready_time = last_job_ops[op.job_id] if last_job_ops[op.job_id] != -1 else 0
         mch_ready_time = last_mch_ops[op.machine_type] if last_mch_ops[op.machine_type] != -1 else 0
-        # start times of the operations scheduled on the same machine
-        start_times = machine_start_times[op.machine_type]
+        mch_schedule = schedule[op.machine_type]
         # ids of the operations scheduled on the same machine
-        op_ids = machine_op_ids[op.machine_type]
+        op_ids = machine_infos[op.machine_type]['op_ids']
+        # start times of the operations scheduled on the same machine
+        start_times = machine_infos[op.machine_type]['start_times']
+        # start times of the operations scheduled on the same machine
+        end_times = machine_infos[op.machine_type]['end_times']
         # whether the operation is scheduled in the end (False) or between already scheduled operations (True)
         flag = False
 
@@ -121,19 +126,18 @@ class GNNJobShopModel(Model):
 
         if len(possible_pos) == 0:
             # not possible to schedule the operation between other operations -> put in the end
-            op_start_time = put_in_the_end(op, job_ready_time, mch_ready_time, start_times, op_ids)
+            op_start_time = put_in_the_end(op, job_ready_time, mch_ready_time, op_ids, start_times, end_times)
         else:
             # positions which fit the length of the operation (there is enough time before the next operation)
             legal_pos_idx, legal_pos, possible_pos_end_times = get_legal_pos(op.duration, job_ready_time,
-                                                                                              schedule, possible_pos,
-                                                                                              start_times, op_ids)
+                                                                             possible_pos, start_times, end_times)
             if len(legal_pos) == 0:
                 # no position which can fit the operation -> put in the end
-                op_start_time = put_in_the_end(op, job_ready_time, mch_ready_time, start_times, op_ids)
+                op_start_time = put_in_the_end(op, job_ready_time, mch_ready_time, op_ids, start_times, end_times)
             else:
                 # schedule the operation between other operations
                 op_start_time = put_in_between(op, legal_pos_idx, legal_pos, possible_pos_end_times,
-                                                                start_times, op_ids)
+                                               op_ids, start_times, end_times)
                 flag = True
 
         return op_start_time, flag
@@ -220,7 +224,6 @@ class GNNJobShopModel(Model):
 
 if __name__ == '__main__':
     model = GNNJobShopModel()
-
 
     # import time
     # start_time = time.time()

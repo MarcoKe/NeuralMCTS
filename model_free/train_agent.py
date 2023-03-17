@@ -13,7 +13,7 @@ from gnn_feature_extractor import GNNExtractor
 
 
 # env = JSSPGym(n_j=2, n_m=2)
-generator = SingleInstanceRandomGenerator(num_jobs=2, num_operations=2)
+generator = SingleInstanceRandomGenerator(num_jobs=2, num_operations=2, num_machines=2)
 env = OptimalityGapReward(NaiveActionSpace(NaiveObservationSpace(GNNJobShopEnv(generator))))
 
 feature_extractor_kwargs = dict(num_layers=3, num_mlp_layers=2,
@@ -30,7 +30,8 @@ model.save("ppo_jsp_2x2_gnn.zip")
 # env = OptimalityGapReward(NaiveActionSpace(NaiveObservationSpace(JobShopEnv(generator))))
 #
 # policy_kwargs = dict(activation_fn=torch.nn.modules.activation.Mish)
-# model = PPO("MlpPolicy", env, verbose=1, tensorboard_log="results/tensorboard/stb3_jssp_tensorboard/", policy_kwargs=policy_kwargs, ent_coef=0.05)
+# model = PPO("MlpPolicy", env, verbose=1, tensorboard_log="results/tensorboard/stb3_jssp_tensorboard/",
+#             policy_kwargs=policy_kwargs, ent_coef=0.05)
 # model.learn(total_timesteps=3_000_000)
 # model.save("ppo_jssp_2x2.zip")
 
