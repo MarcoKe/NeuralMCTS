@@ -46,7 +46,7 @@ class GNNJobShopEnv(gym.Env):
         adj_matrix = self.model.init_adj_matrix(self.num_ops, self.num_jobs)
         features = self.model.init_features(self.instance.jobs)
         schedule = [[] for _ in range(self.num_machines)]
-        remaining_ops = [op for job in deepcopy(self.instance.jobs) for op in job]  # flatten jobs
+        remaining_ops = [job for job in deepcopy(self.instance.jobs)]
 
         return {'remaining_ops': remaining_ops, 'schedule': schedule, 'machine_infos': machine_infos,
                 'last_job_ops': last_job_ops, 'last_mch_ops': last_machine_ops, 'adj_matrix': adj_matrix,

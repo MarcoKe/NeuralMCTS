@@ -1,13 +1,5 @@
 from copy import deepcopy
-
 import numpy as np
-
-
-def get_op_by_id(op_id, ops):
-    for op in ops:
-        if op.op_id == op_id:
-            return op
-    raise ValueError("There is no operation with the given id:", op_id)
 
 
 def get_legal_pos(op_dur, job_ready_time, possible_pos, start_times, end_times):
