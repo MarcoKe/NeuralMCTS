@@ -4,6 +4,10 @@ from stable_baselines3 import PPO
 from envs.minimal_jsp_env.jsp_model import JobShopModel
 from envs.gnn_jsp_env.reward_functions.opt_gap import OptimalityGapReward
 from envs.tsp.TSP import TSPGym
+from envs.minimal_jsp_env.jsp_env import JobShopEnv
+from envs.minimal_jsp_env.action_spaces.naive import NaiveActionSpace
+from envs.minimal_jsp_env.observation_spaces.naive import NaiveObservationSpace
+from envs.minimal_jsp_env.util.jsp_generation.single_instance_generator import SingleInstanceRandomGenerator
 from envs.gnn_jsp_env.jsp_env import GNNJobShopEnv
 from envs.gnn_jsp_env.action_spaces.naive import NaiveActionSpace
 from envs.gnn_jsp_env.observation_spaces.naive import NaiveObservationSpace
@@ -23,7 +27,7 @@ policy_kwargs = dict(activation_fn=torch.nn.modules.activation.Mish,
                      features_extractor_kwargs=feature_extractor_kwargs)
 model = PPO("MultiInputPolicy", env, verbose=1, tensorboard_log="stb3_jssp_gnn_tensorboard/",
             policy_kwargs=policy_kwargs)
-model.learn(total_timesteps=5_000_000)
+model.learn(total_timesteps=3_000_000)
 model.save("ppo_jsp_2x2_gnn.zip")
 
 # generator = SingleInstanceRandomGenerator(num_jobs=2, num_operations=2)

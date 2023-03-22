@@ -1,5 +1,6 @@
 from collections import namedtuple
 from typing import List
+from envs.minimal_jsp_env.util.jsp_solver import JSPSolver
 
 Operation = namedtuple("Operation", ["job_id", "op_id", "machine_type", "duration"])
 
@@ -13,5 +14,5 @@ class JSPInstance:
         self.num_machines = num_machines
         self.max_op_time = max_op_time if max_op_time else max([op.duration for job in jobs for op in job])
         self.id = id
-        self.opt_time = opt_time
-
+        self.opt_time = opt_time if opt_time else JSPSolver().solve_from_job_list(jobs)
+        print("optimal time:", self.opt_time)

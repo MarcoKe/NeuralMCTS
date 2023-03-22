@@ -182,7 +182,7 @@ class JSSPGym(JSSP, gym.Env, EzPickle):
         low_bounds = np.tile(np.array([low, 0], dtype=np.float32), (self.number_of_tasks, 1))
         high_bounds = np.tile(np.array([high, 1], dtype=np.float32), (self.number_of_tasks, 1))
         self.observation_space = gym.spaces.Dict(
-            {"adj_matrix": gym.spaces.MultiBinary(n=self.state['adj_matrix'].shape),
+            {"adj_matrix": gym.spaces.Box(low=0, high=1, shape=self.state['adj_matrix'].shape, dtype=np.float32),
              "features": gym.spaces.Box(low=low_bounds, high=high_bounds,
                                         shape=self.state['features'].shape, dtype=np.float32)})
         self.action_space = gym.spaces.Discrete(self.number_of_tasks)

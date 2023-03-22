@@ -41,7 +41,8 @@ class GNNJobShopModel(Model):
         # corresponding start and end times
         machine_infos = {m: {'op_ids': -1 * np.ones(ops_per_machine[m], dtype=np.int32),
                              'start_times': -1 * np.ones(ops_per_machine[m], dtype=np.int32),
-                             'end_times': -1 * np.ones(ops_per_machine[m], dtype=np.int32)} for m in range(num_machines)}
+                             'end_times': -1 * np.ones(ops_per_machine[m], dtype=np.int32)} for m in
+                         range(num_machines)}
         # time at which the last scheduled operation ends for each job
         last_job_ops = [-1 for _ in range(num_jobs)]
         # time at which the last scheduled operation ends on each machine
@@ -177,6 +178,8 @@ class GNNJobShopModel(Model):
 
     @staticmethod
     def legal_actions(state):
+        print("legal actions:", [job_id for job_id in range(len(state['remaining_ops'])) if
+                                 len(state['remaining_ops'][job_id]) > 0])
         return [job_id for job_id in range(len(state['remaining_ops'])) if
                 len(state['remaining_ops'][job_id]) > 0]
 
