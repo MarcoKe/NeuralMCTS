@@ -17,7 +17,7 @@ from gnn_feature_extractor import GNNExtractor
 
 
 # env = JSSPGym(n_j=2, n_m=2)
-generator = SingleInstanceRandomGenerator(num_jobs=2, num_operations=2, num_machines=2)
+generator = SingleInstanceRandomGenerator(num_jobs=6, num_operations=6, num_machines=6)
 env = OptimalityGapReward(NaiveActionSpace(NaiveObservationSpace(GNNJobShopEnv(generator))))
 
 feature_extractor_kwargs = dict(num_layers=3, num_mlp_layers=2,
