@@ -1,5 +1,5 @@
 from util.object_factory import ObjectFactory
-from envs.gnn_jsp_env.observation_spaces.naive import NaiveObservationSpace
+from envs.gnn_jsp_env.observation_spaces.gnn import GNNObservationSpace
 
 class ObservationSpaceFactory(ObjectFactory):
     def get(self, key, **kwargs):
@@ -7,4 +7,4 @@ class ObservationSpaceFactory(ObjectFactory):
 
 
 gnn_observation_spaces = ObservationSpaceFactory()
-gnn_observation_spaces.register_builder('naive', NaiveObservationSpace)
+gnn_observation_spaces.register_builder('naive', GNNObservationSpace)

@@ -1,6 +1,6 @@
 import json
-from envs.minimal_jsp_env.util.jsp_conversion.converter import JSPReader
-from envs.minimal_jsp_env.entities import Operation, JSPInstance
+from envs.gnn_jsp_env.util.jsp_conversion.converter import JSPReader
+from envs.gnn_jsp_env.entities import Operation, JSPInstance
 
 
 class SamsonovReader(JSPReader):

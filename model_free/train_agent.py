@@ -9,16 +9,14 @@ from envs.minimal_jsp_env.action_spaces.naive import NaiveActionSpace
 from envs.minimal_jsp_env.observation_spaces.naive import NaiveObservationSpace
 from envs.minimal_jsp_env.util.jsp_generation.single_instance_generator import SingleInstanceRandomGenerator
 from envs.gnn_jsp_env.jsp_env import GNNJobShopEnv
-from envs.gnn_jsp_env.action_spaces.naive import NaiveActionSpace
-from envs.gnn_jsp_env.observation_spaces.naive import NaiveObservationSpace
+from envs.gnn_jsp_env.action_spaces.gnn import GNNActionSpace
+from envs.gnn_jsp_env.observation_spaces.gnn import GNNObservationSpace
 from envs.gnn_jsp_env.util.jsp_generation.single_instance_generator import SingleInstanceRandomGenerator
-from envs.gnn_jsp_env.JSSP import JSSPGym
 from gnn_feature_extractor import GNNExtractor
 
 
-# env = JSSPGym(n_j=2, n_m=2)
 generator = SingleInstanceRandomGenerator(num_jobs=6, num_operations=6, num_machines=6)
-env = OptimalityGapReward(NaiveActionSpace(NaiveObservationSpace(GNNJobShopEnv(generator))))
+env = OptimalityGapReward(GNNActionSpace(GNNObservationSpace(GNNJobShopEnv(generator))))
 
 feature_extractor_kwargs = dict(num_layers=3, num_mlp_layers=2,
                                 hidden_dim=64, graph_pool="avg")

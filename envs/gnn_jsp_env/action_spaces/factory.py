@@ -1,5 +1,5 @@
 from util.object_factory import ObjectFactory
-from envs.gnn_jsp_env.action_spaces.naive import NaiveActionSpace
+from envs.gnn_jsp_env.action_spaces.gnn import GNNActionSpace
 
 
 class ActionSpaceFactory(ObjectFactory):
@@ -8,4 +8,4 @@ class ActionSpaceFactory(ObjectFactory):
 
 
 gnn_action_spaces = ActionSpaceFactory()
-gnn_action_spaces.register_builder('naive', NaiveActionSpace)
+gnn_action_spaces.register_builder('naive', GNNActionSpace)
