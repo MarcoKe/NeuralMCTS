@@ -92,4 +92,4 @@ def setup_experiment(exp_name):
 
 if __name__ == '__main__':
     # setup_experiment("20230128_exp_001")
-    setup_experiment("jsp_001")
+    setup_experiment("jsp_test")
