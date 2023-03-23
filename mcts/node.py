@@ -37,7 +37,7 @@ class Node:
         for c in self.children:
             if c.visits > 0:
                 if mode == 'mean':
-                    val = self.value()
+                    val = c.value()
                 else:
                     val = c.max_return
                 if val > best_value:
