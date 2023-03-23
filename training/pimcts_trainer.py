@@ -75,7 +75,7 @@ class MCTSPolicyImprovementTrainer:
         will still be used for neural net training, however.
         """
         tree_policy = tree_policy_factory.get('uct', **{'exploitation': {'name': 'avg_node_value', 'params': {}},
-                                                      'exploration': {'name': 'puct', 'params': {'exploration_constant': 1}}})
+                                                      'exploration': {'name': 'uct', 'params': {'exploration_constant': 1}}})
         expansion_policy = expansion_policy_factory.get('full_expansion')
         evaluation_policy = eval_policy_factory.get('random')
 
@@ -87,8 +87,8 @@ class MCTSPolicyImprovementTrainer:
                          neural_net=self.guided_mcts_agent.neural_net,
                          num_simulations=self.guided_mcts_agent.num_simulations,
                          evaluate_leaf_children=self.guided_mcts_agent.evaluate_leaf_children,
-                         value_initialization=self.guided_mcts_agent.value_initialization,
-                         initialize_tree=self.guided_mcts_agent.initialize_tree)
+                         value_initialization=False,
+                         initialize_tree=False)
 
     @staticmethod
     def mcts_policy_improvement_loss(pi_mcts, pi_theta, v_mcts, v_theta):
