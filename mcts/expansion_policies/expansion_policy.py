@@ -11,4 +11,7 @@ class ExpansionPolicy:
 
         return new_children
 
+    def __str__(self):
+        return "FullExp"
+
 
