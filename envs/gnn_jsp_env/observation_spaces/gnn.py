@@ -2,7 +2,7 @@ import gym
 import numpy as np
 
 # Parameters previously taken from the param_parser TODO take from arguments
-high = 9  # duration upper bound
+high = 11  # duration upper bound
 low = 1  # duration lower bound
 
 

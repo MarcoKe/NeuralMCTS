@@ -1,0 +1,4 @@
+name: gnn_test
+env: jsp_gnn_001
+agent: mcts_from_scratch_gnn_001
+policy_improvement_iterations: 1

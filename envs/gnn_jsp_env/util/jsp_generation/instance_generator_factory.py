@@ -9,9 +9,9 @@ class InstanceGeneratorFactory(ObjectFactory):
         return self.create(key, **kwargs)
 
 
-jsp_generators = InstanceGeneratorFactory()
-jsp_generators.register_builder('random', RandomJSPGenerator)
-jsp_generators.register_builder('single', SingleInstanceGenerator)
-jsp_generators.register_builder('multiple', MultipleInstanceGenerator)
+gnn_generators = InstanceGeneratorFactory()
+gnn_generators.register_builder('random', RandomJSPGenerator)
+gnn_generators.register_builder('single', SingleInstanceGenerator)
+gnn_generators.register_builder('multiple', MultipleInstanceGenerator)
 
 

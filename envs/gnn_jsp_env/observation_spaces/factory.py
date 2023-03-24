@@ -7,4 +7,4 @@ class ObservationSpaceFactory(ObjectFactory):
 
 
 gnn_observation_spaces = ObservationSpaceFactory()
-gnn_observation_spaces.register_builder('naive', GNNObservationSpace)
+gnn_observation_spaces.register_builder('gnn', GNNObservationSpace)

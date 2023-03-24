@@ -14,6 +14,7 @@ from envs.tsp.observation_spaces.factory import observation_spaces as tsp_observ
 from envs.tsp.action_spaces.factory import action_spaces as tsp_action_spaces
 from envs.tsp.reward_functions.factory import reward_functions as tsp_reward_functions
 from envs.minimal_jsp_env.util.jsp_generation.instance_generator_factory import jsp_generators
+from envs.gnn_jsp_env.util.jsp_generation.instance_generator_factory import gnn_generators
 from envs.minimal_jsp_env.util.jsp_solver import jsp_solvers
 
 
@@ -55,32 +56,34 @@ class SolverFactoryFactory(ClassFactory):
 env_factory = EnvironmentFactory()
 env_factory.register_builder('tsp', TSPGym)
 env_factory.register_builder('jsp_minimal', JobShopEnv)
-env_factory.register_builder('gnn_jsp', GNNJobShopEnv)
+env_factory.register_builder('jsp_gnn', GNNJobShopEnv)
 
 model_factory = ModelFactory()
 model_factory.register_builder('tsp', TSP)
 model_factory.register_builder('jsp_minimal', JobShopModel)
-model_factory.register_builder('gnn_jsp', GNNJobShopModel)
+model_factory.register_builder('jsp_gnn', GNNJobShopModel)
 
 observation_factories = ObservationFactoryFactory()
-observation_factories.register_class('gnn_jsp', gnn_observation_spaces)
+observation_factories.register_class('jsp_gnn', gnn_observation_spaces)
 observation_factories.register_class('jsp_minimal', observation_spaces)
 observation_factories.register_class('tsp', tsp_observation_spaces)
 
 action_factories = ActionFactoryFactory()
-action_factories.register_class('gnn_jsp', gnn_action_spaces)
+action_factories.register_class('jsp_gnn', gnn_action_spaces)
 action_factories.register_class('jsp_minimal', action_spaces)
 action_factories.register_class('tsp', tsp_action_spaces)
 
 reward_factories = RewardFactoryFactory()
-reward_factories.register_class('gnn_jsp', gnn_reward_functions)
+reward_factories.register_class('jsp_gnn', gnn_reward_functions)
 reward_factories.register_class('jsp_minimal', reward_functions)
 reward_factories.register_class('tsp', tsp_reward_functions)
 
 instance_factories = InstanceFactoryFactory()
+instance_factories.register_class('jsp_gnn', gnn_generators)
 instance_factories.register_class('jsp_minimal', jsp_generators)
 instance_factories.register_class('tsp', None)  # todo
 
 solver_factories = SolverFactoryFactory()
+solver_factories.register_class('jsp_gnn', jsp_solvers)
 solver_factories.register_class('jsp_minimal', jsp_solvers)
 solver_factories.register_class('tsp', None)  # todo

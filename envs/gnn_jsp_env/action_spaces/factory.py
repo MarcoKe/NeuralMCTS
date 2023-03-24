@@ -8,4 +8,4 @@ class ActionSpaceFactory(ObjectFactory):
 
 
 gnn_action_spaces = ActionSpaceFactory()
-gnn_action_spaces.register_builder('naive', GNNActionSpace)
+gnn_action_spaces.register_builder('gnn', GNNActionSpace)

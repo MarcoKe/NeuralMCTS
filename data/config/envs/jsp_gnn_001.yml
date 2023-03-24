@@ -1,0 +1,16 @@
+name: 'jsp_gnn'
+params:
+  instance_generator:
+    name: 'multiple'
+    params:
+      path: 'data/jsp_instances/6x6x6/'
+      format: 'samsonov'
+  observation_space:
+    name: 'gnn'
+    params: {}
+  action_space:
+    name: 'gnn'
+    params: {}
+  reward_function:
+    name: 'opt_gap'
+    params: {}
