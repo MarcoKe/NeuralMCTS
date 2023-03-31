@@ -1,0 +1,7 @@
+name: 'pool_dataset'
+target_path: "data/pool_dataset_generation/"
+generator_type: "random_job_pool_entropy" # 'random' / 'random_pool' / 'random_pool_entropy' / 'random_job_pool' / 'random_job_pool_entropy'
+num_simulations: 1
+num_jobs: 7
+num_operations: 7
+max_op_duration: 9

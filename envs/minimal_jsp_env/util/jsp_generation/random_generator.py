@@ -75,6 +75,12 @@ class RandomJSPGeneratorOperationDistirbution(JSPGenerator):
         for job_id in range(0, self.num_jobs):
             job_operations = operations_pool[self.num_operations*job_id:self.num_operations*(job_id+1)]
             operations = [Operation(job_id, op_id, type, duration) for op_id, (type, duration) in enumerate(job_operations)]
+            
+            # TODO, check if this is still an issue with entropy list designed for different size, maybe there is an rounding issue
+            # This is just a work-around for now
+            if operations == []:
+                operations = jobs[-1]
+
             jobs.append(operations)
 
         return JSPInstance(jobs, num_ops_per_job=self.num_operations, max_op_time=self.max_op_duration)
