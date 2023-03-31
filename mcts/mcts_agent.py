@@ -201,7 +201,9 @@ class MCTSAgent:
         return policy, value, root_node.select_best_action()[0], stats
 
     def __str__(self):
-        return "MCTS(" + str(self.tree_policy) + ", " + str(self.evaluation_policy) + ")" + str(self.dirichlet_noise)
+        return "MCTS(" + str(self.tree_policy) + ", " + str(self.expansion_policy) + ", " \
+               + str(self.evaluation_policy) + ") " + str(self.evaluate_leaf_children) + " " \
+               + str(self.initialize_tree) + " " + str(self.value_initialization)
 
 
 if __name__ == '__main__':

@@ -92,4 +92,5 @@ def setup_experiment(exp_name):
 
 if __name__ == '__main__':
     # setup_experiment("20230128_exp_001")
-    setup_experiment("jsp_001")
+    # setup_experiment("jsp_001")
+    setup_experiment("ff_03/01_jsp_uct_full_expansion_random_evaluate_leaf_children")
