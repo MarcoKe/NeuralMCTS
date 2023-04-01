@@ -1,0 +1,4 @@
+name: jsp_puct_neural_expansion_random_initialize_tree
+env: jsp_minimal_001
+agent: ff_05/puct_neural_expansion_random_initialize_tree
+policy_improvement_iterations: 250
