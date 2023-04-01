@@ -1,0 +1,16 @@
+name: 'jsp_minimal'
+params:
+  instance_generator:
+    name: 'multiple'
+    params:
+      path: 'data/jsp_instances/6x6x6/'
+      format: 'samsonov'
+  observation_space:
+    name: 'naive2'
+    params: {}
+  action_space:
+    name: 'naive'
+    params: {}
+  reward_function:
+    name: 'opt_gap'
+    params: {}
