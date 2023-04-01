@@ -1,0 +1,32 @@
+name: puct_full_expansion_neural_value_eval
+num_simulations: 100
+evaluate_leaf_children: false
+learned_policy:
+  location: ''
+training:
+  buffer_size: 100000
+  weight_decay: 0.0005
+  learning_rate: 1.0e-05
+  batch_size: 256
+  num_epochs: 1
+  num_episodes: 5
+  workers: 8
+  warmup_steps: 50
+tree_policy:
+  name: uct
+  params:
+    exploitation:
+      name: avg_node_value
+      params: {}
+    exploration:
+      name: puct
+      params:
+        exploration_constant: 1
+expansion_policy:
+  name: full_expansion
+  params: {}
+eval_policy:
+  name: neural_value_eval
+  params: {}
+value_initialization: false
+initialize_tree: false
