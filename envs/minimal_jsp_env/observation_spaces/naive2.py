@@ -15,7 +15,7 @@ class NaiveObservationSpace(gym.ObservationWrapper):
 
         machine_job_ids = [-1 for _ in range(self.env.num_machines)]
         machine_durations = [-1 for _ in range(self.env.num_machines)]
-        earliest, latest = self.earliest_finished_job(schedule)
+        earliest, latest = self.finish_time_extrema(schedule)
         for machine, machine_schedule in enumerate(schedule):
             if len(machine_schedule) > 0:
                 last_op, start_time, end_time = machine_schedule[-1]
@@ -41,7 +41,11 @@ class NaiveObservationSpace(gym.ObservationWrapper):
         obs = machine_obs + remaining_ops_obs
         return np.array(obs).astype(np.float32)
 
-    def earliest_finished_job(self, schedule):
+    def finish_time_extrema(self, schedule):
+        """
+        finds the earliest and latest finish time over all machines in a given schedule.
+        i.e. among all the last operations scheduled on all machines, what is the earliest and latest finish time
+        """
         earliest = math.inf
         latest = 0
         for machine, machine_schedule in enumerate(schedule):
