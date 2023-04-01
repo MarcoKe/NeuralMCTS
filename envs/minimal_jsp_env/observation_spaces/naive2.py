@@ -1,6 +1,6 @@
 import gym
 import numpy as np
-
+import math
 
 class NaiveObservationSpace(gym.ObservationWrapper):
     def __init__(self, env):
@@ -15,11 +15,12 @@ class NaiveObservationSpace(gym.ObservationWrapper):
 
         machine_job_ids = [-1 for _ in range(self.env.num_machines)]
         machine_durations = [-1 for _ in range(self.env.num_machines)]
+        earliest, latest = self.earliest_finished_job(schedule)
         for machine, machine_schedule in enumerate(schedule):
             if len(machine_schedule) > 0:
                 last_op, start_time, end_time = machine_schedule[-1]
                 machine_job_ids[machine] = self.normalize(last_op.job_id, 0, self.env.num_jobs)
-                machine_durations[machine] = self.normalize(last_op.duration, 0, self.env.max_op_duration)
+                machine_durations[machine] = self.normalize(end_time-earliest, 0, latest-earliest)
         machine_obs = machine_job_ids + machine_durations
 
         rem_job_ids = []
@@ -40,5 +41,24 @@ class NaiveObservationSpace(gym.ObservationWrapper):
         obs = machine_obs + remaining_ops_obs
         return np.array(obs).astype(np.float32)
 
+    def earliest_finished_job(self, schedule):
+        earliest = math.inf
+        latest = 0
+        for machine, machine_schedule in enumerate(schedule):
+            if len(machine_schedule) > 0:
+                last_op, start_time, end_time = machine_schedule[-1]
+                if end_time < earliest:
+                    earliest = end_time
+
+                if end_time > latest:
+                    latest = end_time
+
+        if earliest == math.inf:
+            earliest = 0
+        return earliest, latest
+
     def normalize(self, val, min, max):
-        return val - min / (max - min)
+        if min == max:
+            return 0
+        # print(val, min, max, (val - min) / (max - min))
+        return (val - min) / (max - min)
