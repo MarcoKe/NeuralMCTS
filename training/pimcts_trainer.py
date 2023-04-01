@@ -86,7 +86,8 @@ class MCTSPolicyImprovementTrainer:
                          evaluation_policy,
                          neural_net=self.guided_mcts_agent.neural_net,
                          num_simulations=self.guided_mcts_agent.num_simulations,
-                         evaluate_leaf_children=self.guided_mcts_agent.evaluate_leaf_children,
+                         # evaluate_leaf_children=self.guided_mcts_agent.evaluate_leaf_children,
+                         evaluate_leaf_children=True,
                          value_initialization=False,
                          initialize_tree=False)
 
