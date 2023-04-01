@@ -1,4 +1,0 @@
-name: jsp_puct_neural_expansion_neural_rollout_eval_evaluate_leaf_children
-env: jsp_minimal_002
-agent: naive2_ff_03/puct_neural_expansion_neural_rollout_eval_evaluate_leaf_children
-policy_improvement_iterations: 250
