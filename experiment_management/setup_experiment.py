@@ -34,7 +34,11 @@ def create_agent(env, model, agent_config):
     if len(agent_config['learned_policy']['location']) > 0:
         model_free_agent = PPO.load(agent_config['learned_policy']['location'], env=env)
     else:
-        model_free_agent = PPO('MlpPolicy', env, policy_kwargs=dict(activation_fn=torch.nn.modules.Mish))
+        policy_kwargs = dict()
+        policy_kwargs['activation_fn'] = torch.nn.modules.Mish
+        if 'net_arch' in agent_config['learned_policy']:
+            policy_kwargs['net_arch'] = agent_config['learned_policy']['net_arch']
+        model_free_agent = PPO('MlpPolicy', env, policy_kwargs=policy_kwargs)
     neural_net = Stb3ACAgent(model_free_agent)
 
     tp = tree_policy_factory.get(agent_config['tree_policy']['name'], **agent_config['tree_policy']['params'])
@@ -93,4 +97,4 @@ def setup_experiment(exp_name):
 if __name__ == '__main__':
     # setup_experiment("20230128_exp_001")
     # setup_experiment("jsp_001")
-    setup_experiment("ff_03/01_jsp_uct_full_expansion_random_evaluate_leaf_children")
+    setup_experiment("naive2_ff_05/jsp_uct_neural_expansion_neural_rollout_eval_value_initialization_initialize_tree")
