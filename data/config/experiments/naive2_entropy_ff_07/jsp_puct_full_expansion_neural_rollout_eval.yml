@@ -1,0 +1,4 @@
+name: jsp_puct_full_expansion_neural_rollout_eval
+env: jsp_minimal_002
+agent: naive2_entropy_ff_07/puct_full_expansion_neural_rollout_eval
+policy_improvement_iterations: 250

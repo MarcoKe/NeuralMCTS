@@ -1,8 +1,11 @@
 name: uct_neural_expansion_neural_rollout_eval_value_initialization_initialize_tree
-num_simulations: 100
+num_simulations: 500
 evaluate_leaf_children: false
 learned_policy:
   location: ''
+  net_arch:
+    pi: [128, 128]
+    vf: [128, 128]
 training:
   buffer_size: 100000
   weight_decay: 0.0005
@@ -11,7 +14,7 @@ training:
   num_epochs: 1
   num_episodes: 5
   workers: 8
-  warmup_steps: 50
+  warmup_steps: 0
 tree_policy:
   name: uct
   params:

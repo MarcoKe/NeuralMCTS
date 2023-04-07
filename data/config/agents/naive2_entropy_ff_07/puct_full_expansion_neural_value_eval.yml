@@ -1,9 +1,17 @@
-name: uct_full_expansion_random_evaluate_leaf_children
+name: puct_full_expansion_neural_value_eval
 num_simulations: 100
-initialize_tree: false
-value_initialization: false
+evaluate_leaf_children: false
+value_initialization: true
+initialize_tree: true
 learned_policy:
   location: ''
+  net_arch:
+    pi:
+    - 128
+    - 128
+    vf:
+    - 128
+    - 128
 training:
   buffer_size: 100000
   weight_decay: 0.0005
@@ -12,7 +20,8 @@ training:
   num_epochs: 1
   num_episodes: 5
   workers: 8
-  warmup_steps: 50
+  warmup_steps: 0
+  entropy_loss: true
 tree_policy:
   name: uct
   params:
@@ -20,13 +29,12 @@ tree_policy:
       name: avg_node_value
       params: {}
     exploration:
-      name: uct
+      name: puct
       params:
         exploration_constant: 1
 expansion_policy:
   name: full_expansion
   params: {}
 eval_policy:
-  name: random
+  name: neural_value_eval
   params: {}
-evaluate_leaf_children: true

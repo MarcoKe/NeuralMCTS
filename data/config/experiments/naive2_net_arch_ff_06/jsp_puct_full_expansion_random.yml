@@ -1,0 +1,4 @@
+name: jsp_puct_full_expansion_random
+env: jsp_minimal_002
+agent: naive2_net_arch_ff_06/puct_full_expansion_random
+policy_improvement_iterations: 250
