@@ -7,6 +7,7 @@ import wandb
 import os
 import time
 from torch.nn import functional as F
+from torch.distributions import Categorical
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3 import PPO
 
@@ -25,7 +26,7 @@ from training.schedule import LinearSchedule
 class MCTSPolicyImprovementTrainer:
     def __init__(self, exp_name, env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.0005, learning_rate=1e-5,
                  buffer_size=50000, batch_size=256, num_epochs=1, policy_improvement_iterations=2000, workers=8,
-                 num_episodes=5, warmup_steps=0, solver=None, wandb_run=None):
+                 num_episodes=5, warmup_steps=0, entropy_loss=False, solver=None, wandb_run=None):
         """
         :mcts_agent: is the agent generating experiences by performing mcts searches
         :model_free_agent: is the model free agent that is being trained using these collected experiences
@@ -56,6 +57,7 @@ class MCTSPolicyImprovementTrainer:
         self.workers = workers
         self.num_episodes = num_episodes
         self.warmup_steps = warmup_steps
+        self.entropy_loss = entropy_loss
         self.solver = solver
 
         if not self.wandb_run:
@@ -91,16 +93,18 @@ class MCTSPolicyImprovementTrainer:
                          value_initialization=False,
                          initialize_tree=False)
 
-    @staticmethod
-    def mcts_policy_improvement_loss(pi_mcts, pi_theta, v_mcts, v_theta):
+    def mcts_policy_improvement_loss(self, pi_mcts, pi_theta, v_mcts, v_theta):
         """
         cross entropy between model free policy prediction and mcts policy
         mse between value estimates
         """
         policy_loss = th.mean(-th.sum(pi_mcts * th.log(pi_theta + 1e-9), dim=-1))
         value_loss = F.mse_loss(v_mcts, v_theta)
-        total_loss = (policy_loss + value_loss) / 2
-        return total_loss, policy_loss, value_loss
+        entropy = 0
+        if self.entropy_loss:
+            entropy = (F.softmax(pi_theta, dim=1) * F.log_softmax(pi_theta, dim=1)).sum()
+        total_loss = (policy_loss + value_loss + entropy) / 2
+        return total_loss, policy_loss, value_loss, entropy
 
     def forward(self, obs: th.Tensor):
         """
@@ -139,7 +143,7 @@ class MCTSPolicyImprovementTrainer:
             batch = self.memory.sample_batch(self.batch_size)
 
             predicted_probs, predicted_values = self.forward(batch['obs']) # legal actions or just all actions?
-            loss, ploss, vloss = self.mcts_policy_improvement_loss(batch['mcts_probs'], predicted_probs, batch['outcomes'], predicted_values)
+            loss, ploss, vloss, eloss = self.mcts_policy_improvement_loss(batch['mcts_probs'], predicted_probs, batch['outcomes'], predicted_values)
 
             # Optimization step
             self.policy.optimizer.zero_grad()
@@ -148,6 +152,8 @@ class MCTSPolicyImprovementTrainer:
 
             self.log("mctstrain/policy_ce_loss", ploss.item())
             self.log("mctstrain/value_mse_loss", vloss.item())
+            self.log("mctstrain/entropy_loss", eloss.item())
+
             self.log("mctstrain/mcts_probs_entropy", np.mean(entropy(batch['mcts_probs'].detach().numpy(), base=self.mcts_agent.env.max_num_actions(), axis=1)))
             self.log("mctstrain/learned_probs_entropy", np.mean(entropy(predicted_probs.detach().numpy(), base=self.mcts_agent.env.max_num_actions(), axis=1)))
 
