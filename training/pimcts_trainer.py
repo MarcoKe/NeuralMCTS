@@ -102,7 +102,8 @@ class MCTSPolicyImprovementTrainer:
         value_loss = F.mse_loss(v_mcts, v_theta)
         entropy = 0
         if self.entropy_loss:
-            entropy = (F.softmax(pi_theta, dim=1) * F.log_softmax(pi_theta, dim=1)).sum()
+            # entropy with base=num_actions. since torch does not allow specifying custom bases, we use the change of base formula
+            entropy = th.mean(th.sum(-(pi_theta * th.log(pi_theta) / th.log(th.ones_like(pi_theta)*self.mcts_agent.env.max_num_actions())), axis=1))
         total_loss = (policy_loss + value_loss + entropy) / 2
         return total_loss, policy_loss, value_loss, entropy
 
@@ -132,7 +133,6 @@ class MCTSPolicyImprovementTrainer:
         :mcts_probs: [num_experiences, num_actions]
         :mcts_values: [num_experiences, 1]
         """
-
         if len(self.memory) < self.batch_size: return
 
         # Switch to train mode (this affects batch norm / dropout)
