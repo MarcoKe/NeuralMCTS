@@ -4,7 +4,7 @@ import torch
 
 class ReplayMemory:
     def __init__(self, obs_dim, probs_dim, size):
-        self.obs_buf = np.zeros((size, obs_dim), dtype=np.float32)
+        self.obs_buf = np.zeros((size, *obs_dim), dtype=np.float32)
         self.probs_buf = np.zeros((size, probs_dim), dtype=np.float32)
         self.outcomes_buf = np.zeros(size, dtype=np.float32)
         self.ptr, self.size, self.max_size = 0, 0, size

@@ -18,7 +18,7 @@ from gnn_feature_extractor import GNNExtractor
 generator = SingleInstanceRandomGenerator(num_jobs=6, num_operations=6, num_machines=6)
 env = OptimalityGapReward(GNNActionSpace(GNNObservationSpace(GNNJobShopEnv(generator))))
 
-feature_extractor_kwargs = dict(num_layers=3, num_mlp_layers=2,
+feature_extractor_kwargs = dict(num_layers=3, num_mlp_layers=2, input_dim=2,
                                 hidden_dim=64, graph_pool="avg")
 policy_kwargs = dict(activation_fn=torch.nn.modules.activation.Mish,
                      features_extractor_class=GNNExtractor,

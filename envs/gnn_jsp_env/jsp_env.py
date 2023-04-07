@@ -25,11 +25,6 @@ class GNNJobShopEnv(gym.Env):
         self.num_jobs = self.instance.num_jobs
         self.num_ops = self.num_jobs * self.ops_per_job
 
-        # possible operations to choose from next for each job (initialize with the first tasks for each job)
-        possible_next_ops = np.arange(start=0, stop=self.num_ops, step=1).reshape(self.num_jobs, -1)[:, 0].astype(
-            np.int64)
-        # boolean values indicating whether all operations of a job have been scheduled or not
-        mask = np.full(shape=self.num_jobs, fill_value=0, dtype=bool)
         # number of operations scheduled on each machine
         ops_per_machine = [len([op for job in self.instance.jobs for op in job if op.machine_type == m]) for m in
                            range(self.num_machines)]
@@ -50,7 +45,7 @@ class GNNJobShopEnv(gym.Env):
 
         return {'remaining_ops': remaining_ops, 'schedule': schedule, 'machine_infos': machine_infos,
                 'last_job_ops': last_job_ops, 'last_mch_ops': last_machine_ops, 'adj_matrix': adj_matrix,
-                'features': features, 'possible_next_ops': possible_next_ops, 'mask': mask, 'jobs': self.instance.jobs}
+                'features': features, 'jobs': self.instance.jobs}
 
     def reset(self):
         self.done = False

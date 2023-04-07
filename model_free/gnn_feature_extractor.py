@@ -15,18 +15,13 @@ class GNNExtractor(BaseFeaturesExtractor):
         This corresponds to the number of unit for the last layer.
     """
 
-    def __init__(self, observation_space: gym.spaces.Dict, num_layers: int = 3, num_mlp_layers: int = 2,
-                 hidden_dim: int = 64, graph_pool: str = "avg", device: str = "auto"):
+    def __init__(self, observation_space: gym.spaces.Box, num_layers: int = 3, num_mlp_layers: int = 2,
+                 input_dim: int = 2, hidden_dim: int = 64, graph_pool: str = "avg", device: str = "auto"):
         super().__init__(observation_space=observation_space, features_dim=64)
-        assert len(observation_space.spaces.keys()) == 2 and list(observation_space.spaces.keys())[0] == "adj_matrix" \
-               and list(observation_space.spaces.keys())[1] == "features", (
-            "The observation space should consist of a graph adjacency matrix and node features")
 
         self.graph_pool = graph_pool
         self.device = get_device(device)
         self.num_layers = num_layers
-        feature_space = list(observation_space.spaces.values())[1]
-        input_dim = feature_space.shape[1]
 
         # List of MLPs
         self.mlps = th.nn.ModuleList()
@@ -59,11 +54,10 @@ class GNNExtractor(BaseFeaturesExtractor):
         return h
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
-        adj_block = th.stack([th.from_numpy(np.copy(l)).to_sparse() for l in
-                              list(observations.values())[0]])
+        adj_block = th.stack([th.from_numpy(np.copy(l[:, :-2])).to_sparse() for l in observations])
         n_tasks = adj_block.shape[1]
         adj_block_concat = self.aggr_obs(adj_block, n_tasks)
-        fea_concat = th.stack([th.from_numpy(np.copy(l)) for l in list(observations.values())[1]])
+        fea_concat = th.stack([th.from_numpy(np.copy(l[:, -2:])) for l in observations])
         fea_concat = fea_concat.reshape(-1, fea_concat.size(-1))
         h = fea_concat  # list of hidden representations at each layer (including input)
 

@@ -5,6 +5,7 @@ value_initialization: True
 initialize_tree: True
 learned_policy:
   location: ''
+features_extractor: ''
 tree_policy:
   name: 'uct'
   params:

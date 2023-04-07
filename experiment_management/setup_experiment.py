@@ -6,6 +6,7 @@ from experiment_management.config_handling.load_exp_config import load_exp_confi
 from stable_baselines3 import PPO
 from mcts.mcts_agent import MCTSAgent
 from model_free.stb3_wrapper import Stb3ACAgent
+from model_free.gnn_feature_extractor import GNNExtractor
 from mcts.tree_policies.tree_policy_factory import tree_policy_factory
 from mcts.expansion_policies.expansion_policy_factory import expansion_policy_factory
 from mcts.evaluation_policies.eval_policy_factory import eval_policy_factory
@@ -25,7 +26,8 @@ def create_env(env_config):
     environment = env_factory.get(env_config['name'], **env_config['params'])
     environment = action_spaces.get(env_config['params']['action_space']['name'], env=environment)
     environment = reward_functions.get(env_config['params']['reward_function']['name'], env=environment)
-    environment = observation_spaces.get(env_config['params']['observation_space']['name'], env=environment) # this one needs to be last, do not change
+    environment = observation_spaces.get(env_config['params']['observation_space']['name'],
+                                         env=environment)  # this one needs to be last, do not change
     model = model_factory.get(env_config['name'], **env_config['params'])
     return environment, model
 
@@ -33,12 +35,21 @@ def create_env(env_config):
 def create_agent(env, model, agent_config):
     if len(agent_config['learned_policy']['location']) > 0:
         model_free_agent = PPO.load(agent_config['learned_policy']['location'], env=env)
+    elif agent_config['features_extractor'] == 'gnn':
+        feature_extractor_kwargs = dict(num_layers=3, num_mlp_layers=2, input_dim=2,
+                                        hidden_dim=64, graph_pool="avg")
+        policy_kwargs = dict(activation_fn=torch.nn.modules.activation.Mish,
+                             features_extractor_class=GNNExtractor,
+                             features_extractor_kwargs=feature_extractor_kwargs)
+        model_free_agent = PPO("MultiInputPolicy", env, verbose=1, tensorboard_log="stb3_jssp_gnn_tensorboard/",
+                               policy_kwargs=policy_kwargs)
     else:
         model_free_agent = PPO('MlpPolicy', env, policy_kwargs=dict(activation_fn=torch.nn.modules.Mish))
     neural_net = Stb3ACAgent(model_free_agent)
 
     tp = tree_policy_factory.get(agent_config['tree_policy']['name'], **agent_config['tree_policy']['params'])
-    ep = expansion_policy_factory.get(agent_config['expansion_policy']['name'], **agent_config['expansion_policy']['params'])
+    ep = expansion_policy_factory.get(agent_config['expansion_policy']['name'],
+                                      **agent_config['expansion_policy']['params'])
     rp = eval_policy_factory.get(agent_config['eval_policy']['name'], **agent_config['eval_policy']['params'])
     mcts_agent = MCTSAgent(env, model, tp, ep, rp, neural_net=neural_net,
                            num_simulations=agent_config['num_simulations'],
@@ -82,8 +93,10 @@ def setup_experiment(exp_name):
 
     solver_factory = solver_factories.get(env_config['name'])
     solver = solver_factory.get('opt')  # todo
-    trainer = MCTSPolicyImprovementTrainer(exp_config['name'], env, mcts_agent, model_free_agent, wandb_run=wandb_run, solver=solver,
-                                           **agent_config['training'], policy_improvement_iterations=exp_config['policy_improvement_iterations'])
+    trainer = MCTSPolicyImprovementTrainer(exp_config['name'], env, mcts_agent, model_free_agent, #wandb_run=wandb_run,
+                                           solver=solver,
+                                           **agent_config['training'],
+                                           policy_improvement_iterations=exp_config['policy_improvement_iterations'])
 
     trainer.train()
 
@@ -92,4 +105,4 @@ def setup_experiment(exp_name):
 
 if __name__ == '__main__':
     # setup_experiment("20230128_exp_001")
-    setup_experiment("jsp_001")
+    setup_experiment("gnn_jsp_test")
