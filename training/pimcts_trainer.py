@@ -103,7 +103,7 @@ class MCTSPolicyImprovementTrainer:
         entropy = 0
         if self.entropy_loss:
             # entropy with base=num_actions. since torch does not allow specifying custom bases, we use the change of base formula
-            entropy = th.mean(th.sum(-(pi_theta * th.log(pi_theta) / th.log(th.ones_like(pi_theta)*self.mcts_agent.env.max_num_actions())), axis=1))
+            entropy = -th.mean(th.sum(-(pi_theta * th.log(pi_theta) / th.log(th.ones_like(pi_theta)*self.mcts_agent.env.max_num_actions())), axis=1))
         total_loss = (policy_loss + value_loss + entropy) / 2
         return total_loss, policy_loss, value_loss, entropy
 
