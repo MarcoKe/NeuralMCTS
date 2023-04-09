@@ -4,11 +4,6 @@ import gym
 import numpy as np
 from copy import deepcopy
 
-# Parameters previously taken from the param_parser TODO take from arguments
-init_quality_flag = False  # flag of whether init state quality is 0, True for 0
-et_normalize_coef = 1000  # normalizing constant for feature LBs (end time), normalization way: fea/constant
-rewardscale = 0.  # reward scale for positive rewards
-
 
 class GNNJobShopEnv(gym.Env):
     def __init__(self, instance_generator: JSPGenerator, **kwargs):

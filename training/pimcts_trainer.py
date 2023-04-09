@@ -12,6 +12,9 @@ from stable_baselines3 import PPO
 
 from envs.tsp.TSP import TSPGym, TSP
 from mcts.mcts_agent import MCTSAgent
+from mcts.tree_policies.tree_policy_factory import tree_policy_factory
+from mcts.expansion_policies.expansion_policy_factory import expansion_policy_factory
+from mcts.evaluation_policies.eval_policy_factory import eval_policy_factory
 from mcts.util.benchmark_agents import perform_episode as eval
 from mcts.util.benchmark_agents import opt_gap
 from mcts.util.benchmark_agents import MCTSAgentWrapper, Stb3AgentWrapper
@@ -22,7 +25,7 @@ from training.schedule import LinearSchedule
 class MCTSPolicyImprovementTrainer:
     def __init__(self, exp_name, env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.0005, learning_rate=1e-5,
                  buffer_size=50000, batch_size=256, num_epochs=1, policy_improvement_iterations=2000, workers=8,
-                 num_episodes=5, solver=None, wandb_run=None):
+                 num_episodes=5, warmup_steps=0, entropy_loss=False, solver=None, wandb_run=None):
         """
         :mcts_agent: is the agent generating experiences by performing mcts searches
         :model_free_agent: is the model free agent that is being trained using these collected experiences
@@ -33,12 +36,14 @@ class MCTSPolicyImprovementTrainer:
         :policy_improvement_iterations: number of (collect experience) -> (train) iterations
         :workers: how many workers will collect experience in parallel
         :num_episodes: how many episodes of experience EACH worker will collect
+        :warmup_steps: How many policy iteration steps are performed using vanilla MCTS before switching to guided mcts
         """
         self.exp_name = exp_name
         self.env = env
         self.model_free_agent = model_free_agent
         self.policy: ActorCriticPolicy = model_free_agent.policy
-        self.mcts_agent = mcts_agent
+        self.guided_mcts_agent = mcts_agent
+        self.mcts_agent = self.build_warmup_agent() # initialized as vanilla mcts agent, replaced by guided agent after # warmup steps
         self.policy.optimizer.weight_decay = weight_decay
         self.policy.optimizer.learning_rate = learning_rate
         self.wandb_run = wandb_run
@@ -51,6 +56,8 @@ class MCTSPolicyImprovementTrainer:
         self.total_neural_net_calls = 0
         self.workers = workers
         self.num_episodes = num_episodes
+        self.warmup_steps = warmup_steps
+        self.entropy_loss = entropy_loss
         self.solver = solver
 
         if not self.wandb_run:
@@ -64,16 +71,41 @@ class MCTSPolicyImprovementTrainer:
         else:
             self.model_free_agent.logger.record(key, value)
 
-    @staticmethod
-    def mcts_policy_improvement_loss(pi_mcts, pi_theta, v_mcts, v_theta):
+    def build_warmup_agent(self):
+        """
+        This method simply returns a vanilla MCTS agent without neural guidance. The experience collected with this agent
+        will still be used for neural net training, however.
+        """
+        tree_policy = tree_policy_factory.get('uct', **{'exploitation': {'name': 'avg_node_value', 'params': {}},
+                                                      'exploration': {'name': 'uct', 'params': {'exploration_constant': 1}}})
+        expansion_policy = expansion_policy_factory.get('full_expansion')
+        evaluation_policy = eval_policy_factory.get('random')
+
+        return MCTSAgent(self.guided_mcts_agent.env,
+                         self.guided_mcts_agent.model,
+                         tree_policy,
+                         expansion_policy,
+                         evaluation_policy,
+                         neural_net=self.guided_mcts_agent.neural_net,
+                         num_simulations=self.guided_mcts_agent.num_simulations,
+                         # evaluate_leaf_children=self.guided_mcts_agent.evaluate_leaf_children,
+                         evaluate_leaf_children=True,
+                         value_initialization=False,
+                         initialize_tree=False)
+
+    def mcts_policy_improvement_loss(self, pi_mcts, pi_theta, v_mcts, v_theta):
         """
         cross entropy between model free policy prediction and mcts policy
         mse between value estimates
         """
         policy_loss = th.mean(-th.sum(pi_mcts * th.log(pi_theta + 1e-9), dim=-1))
         value_loss = F.mse_loss(v_mcts, v_theta)
-        total_loss = (policy_loss + value_loss) / 2
-        return total_loss, policy_loss, value_loss
+        entropy = 0
+        if self.entropy_loss:
+            # entropy with base=num_actions. since torch does not allow specifying custom bases, we use the change of base formula
+            entropy = -th.mean(th.sum(-(pi_theta * th.log(pi_theta) / th.log(th.ones_like(pi_theta)*self.mcts_agent.env.max_num_actions())), axis=1))
+        total_loss = (policy_loss + value_loss + entropy) / 2
+        return total_loss, policy_loss, value_loss, entropy
 
     def forward(self, obs: th.Tensor):
         """
@@ -81,12 +113,12 @@ class MCTSPolicyImprovementTrainer:
         """
         # Preprocess the observation if needed
         features = self.policy.extract_features(obs)
-        if self.policy.share_features_extractor:
-            latent_pi, latent_vf = self.policy.mlp_extractor(features)
-        else:
-            pi_features, vf_features = features
-            latent_pi = self.policy.mlp_extractor.forward_actor(pi_features)
-            latent_vf = self.policy.mlp_extractor.forward_critic(vf_features)
+        # if self.policy.share_features_extractor:
+        latent_pi, latent_vf = self.policy.mlp_extractor(features)
+        # else:
+        #     pi_features, vf_features = features
+        #     latent_pi = self.policy.mlp_extractor.forward_actor(pi_features)
+        #     latent_vf = self.policy.mlp_extractor.forward_critic(vf_features)
         # Evaluate the values for the given observations
         values = self.policy.value_net(latent_vf)
         action_logits = self.policy.action_net(latent_pi)
@@ -101,7 +133,6 @@ class MCTSPolicyImprovementTrainer:
         :mcts_probs: [num_experiences, num_actions]
         :mcts_values: [num_experiences, 1]
         """
-
         if len(self.memory) < self.batch_size: return
 
         # Switch to train mode (this affects batch norm / dropout)
@@ -112,7 +143,7 @@ class MCTSPolicyImprovementTrainer:
             batch = self.memory.sample_batch(self.batch_size)
 
             predicted_probs, predicted_values = self.forward(batch['obs']) # legal actions or just all actions?
-            loss, ploss, vloss = self.mcts_policy_improvement_loss(batch['mcts_probs'], predicted_probs, batch['outcomes'], predicted_values)
+            loss, ploss, vloss, eloss = self.mcts_policy_improvement_loss(batch['mcts_probs'], predicted_probs, batch['outcomes'], predicted_values)
 
             # Optimization step
             self.policy.optimizer.zero_grad()
@@ -121,6 +152,8 @@ class MCTSPolicyImprovementTrainer:
 
             self.log("mctstrain/policy_ce_loss", ploss.item())
             self.log("mctstrain/value_mse_loss", vloss.item())
+            self.log("mctstrain/entropy_loss", eloss.item())
+
             self.log("mctstrain/mcts_probs_entropy", np.mean(entropy(batch['mcts_probs'].detach().numpy(), base=self.mcts_agent.env.max_num_actions(), axis=1)))
             self.log("mctstrain/learned_probs_entropy", np.mean(entropy(predicted_probs.detach().numpy(), base=self.mcts_agent.env.max_num_actions(), axis=1)))
 
@@ -172,6 +205,9 @@ class MCTSPolicyImprovementTrainer:
 
     def train(self):
         for i in range(self.policy_improvement_iterations):
+            if i == self.warmup_steps:
+                self.mcts_agent = self.guided_mcts_agent
+            print(i, " ", self.mcts_agent)
             self.policy_improvement_steps = i
             self.temp = self.temp_schedule.value(self.policy_improvement_steps)
             self.log('mctstrain/temp', self.temp)

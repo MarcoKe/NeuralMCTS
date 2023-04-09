@@ -1,6 +1,10 @@
 import numpy as np
 import torch
 
+# there are almost definitely ways to implement a more efficient replay memory
+# however, the time required to collect experiences far exceeds the training time
+# optimizing this replay buffer should probably not be top priority
+
 
 class ReplayMemory:
     def __init__(self, obs_dim, probs_dim, size):

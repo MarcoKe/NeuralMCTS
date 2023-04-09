@@ -12,6 +12,7 @@ training:
   num_epochs: 1
   num_episodes: 5
   workers: 8
+  warmup_steps: 50
 tree_policy:
   name: uct
   params:

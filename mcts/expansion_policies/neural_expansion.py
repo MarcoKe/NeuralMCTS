@@ -43,4 +43,5 @@ class NeuralExpansionPolicy(ExpansionPolicy):
 
         return actions_to_expand
 
-
+    def __str__(self):
+        return "NExp" + str(self.threshold)

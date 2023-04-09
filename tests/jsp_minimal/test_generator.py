@@ -1,6 +1,9 @@
 from envs.minimal_jsp_env.util.jsp_generation.random_generator import RandomJSPGeneratorOperationDistirbution, RandomJSPGenerator
 from envs.minimal_jsp_env.util.jsp_solver import JSPSolver
 
+from envs.minimal_jsp_env.util.jsp_generation.entropy_functions import entropy_optimizer, calculate_entropy_from_operations_list
+from scipy.stats import entropy
+
 
 def test_min_entropy():
     
@@ -35,3 +38,20 @@ def test_jsp_solver():
     instance = RandomJSPGenerator(num_jobs=6, num_operations=6, max_op_duration=9).generate()
     
     assert type(instance.opt_time) == int or type(instance.opt_time) == float
+
+def test_optimizer():
+    optimizer = entropy_optimizer(
+        output_size=200, 
+        hidden_size=20, 
+        learning_rate=0.1, 
+        num_epochs=200, 
+        max_episodes=200, 
+        precision=0.1)
+    outputs = optimizer.find_entropies()
+
+    max_entropy = calculate_entropy_from_operations_list(range(200))
+    for ratio in outputs:
+        output_entropy = entropy(outputs[ratio])
+        relative_entropy = output_entropy/max_entropy
+        entropy_diff = abs(relative_entropy-ratio)
+        assert entropy_diff < 0.05
