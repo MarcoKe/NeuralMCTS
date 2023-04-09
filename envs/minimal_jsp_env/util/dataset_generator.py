@@ -5,6 +5,7 @@ sys.path.append(os.getcwd())
 
 from envs.minimal_jsp_env.util.jsp_generation.random_generator import RandomJSPGenerator, RandomJSPGeneratorPool, RandomJSPGeneratorOperationDistirbution, RandomJSPGeneratorWithJobPool
 from envs.minimal_jsp_env.entities import Operation, JSPInstance
+from envs.minimal_jsp_env.util.jsp_generation.entropy_optimizer import EntropyOptimizer
 import json
 import argparse
 
@@ -27,6 +28,8 @@ if __name__ == '__main__':
     num_jobs = config_file['num_jobs']
     num_operations = config_file['num_operations']
     max_op_duration = config_file['max_op_duration']
+
+    
 
     # for now with predefined entropy distribution, next merge I'll add the entropy optimizer to generate the entropy distribution
     entropy0_2 = [0.5, 0.5]

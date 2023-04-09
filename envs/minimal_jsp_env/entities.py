@@ -1,7 +1,7 @@
 from collections import namedtuple
 from typing import List
 from envs.minimal_jsp_env.util.jsp_solver import JSPSolver
-from envs.minimal_jsp_env.util.jsp_generation.entropy_functions import calculate_entropy_from_operations_list, collect_all_operations
+from envs.minimal_jsp_env.util.jsp_generation.entropy_functions import calculate_entropy_from_operations_list
 
 Operation = namedtuple("Operation", ["job_id", "op_id", "machine_type", "duration"])
 
