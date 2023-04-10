@@ -25,7 +25,7 @@ from training.schedule import LinearSchedule
 class MCTSPolicyImprovementTrainer:
     def __init__(self, exp_name, env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.0005, learning_rate=1e-5,
                  buffer_size=50000, batch_size=256, num_epochs=1, policy_improvement_iterations=2000, workers=8,
-                 num_episodes=5, warmup_steps=0, entropy_loss=False, solver=None, wandb_run=None):
+                 num_episodes=5, warmup_steps=0, entropy_loss=False, selection_mode='mean', solver=None, wandb_run=None):
         """
         :mcts_agent: is the agent generating experiences by performing mcts searches
         :model_free_agent: is the model free agent that is being trained using these collected experiences
@@ -58,6 +58,7 @@ class MCTSPolicyImprovementTrainer:
         self.num_episodes = num_episodes
         self.warmup_steps = warmup_steps
         self.entropy_loss = entropy_loss
+        self.selection_mode = selection_mode
         self.solver = solver
 
         if not self.wandb_run:
@@ -100,7 +101,7 @@ class MCTSPolicyImprovementTrainer:
         """
         policy_loss = th.mean(-th.sum(pi_mcts * th.log(pi_theta + 1e-9), dim=-1))
         value_loss = F.mse_loss(v_mcts, v_theta)
-        entropy = 0
+        entropy = th.Tensor([0])
         if self.entropy_loss:
             # entropy with base=num_actions. since torch does not allow specifying custom bases, we use the change of base formula
             entropy = -th.mean(th.sum(-(pi_theta * th.log(pi_theta) / th.log(th.ones_like(pi_theta)*self.mcts_agent.env.max_num_actions())), axis=1))
@@ -172,7 +173,7 @@ class MCTSPolicyImprovementTrainer:
 
         while not done:
 
-            pi_mcts_, v_mcts_, action, stats = self.mcts_agent.stochastic_policy(self.env.raw_state(), temperature=self.temp)
+            pi_mcts_, v_mcts_, action, stats = self.mcts_agent.stochastic_policy(self.env.raw_state(), temperature=self.temp, selection_mode=self.selection_mode)
             observations.append(state)
             pi_mcts.append(pi_mcts_.tolist())
             v_mcts.append(v_mcts_)

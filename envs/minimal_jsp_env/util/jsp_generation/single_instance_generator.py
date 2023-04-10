@@ -23,8 +23,11 @@ class SingleInstanceGenerator(JSPGenerator):
         self.instance = reader.read_instance(path)
 
     def __init__(self, path: str, format: str, **kwargs):
-        reader = instance_readers.get(format)
-        self.instance = reader.read_instance(path)
+        self.set_instance(path, format)
 
     def generate(self) -> JSPInstance:
         return copy.deepcopy(self.instance) #todo solve this generally
+
+    def set_instance(self, path: str, format: str):
+        reader = instance_readers.get(format)
+        self.instance = reader.read_instance(path)
