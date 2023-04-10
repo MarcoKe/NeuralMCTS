@@ -100,7 +100,7 @@ class MCTSPolicyImprovementTrainer:
         """
         policy_loss = th.mean(-th.sum(pi_mcts * th.log(pi_theta + 1e-9), dim=-1))
         value_loss = F.mse_loss(v_mcts, v_theta)
-        entropy = 0
+        entropy = th.Tensor([0])
         if self.entropy_loss:
             # entropy with base=num_actions. since torch does not allow specifying custom bases, we use the change of base formula
             entropy = -th.mean(th.sum(-(pi_theta * th.log(pi_theta) / th.log(th.ones_like(pi_theta)*self.mcts_agent.env.max_num_actions())), axis=1))
