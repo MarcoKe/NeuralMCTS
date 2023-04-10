@@ -58,6 +58,7 @@ class MCTSPolicyImprovementTrainer:
         self.num_episodes = num_episodes
         self.warmup_steps = warmup_steps
         self.entropy_loss = entropy_loss
+        self.selection_mode = selection_mode
         self.solver = solver
 
         if not self.wandb_run:
@@ -172,7 +173,7 @@ class MCTSPolicyImprovementTrainer:
 
         while not done:
 
-            pi_mcts_, v_mcts_, action, stats = self.mcts_agent.stochastic_policy(self.env.raw_state(), temperature=self.temp, mode=self.selection_mode)
+            pi_mcts_, v_mcts_, action, stats = self.mcts_agent.stochastic_policy(self.env.raw_state(), temperature=self.temp, selection_mode=self.selection_mode)
             observations.append(state)
             pi_mcts.append(pi_mcts_.tolist())
             v_mcts.append(v_mcts_)
