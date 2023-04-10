@@ -1,0 +1,4 @@
+name: jsp_puct_neural_expansion_neural_value_eval
+env: jsp_minimal_002
+agent: naive2_ppo_pretraining/puct_neural_expansion_neural_value_eval
+policy_improvement_iterations: 250
