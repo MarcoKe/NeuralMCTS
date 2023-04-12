@@ -37,9 +37,9 @@ def get_entropy_loss(pred, target):
     return loss
 
 
-def get_rounded_entropy_loss(pred, target):
+def get_rounded_entropy_loss(pred, target, output_size):
     """Calculates rounded entropy loss. This is used to ensure that the probabilities are not too small."""
-    pred = pred[pred>round(1/len(pred),4)]
+    pred = pred[pred>round(1/output_size,4)]
     pred = torch.cat((pred, torch.Tensor([1- torch.sum(pred)])), 0)
     distribution = torch.distributions.Categorical(probs=pred)
     entropy = distribution.entropy()    
@@ -71,7 +71,7 @@ class EntropyOptimizer:
             if low_entropy:
                 loss = get_entropy_loss(output, target)
             else:
-                loss = get_rounded_entropy_loss(output, target)
+                loss = get_rounded_entropy_loss(output, target, self.output_size)
                 
             if loss <= 0.0005:
                 break

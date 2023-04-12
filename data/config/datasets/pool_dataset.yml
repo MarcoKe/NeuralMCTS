@@ -1,5 +1,5 @@
 name: 'pool_dataset'
-target_path: "data/pool_dataset_generation/"
+target_path: "../datasets/pool_dataset_generation/"
 generator_type: "random_pool_entropy" # 'random' / 'random_pool' / 'random_pool_entropy' / 'random_job_pool' / 'random_job_pool_entropy'
 num_simulations: 1000
 num_jobs: 6
@@ -11,4 +11,4 @@ optimizer_config:
   learning_rate: 0.1
   num_epochs: 200
   max_episodes: 200
-  precision: 0.1
+  precision: 0.05
