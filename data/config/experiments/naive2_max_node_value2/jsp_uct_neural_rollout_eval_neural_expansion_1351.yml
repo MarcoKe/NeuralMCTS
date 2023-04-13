@@ -1,0 +1,4 @@
+name: jsp_uct_neural_rollout_eval_neural_expansion_1351
+env: jsp_minimal_002
+agent: naive2_max_node_value2/uct_neural_rollout_eval_neural_expansion_1351
+policy_improvement_iterations: 250

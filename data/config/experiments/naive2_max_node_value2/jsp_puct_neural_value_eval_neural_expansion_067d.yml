@@ -1,0 +1,4 @@
+name: jsp_puct_neural_value_eval_neural_expansion_067d
+env: jsp_minimal_002
+agent: naive2_max_node_value2/puct_neural_value_eval_neural_expansion_067d
+policy_improvement_iterations: 250

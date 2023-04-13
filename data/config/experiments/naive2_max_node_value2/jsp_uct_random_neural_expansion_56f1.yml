@@ -1,0 +1,4 @@
+name: jsp_uct_random_neural_expansion_56f1
+env: jsp_minimal_002
+agent: naive2_max_node_value2/uct_random_neural_expansion_56f1
+policy_improvement_iterations: 250
