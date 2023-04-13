@@ -1,9 +1,17 @@
 from collections import namedtuple
 from typing import List
 from envs.minimal_jsp_env.util.jsp_solver import JSPSolver
-from envs.minimal_jsp_env.util.jsp_generation.entropy_functions import calculate_entropy_from_operations_list, collect_all_operations
+from envs.minimal_jsp_env.util.jsp_generation.entropy_functions import calculate_entropy_from_operations_list
 
 Operation = namedtuple("Operation", ["job_id", "op_id", "machine_type", "duration"])
+
+def collect_all_operations(jobs: List) -> List[tuple]:
+    """Collect a list of all operations in the given jobs."""
+    all_operations = []
+    for job in jobs:
+        job_operations = [(i.machine_type, i.duration) for i in job]
+        all_operations += job_operations
+    return all_operations
 
 class JSPInstance:
     def __init__(self, jobs: List, num_ops_per_job: int=None, max_op_time: int=None,

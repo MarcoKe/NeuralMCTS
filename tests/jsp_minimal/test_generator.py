@@ -1,7 +1,7 @@
 from envs.minimal_jsp_env.util.jsp_generation.random_generator import RandomJSPGeneratorOperationDistirbution, RandomJSPGenerator
 from envs.minimal_jsp_env.util.jsp_solver import JSPSolver
 
-from envs.minimal_jsp_env.util.jsp_generation.entropy_functions import entropy_optimizer, calculate_entropy_from_operations_list
+from envs.minimal_jsp_env.util.jsp_generation.entropy_functions import EntropyOptimizer, calculate_entropy_from_operations_list
 from scipy.stats import entropy
 
 
@@ -40,7 +40,7 @@ def test_jsp_solver():
     assert type(instance.opt_time) == int or type(instance.opt_time) == float
 
 def test_optimizer():
-    optimizer = entropy_optimizer(
+    optimizer = EntropyOptimizer(
         output_size=200, 
         hidden_size=20, 
         learning_rate=0.1, 
