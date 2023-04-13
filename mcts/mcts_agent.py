@@ -111,7 +111,7 @@ class MCTSAgent:
         while not n.is_leaf():
             n = self.tree_policy.select(n, add_dirichlet=(n.is_root() and self.dirichlet_noise))
             s, terminal_reward, done = model.step(s, n.action) #todo: check if model reward should go through reward fun wrapper
-            terminal_reward = self.env(terminal_reward)
+            terminal_reward = self.env.reward(terminal_reward)
         return n, s, terminal_reward, done
 
     def expansion_phase(self, n, s, model, neural_net):
