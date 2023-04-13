@@ -68,8 +68,17 @@ class RandomJSPGeneratorOperationDistirbution(JSPGenerator):
 
         operations_pool = []
         for distr, operation in zip(operation_distribution, random_operations):
+            #print(f"distribution: {distr}, operation: {operation}, num of operations: {int(self.pool_size*distr)}")
             operations_pool += int(self.pool_size*distr)*[operation]
         random.shuffle(operations_pool)
+
+        # following part is to fix the rounding issue of the multiplication distrubution*pool_size
+        # it causes pool_size reduction, taking random samples to be duplicated may decrease the entropy
+        if len(operations_pool) != self.pool_size:
+            size_difference = self.pool_size - len(operations_pool)
+            operations_pool += operations_pool[-size_difference:]
+        #print(f"pool_size: {self.pool_size}, sum of operation_distribution: {sum(operation_distribution)}")
+        #print(f"size of operations pool: {len(operations_pool)}, random_operations: {len(random_operations)}, operation_distribution: {len(operation_distribution)}")
         
         jobs = []
         for job_id in range(0, self.num_jobs):
@@ -78,8 +87,8 @@ class RandomJSPGeneratorOperationDistirbution(JSPGenerator):
             
             # TODO, check if this is still an issue with entropy list designed for different size, maybe there is an rounding issue
             # This is just a work-around for now
-            if operations == []:
-                operations = jobs[-1]
+            #if operations == []:
+            #    operations = jobs[-1]
 
             jobs.append(operations)
 
