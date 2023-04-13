@@ -12,10 +12,9 @@ def generate_elements(root, grabbable=False):
             "data": {
                 'id': node_id,
                 'visits': node.visits,
-                'returns': node.returns,
+                'avgReturn': node.returns / node.visits,
                 'maxReturn': node.max_return,
-                'info_string': "visits: " + str(node.visits) + "\nreturns: " + str(node.returns) +
-                               "\nmax_return: " + str(node.max_return),
+                'info_string': f"visits: {node.visits:.2f}\n returns: {node.returns:.2f} \n avg_return: {(node.returns/node.visits):.2f}\nmax_return: {node.max_return:.3f}",
                 'expandable': False,
                 'depth': get_depth(root, node),
                 'leaf': node.is_leaf()

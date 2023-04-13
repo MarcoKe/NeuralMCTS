@@ -1,7 +1,7 @@
 import dash_cytoscape as cyto
 from dash import Dash, html, Input, Output, ctx, State
-from stylesheets import tree_stylesheet
-from element_generator import generate_elements, get_default_elements, get_subtree_nodes, get_subtree_edges
+from util.tree_visualization.stylesheets import tree_stylesheet
+from util.tree_visualization.element_generator import generate_elements, get_default_elements, get_subtree_nodes, get_subtree_edges
 
 # enable svg export
 cyto.load_extra_layouts()
