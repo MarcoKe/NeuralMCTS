@@ -1,0 +1,4 @@
+name: jsp_uct_neural_value_eval_neural_expansion_5aac
+env: jsp_minimal_002
+agent: naive2_stochastic_actions/uct_neural_value_eval_neural_expansion_5aac
+policy_improvement_iterations: 250

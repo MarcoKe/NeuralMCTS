@@ -1,0 +1,4 @@
+name: jsp_puct_neural_value_eval_full_expansion_6480
+env: jsp_minimal_002
+agent: naive2_stochastic_actions/puct_neural_value_eval_full_expansion_6480
+policy_improvement_iterations: 250

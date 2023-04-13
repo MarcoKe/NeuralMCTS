@@ -1,0 +1,4 @@
+name: jsp_puct_random_full_expansion_bb5b
+env: jsp_minimal_002
+agent: naive2_stochastic_actions/puct_random_full_expansion_bb5b
+policy_improvement_iterations: 250
