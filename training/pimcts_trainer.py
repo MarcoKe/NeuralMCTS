@@ -114,12 +114,12 @@ class MCTSPolicyImprovementTrainer:
         """
         # Preprocess the observation if needed
         features = self.policy.extract_features(obs)
-        # if self.policy.share_features_extractor:
-        latent_pi, latent_vf = self.policy.mlp_extractor(features)
-        # else:
-        #     pi_features, vf_features = features
-        #     latent_pi = self.policy.mlp_extractor.forward_actor(pi_features)
-        #     latent_vf = self.policy.mlp_extractor.forward_critic(vf_features)
+        if self.policy.share_features_extractor:
+            latent_pi, latent_vf = self.policy.mlp_extractor(features)
+        else:
+            pi_features, vf_features = features
+            latent_pi = self.policy.mlp_extractor.forward_actor(pi_features)
+            latent_vf = self.policy.mlp_extractor.forward_critic(vf_features)
         # Evaluate the values for the given observations
         values = self.policy.value_net(latent_vf)
         action_logits = self.policy.action_net(latent_pi)

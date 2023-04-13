@@ -34,19 +34,16 @@ def create_env(env_config):
 def create_agent(env, model, agent_config):
     if len(agent_config['learned_policy']['location']) > 0:
         model_free_agent = PPO.load(agent_config['learned_policy']['location'], env=env)
-    elif agent_config['features_extractor'] == 'gnn':
-        feature_extractor_kwargs = dict(num_layers=3, num_mlp_layers=2, input_dim=2,
-                                        hidden_dim=64, graph_pool="avg")
-        policy_kwargs = dict(activation_fn=torch.nn.modules.activation.Mish,
-                             features_extractor_class=GNNExtractor,
-                             features_extractor_kwargs=feature_extractor_kwargs)
-        model_free_agent = PPO("MultiInputPolicy", env, verbose=1, tensorboard_log="stb3_jssp_gnn_tensorboard/",
-                               policy_kwargs=policy_kwargs)
     else:
         policy_kwargs = dict()
         policy_kwargs['activation_fn'] = torch.nn.modules.Mish
         if 'net_arch' in agent_config['learned_policy']:
             policy_kwargs['net_arch'] = agent_config['learned_policy']['net_arch']
+        if agent_config['features_extractor'] == 'gnn':
+            feature_extractor_kwargs = dict(num_layers=3, num_mlp_layers=2, input_dim=2,
+                                            hidden_dim=64, graph_pool="avg")
+            policy_kwargs['features_extractor_class'] = GNNExtractor
+            policy_kwargs['features_extractor_kwargs'] = feature_extractor_kwargs
         model_free_agent = PPO('MlpPolicy', env, policy_kwargs=policy_kwargs)
     neural_net = Stb3ACAgent(model_free_agent)
 
