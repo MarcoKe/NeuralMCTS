@@ -58,7 +58,7 @@ class GNNJobShopModel(Model):
 
         if len(state['remaining_ops'][job_id]) > 0:
             op = state['remaining_ops'][job_id].pop(0)
-            start_time, flag = GNNJobShopModel._determine_start_time(op, state['schedule'], state['last_job_ops'],
+            start_time, flag = GNNJobShopModel._determine_start_time(op, state['last_job_ops'],
                                                                      state['last_mch_ops'], state['machine_infos'])
             # insert the operation at the correct position so that the entries remain sorted according to start_time
             state['schedule'][op.machine_type].append((op, start_time, start_time + op.duration))
@@ -79,28 +79,28 @@ class GNNJobShopModel(Model):
     @staticmethod
     def _update_adj_matrix(state, op, flag):
         precd, succd = get_op_nbghs(op, state['machine_infos'])
-        state['adj_matrix'][op.op_id] = 0
-        state['adj_matrix'][op.op_id, op.op_id] = 1
-        state['adj_matrix'][op.op_id, precd] = 1
-        state['adj_matrix'][succd, op.op_id] = 1
-        if op.op_id not in get_first_col(state):
-            state['adj_matrix'][op.op_id, op.op_id - 1] = 1
+        state['adj_matrix'][op.unique_op_id] = 0
+        state['adj_matrix'][op.unique_op_id, op.unique_op_id] = 1
+        state['adj_matrix'][op.unique_op_id, precd] = 1
+        state['adj_matrix'][succd, op.unique_op_id] = 1
+        if op.unique_op_id not in get_first_col(state):
+            state['adj_matrix'][op.unique_op_id, op.unique_op_id - 1] = 1
         # remove the old arc when a new operation inserts between two operations
-        if flag and precd != op.op_id and succd != op.op_id:
+        if flag and precd != op.unique_op_id and succd != op.unique_op_id:
             state['adj_matrix'][succd, precd] = 0
 
     @staticmethod
     def _update_features(state, op):
         lower_bounds = get_end_time_lbs(state['jobs'], state['machine_infos'])
-        finished = np.array([f[1] if f[0] != op.op_id else 1 for f in state['features']])
+        finished = np.array([f[1] if i != op.unique_op_id
+                             else 1 for i, f in enumerate(state['features'])])  # set op as finished
         state['features'] = np.concatenate((lower_bounds.reshape(-1, 1) / et_normalize_coef,
                                             finished.reshape(-1, 1)), axis=1)
 
     @staticmethod
-    def _determine_start_time(op: Operation, schedule, last_job_ops, last_mch_ops, machine_infos):
+    def _determine_start_time(op: Operation, last_job_ops, last_mch_ops, machine_infos):
         job_ready_time = last_job_ops[op.job_id] if last_job_ops[op.job_id] != -1 else 0
         mch_ready_time = last_mch_ops[op.machine_type] if last_mch_ops[op.machine_type] != -1 else 0
-        mch_schedule = schedule[op.machine_type]
         # ids of the operations scheduled on the same machine
         op_ids = machine_infos[op.machine_type]['op_ids']
         # start times of the operations scheduled on the same machine

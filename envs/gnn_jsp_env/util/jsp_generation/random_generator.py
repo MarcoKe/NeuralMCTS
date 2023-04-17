@@ -21,10 +21,11 @@ class RandomJSPGenerator(JSPGenerator):
             operations = []
             for j in range(0, self.num_operations):
                 op_id = id
+                unique_op_id = op_id + i * self.num_jobs
                 id += 1
                 duration = random.randint(1, self.max_op_duration)
                 machine_type = random.randint(0, self.num_machines - 1)
-                operations.append(Operation(i, op_id, machine_type, duration))
+                operations.append(Operation(i, op_id, unique_op_id,  machine_type, duration))
 
             jobs.append(operations)
 

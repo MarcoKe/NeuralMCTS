@@ -18,10 +18,10 @@ class SamsonovReader(JSPReader):
         for job_id, (jd, jm) in enumerate(zip(jobs_input['durations'], jobs_input['machines'])):
             op_list = []
             for op_id, (d, m) in enumerate(zip(jd, jm)):
-                op_list.append(Operation(job_id, op_id, m, d))
+                op_list.append(Operation(job_id, op_id, op_id + job_id * len(jobs_input['durations']), m, d))
 
             job_list.append(op_list)
 
-        return JSPInstance(job_list, input['n_ops_per_job'], input['max_op_time'], input['jssp_identification'],
-                    input['optimal_time'])
+        return JSPInstance(job_list, input['n_ops_per_job'], input['n_resources'], input['max_op_time'],
+                           input['jssp_identification'], input['optimal_time'])
 
