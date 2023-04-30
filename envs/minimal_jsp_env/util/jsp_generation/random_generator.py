@@ -3,6 +3,7 @@ import numpy as np
 from envs.minimal_jsp_env.entities import Operation, JSPInstance
 from envs.minimal_jsp_env.util.jsp_generation.jsp_generator import JSPGenerator
 from typing import List
+from collections import Counter
 
 
 class RandomJSPGenerator(JSPGenerator):
@@ -68,14 +69,20 @@ class RandomJSPGeneratorOperationDistirbution(JSPGenerator):
         operations_pool = []
         for distr, operation in zip(operation_distribution, random_operations):
             operations_pool += int(self.pool_size*distr)*[operation]
-        random.shuffle(operations_pool)
+        
 
         # Following part is to fix the rounding issue of the multiplication distrubution*pool_size
-        # it causes pool_size reduction, taking random samples to be duplicated may decrease the entropy
         if len(operations_pool) != self.pool_size:
             size_difference = self.pool_size - len(operations_pool)
-            operations_pool += operations_pool[-size_difference:]
+
+            freq_counts = Counter(operations_pool)
+            freq_dict = {k: v for k, v in freq_counts.items()}
+            operations_pool.sort(key=lambda x: freq_dict[x])
+
+            operations_pool += operations_pool[:size_difference]
         
+        random.shuffle(operations_pool)
+
         jobs = []
         for job_id in range(0, self.num_jobs):
             job_operations = operations_pool[self.num_operations*job_id:self.num_operations*(job_id+1)]
