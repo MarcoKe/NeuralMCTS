@@ -72,6 +72,7 @@ class MCTSAgent:
 
             n = best_child
             s, terminal_reward, done = self.model.step(s, n.action)
+            terminal_reward = self.env.reward(terminal_reward)
 
         while n.has_parent():
             n.update(terminal_reward)
@@ -110,7 +111,7 @@ class MCTSAgent:
         while not n.is_leaf():
             n = self.tree_policy.select(n, add_dirichlet=(n.is_root() and self.dirichlet_noise))
             s, terminal_reward, done = model.step(s, n.action) #todo: check if model reward should go through reward fun wrapper
-
+            terminal_reward = self.env.reward(terminal_reward)
         return n, s, terminal_reward, done
 
     def expansion_phase(self, n, s, model, neural_net):
@@ -132,6 +133,7 @@ class MCTSAgent:
             states = []
             for c in new_children:
                 s_, reward_, done_ = model.step(copy.deepcopy(s), c.action)
+                reward_ = self.env.reward(reward_)
                 states.append(s_)
 
                 # with this strategy, we need to check if the episodes are done at this point. otherwise, we will pass

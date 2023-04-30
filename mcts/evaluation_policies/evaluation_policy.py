@@ -26,7 +26,7 @@ class EvaluationPolicy:
 
 
 class RandomRolloutPolicy(EvaluationPolicy):
-    def evaluate(self, state, model=None, **kwargs):
+    def evaluate(self, state, model=None, env=None, **kwargs):
         done = False
 
         while not done:
@@ -34,6 +34,7 @@ class RandomRolloutPolicy(EvaluationPolicy):
 
             action = random.choice(legal_actions)
             state, reward, done = model.step(state, action)
+            reward = env.reward(reward)
 
         return reward, None
 
