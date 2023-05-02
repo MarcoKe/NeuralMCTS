@@ -1,31 +1,31 @@
 import numpy as np
 
 
-def get_legal_pos(op_dur, job_ready_time, possible_pos, start_times, end_times):
-    earliest_start_time = max(job_ready_time, end_times[possible_pos[0] - 1])
-    possible_pos_end_times = np.append(earliest_start_time, end_times[possible_pos])[:-1]
-    possible_gaps = start_times[possible_pos] - possible_pos_end_times
+def get_legal_pos(op_dur, job_ready_time, possible_pos, mch_infos):
+    earliest_start_time = max(job_ready_time, mch_infos['end_times'][possible_pos[0] - 1])
+    possible_pos_end_times = np.append(earliest_start_time, mch_infos['end_times'][possible_pos])[:-1]
+    possible_gaps = mch_infos['start_times'][possible_pos] - possible_pos_end_times
     legal_pos_idx = np.where(op_dur <= possible_gaps)[0]
     legal_pos = np.take(possible_pos, legal_pos_idx)
     return legal_pos_idx, legal_pos, possible_pos_end_times
 
 
-def put_in_the_end(op, job_ready_time, mch_ready_time, op_ids, start_times, end_times):
-    index = np.where(start_times == -1)[0][0]
+def put_in_the_end(op, job_ready_time, mch_ready_time, mch_infos):
+    index = np.where(mch_infos['start_times'] == -1)[0][0]
     op_start_time = max(job_ready_time, mch_ready_time)
-    op_ids[index] = op.unique_op_id
-    start_times[index] = op_start_time
-    end_times[index] = op_start_time + op.duration
+    mch_infos['op_ids'][index] = op.unique_op_id
+    mch_infos['start_times'][index] = op_start_time
+    mch_infos['end_times'][index] = op_start_time + op.duration
     return op_start_time
 
 
-def put_in_between(op, legal_pos_idx, legal_pos, possible_pos_end_times, op_ids, start_times, end_times):
+def put_in_between(op, legal_pos_idx, legal_pos, possible_pos_end_times, mch_infos):
     earliest_idx = legal_pos_idx[0]
     earliest_pos = legal_pos[0]
     start_time = possible_pos_end_times[earliest_idx]
-    op_ids[:] = np.insert(op_ids, earliest_pos, op.unique_op_id)[:-1]
-    start_times[:] = np.insert(start_times, earliest_pos, start_time)[:-1]
-    end_times[:] = np.insert(end_times, earliest_pos, start_time + op.duration)[:-1]
+    mch_infos['op_ids'][:] = np.insert(mch_infos['op_ids'], earliest_pos, op.unique_op_id)[:-1]
+    mch_infos['start_times'][:] = np.insert(mch_infos['start_times'], earliest_pos, start_time)[:-1]
+    mch_infos['end_times'][:] = np.insert(mch_infos['end_times'], earliest_pos, start_time + op.duration)[:-1]
     return start_time
 
 

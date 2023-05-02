@@ -78,16 +78,16 @@ class GNNJobShopModel(Model):
 
     @staticmethod
     def _update_adj_matrix(state, op, flag):
-        precd, succd = get_op_nbghs(op, state['machine_infos'])
+        pred, succ = get_op_nbghs(op, state['machine_infos'])
         state['adj_matrix'][op.unique_op_id] = 0
         state['adj_matrix'][op.unique_op_id, op.unique_op_id] = 1
-        state['adj_matrix'][op.unique_op_id, precd] = 1
-        state['adj_matrix'][succd, op.unique_op_id] = 1
+        state['adj_matrix'][op.unique_op_id, pred] = 1
+        state['adj_matrix'][succ, op.unique_op_id] = 1
         if op.unique_op_id not in get_first_col(state):
             state['adj_matrix'][op.unique_op_id, op.unique_op_id - 1] = 1
         # remove the old arc when a new operation inserts between two operations
-        if flag and precd != op.unique_op_id and succd != op.unique_op_id:
-            state['adj_matrix'][succd, precd] = 0
+        if flag and pred != op.unique_op_id and succ != op.unique_op_id:
+            state['adj_matrix'][succ, pred] = 0
 
     @staticmethod
     def _update_features(state, op):
@@ -101,32 +101,26 @@ class GNNJobShopModel(Model):
     def _determine_start_time(op: Operation, last_job_ops, last_mch_ops, machine_infos):
         job_ready_time = last_job_ops[op.job_id] if last_job_ops[op.job_id] != -1 else 0
         mch_ready_time = last_mch_ops[op.machine_type] if last_mch_ops[op.machine_type] != -1 else 0
-        # ids of the operations scheduled on the same machine
-        op_ids = machine_infos[op.machine_type]['op_ids']
-        # start times of the operations scheduled on the same machine
-        start_times = machine_infos[op.machine_type]['start_times']
-        # start times of the operations scheduled on the same machine
-        end_times = machine_infos[op.machine_type]['end_times']
-        # whether the operation is scheduled in the end (False) or between already scheduled operations (True)
+        # whether the operation is scheduled between already scheduled operations (True) or in the end (False)
         flag = False
 
         # positions between already scheduled operations on the machine required by the operation
-        possible_pos = np.where(job_ready_time < start_times)[0]
+        possible_pos = np.where(job_ready_time < machine_infos[op.machine_type]['start_times'])[0]
 
         if len(possible_pos) == 0:
             # not possible to schedule the operation between other operations -> put in the end
-            op_start_time = put_in_the_end(op, job_ready_time, mch_ready_time, op_ids, start_times, end_times)
+            op_start_time = put_in_the_end(op, job_ready_time, mch_ready_time, machine_infos[op.machine_type])
         else:
             # positions which fit the length of the operation (there is enough time before the next operation)
             legal_pos_idx, legal_pos, possible_pos_end_times = get_legal_pos(op.duration, job_ready_time,
-                                                                             possible_pos, start_times, end_times)
+                                                                             possible_pos, machine_infos[op.machine_type])
             if len(legal_pos) == 0:
                 # no position which can fit the operation -> put in the end
-                op_start_time = put_in_the_end(op, job_ready_time, mch_ready_time, op_ids, start_times, end_times)
+                op_start_time = put_in_the_end(op, job_ready_time, mch_ready_time, machine_infos[op.machine_type])
             else:
                 # schedule the operation between other operations
                 op_start_time = put_in_between(op, legal_pos_idx, legal_pos, possible_pos_end_times,
-                                               op_ids, start_times, end_times)
+                                               machine_infos[op.machine_type])
                 flag = True
 
         return op_start_time, flag
@@ -161,6 +155,7 @@ class GNNJobShopModel(Model):
         done = GNNJobShopModel._is_done(new_state['remaining_ops'])
         if done:
             reward = - GNNJobShopModel._makespan(new_state['schedule'])
+            # reward = - (new_state['features'][:, 0].max() - state['features'][:, 0].max())
 
         return new_state, reward, done
 
