@@ -11,3 +11,4 @@ def test_exp_visit_counts():
 
     probs = MCTSAgent.exponentiated_visit_counts(counts, total, temperature=0.0)
     assert probs == approx([1/3, 1/3, 1/3])
+

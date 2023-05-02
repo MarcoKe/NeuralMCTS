@@ -1,0 +1,4 @@
+name: jsp_puct_neural_rollout_eval_full_expansion_c1b4
+env: jsp_minimal_002
+agent: naive2_max_node_value2/puct_neural_rollout_eval_full_expansion_c1b4
+policy_improvement_iterations: 250

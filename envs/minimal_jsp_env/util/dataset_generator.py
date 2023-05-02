@@ -5,6 +5,8 @@ sys.path.append(os.getcwd())
 
 from envs.minimal_jsp_env.util.jsp_generation.random_generator import RandomJSPGenerator, RandomJSPGeneratorPool, RandomJSPGeneratorOperationDistirbution, RandomJSPGeneratorWithJobPool
 from envs.minimal_jsp_env.entities import Operation, JSPInstance
+from envs.minimal_jsp_env.util.jsp_generation.entropy_functions import EntropyOptimizer, calculate_entropy_from_operations_list
+from scipy.stats import entropy
 import json
 import argparse
 
@@ -27,19 +29,32 @@ if __name__ == '__main__':
     num_jobs = config_file['num_jobs']
     num_operations = config_file['num_operations']
     max_op_duration = config_file['max_op_duration']
+    optimizer_config = config_file['optimizer_config']
 
-    # for now with predefined entropy distribution, next merge I'll add the entropy optimizer to generate the entropy distribution
-    entropy0_2 = [0.5, 0.5]
-    entropy0_3 = [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]
-    entropy0_4 = [0.08333333333333333, 0.16666666666666666, 0.25, 0.08333333333333333, 0.4166666666666667]
-    entropy0_5 = [0.3333333333333333, 0.16666666666666666, 0.08333333333333333, 0.08333333333333333, 0.08333333333333333, 0.08333333333333333, 0.16666666666666666]
-    entropy0_6 = [0.08333333333333333, 0.08333333333333333, 0.08333333333333333, 0.08333333333333333, 0.16666666666666666, 0.08333333333333333, 0.16666666666666666, 0.16666666666666666, 0.08333333333333333]
-    entropy0_7 = [0.05555555555555555, 0.1111111111111111, 0.027777777777777776, 0.05555555555555555, 0.05555555555555555, 0.16666666666666666, 0.16666666666666666, 0.05555555555555555, 0.027777777777777776, 0.027777777777777776, 0.08333333333333333, 0.027777777777777776, 0.05555555555555555, 0.05555555555555555, 0.027777777777777776]
-    entropy0_8 = [0.16666666666666666, 0.027777777777777776, 0.027777777777777776, 0.027777777777777776, 0.027777777777777776, 0.027777777777777776, 0.05555555555555555, 0.027777777777777776, 0.05555555555555555, 0.027777777777777776, 0.027777777777777776, 0.05555555555555555, 0.05555555555555555, 0.027777777777777776, 0.027777777777777776, 0.05555555555555555, 0.027777777777777776, 0.08333333333333333, 0.05555555555555555, 0.08333333333333333, 0.027777777777777776]
+    optimizer = EntropyOptimizer(
+        output_size=optimizer_config['output_size'], 
+        hidden_size=optimizer_config['hidden_size'], 
+        learning_rate=optimizer_config['learning_rate'], 
+        num_epochs=optimizer_config['num_epochs'], 
+        max_episodes=optimizer_config['max_episodes'], 
+        precision=optimizer_config['precision'],
+        )
+    entropies = optimizer.find_entropies()
 
-    for entropy_val in range(2, 9, 1):
+    max_entropy = calculate_entropy_from_operations_list(range(optimizer_config['output_size']))
+    for ratio in entropies:
+        output_entropy = entropy(entropies[ratio])
+        relative_entropy = output_entropy/max_entropy
+        entropy_diff = abs(relative_entropy-ratio)
+        assert entropy_diff < 0.05, "One of the entropies does not meet the required ratio. Rerun the code again."
 
-        dir_path = f"{config_file['target_path']}/entropy0_{entropy_val}/"
+
+
+    for entropy_key in entropies.keys():
+
+        entropy_val = str(entropy_key).replace(".", "_")
+
+        dir_path = f"{config_file['target_path']}/entropy{entropy_val}/"
         os.makedirs(dir_path, exist_ok=True)
 
         for i in range(config_file['num_simulations']):
@@ -48,11 +63,11 @@ if __name__ == '__main__':
             elif config_file['generator_type'] == 'random_pool':
                 instance = RandomJSPGeneratorPool(num_jobs, num_operations, max_op_duration).generate()
             elif config_file['generator_type'] == 'random_pool_entropy':
-                instance = RandomJSPGeneratorOperationDistirbution(num_jobs, num_operations, max_op_duration).generate(eval(f"entropy0_{entropy_val}"))
+                instance = RandomJSPGeneratorOperationDistirbution(num_jobs, num_operations, max_op_duration).generate(entropies[entropy_key])
             elif config_file['generator_type'] == 'random_job_pool':
                 instance = RandomJSPGeneratorWithJobPool(num_jobs, num_operations, max_op_duration).generate()
             elif config_file['generator_type'] == 'random_job_pool_entropy':
-                instance = RandomJSPGeneratorWithJobPool(num_jobs, num_operations, max_op_duration, operation_distribution=eval(f"entropy0_{entropy_val}")).generate()
+                instance = RandomJSPGeneratorWithJobPool(num_jobs, num_operations, max_op_duration, operation_distribution=entropies[entropy_key]).generate()
             
-            file_name = f"entropy0_{entropy_val}_{i}.json"
+            file_name = f"entropy{entropy_val}_{i}.json"
             JSPWriterJSON().write_instance(instance, f"{dir_path}/{file_name}", file_name)
