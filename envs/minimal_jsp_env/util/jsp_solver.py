@@ -25,10 +25,16 @@ class JSPSolver(Solver):
         return opt_time
     
     def solve(self, instance):
+        solutions = dict()
         if instance.opt_time:
-            return instance.opt_time
+            solutions['opt'] = instance.opt_time
         else:
-            return self.solve_from_job_list(instance.jobs)
+            solutions['opt'] = self.solve_from_job_list(instance.jobs)
+
+        if instance.spt_time:
+            solutions['spt'] = instance.spt_time
+
+        return solutions
 
     @staticmethod
     def _solve_jsp(jobs_data, max_time_in_seconds=7200, verbose=False):

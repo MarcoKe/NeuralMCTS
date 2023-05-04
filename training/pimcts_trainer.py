@@ -24,7 +24,7 @@ from training.schedule import LinearSchedule
 
 
 class MCTSPolicyImprovementTrainer:
-    def __init__(self, exp_name, env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.0005, learning_rate=1e-5,
+    def __init__(self, exp_name, env, eval_env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.0005, learning_rate=1e-5,
                  buffer_size=50000, batch_size=256, num_epochs=1, policy_improvement_iterations=2000, workers=8,
                  num_episodes=5, warmup_steps=0, entropy_loss=False, selection_mode='mean', stochastic_actions=False,
                  solver=None, wandb_run=None):
@@ -42,6 +42,7 @@ class MCTSPolicyImprovementTrainer:
         """
         self.exp_name = exp_name
         self.env = env
+        self.eval_env = eval_env
         self.model_free_agent = model_free_agent
         self.policy: ActorCriticPolicy = model_free_agent.policy
         self.guided_mcts_agent = mcts_agent
@@ -264,35 +265,50 @@ class MCTSPolicyImprovementTrainer:
         else:
             results = [self.evaluate_single()]
 
-        opt_gaps = 0
-        reward_diffs = 0
+        # opt_gaps = 0
+        # reward_diffs = 0
         for r in results:
-            opt_gaps += r[0]
-            self.log('eval/opt_gap', r[0])
+            for sol in r[0]:
+                self.log('eval/' + sol, r[0][sol])
+            # self.log('eval/opt_gap', r[0])
             self.log('eval/diff_mcts_model_free', r[1])
             self.log('eval/rew_mcts', r[2])
             self.log('eval/rew_learned_policy', r[3])
+            self.log('eval/instance_id', r[4])
+            # reward_diffs += r[1]
 
-            reward_diffs += r[1]
 
-
-        self.log('mctstrain/eval_optgap', opt_gaps / eval_iterations)
-        self.log('mctstrain/diff_mcts_model_free', reward_diffs / eval_iterations)
+        # self.log('mctstrain/eval_optgap', opt_gaps / eval_iterations)
+        # self.log('mctstrain/diff_mcts_model_free', reward_diffs / eval_iterations)
 
     def evaluate_single(self):
-        state = copy.deepcopy(self.env.reset())
-        state_ = copy.deepcopy(self.env.raw_state())
+        state = copy.deepcopy(self.eval_env.reset())
+        state_ = copy.deepcopy(self.eval_env.raw_state())
 
-        reward_model_free = eval(self.env, Stb3AgentWrapper(self.model_free_agent, self.env, self.mcts_agent.model), copy.deepcopy(state_), copy.deepcopy(state))
+        print(self.eval_env.instance.id)
+        reward_model_free = eval(self.eval_env, Stb3AgentWrapper(self.model_free_agent, self.eval_env, self.mcts_agent.model), copy.deepcopy(state_), copy.deepcopy(state))
 
-        reward_mcts = eval(self.env, MCTSAgentWrapper(self.mcts_agent, self.env), state_, state)
-        opt = self.solver.solve(self.env.current_instance())
-
-        gap = opt_gap(opt, -reward_mcts)
+        reward_mcts = eval(self.eval_env, MCTSAgentWrapper(self.mcts_agent, self.eval_env), state_, state)
         reward_diff = reward_mcts - reward_model_free
 
-        return gap, reward_diff, reward_mcts, reward_model_free
+        solutions = self.solver.solve(self.eval_env.current_instance())
+        solution_gaps = self.solutions_to_gaps(solutions)
 
+        return solution_gaps, reward_diff, reward_mcts, reward_model_free, self.eval_env.instance.id
+
+    def solutions_to_gaps(self, solutions):
+        if 'opt' in solutions:
+            opt = solutions['opt']
+            gaps = dict()
+
+            for sol in solutions.keys():
+                if sol != 'opt':
+                    gaps[sol] = opt_gap(opt, solutions[sol])
+
+            return gaps
+
+        else:
+            return None
 
 
 if __name__ == '__main__':
