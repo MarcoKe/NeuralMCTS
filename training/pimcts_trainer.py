@@ -258,7 +258,6 @@ class MCTSPolicyImprovementTrainer:
         self.model_free_agent.save(model_path)
 
     def evaluate(self, eval_iterations=10):
-        print("evaluating")
         if self.workers > 1:
             instances = [(self.eval_env.generator.generate(),) for _ in range(eval_iterations)]
             pool = mp.Pool(eval_iterations)
@@ -280,7 +279,6 @@ class MCTSPolicyImprovementTrainer:
         state = copy.deepcopy(self.eval_env.reset())
         state_ = copy.deepcopy(self.eval_env.raw_state())
 
-        print(instance.id)
         reward_model_free = eval(self.eval_env, Stb3AgentWrapper(self.model_free_agent, self.eval_env, self.mcts_agent.model), copy.deepcopy(state_), copy.deepcopy(state))
 
         reward_mcts = eval(self.eval_env, MCTSAgentWrapper(self.mcts_agent, self.eval_env), state_, state)
