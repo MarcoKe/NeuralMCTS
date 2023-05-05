@@ -19,8 +19,12 @@ class JobShopEnv(gym.Env):
 
         schedule = [[] for _ in range(self.num_machines)]
         last_job_ops = [-1 for _ in range(self.num_jobs)]
-        return {'remaining_operations': deepcopy(self.instance.jobs), 'schedule': schedule,
+
+        s_ = {'remaining_operations': deepcopy(self.instance.jobs), 'schedule': schedule,
                 'last_job_ops': last_job_ops}
+
+        self.state = s_
+        return s_
 
     def _generate_instance(self):
         instance = self.generator.generate()
