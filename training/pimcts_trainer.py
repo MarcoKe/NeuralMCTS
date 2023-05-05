@@ -258,34 +258,29 @@ class MCTSPolicyImprovementTrainer:
         self.model_free_agent.save(model_path)
 
     def evaluate(self, eval_iterations=10):
+        print("evaluating")
         if self.workers > 1:
+            instances = [(self.eval_env.generator.generate(),) for _ in range(eval_iterations)]
             pool = mp.Pool(eval_iterations)
-            results = pool.starmap(self.evaluate_single, [[]] * eval_iterations)
+            results = pool.starmap(self.evaluate_single, instances)
             pool.close()
-        else:
-            results = [self.evaluate_single()]
+        else: # only for debugging purposes
+            results = [self.evaluate_single(self.eval_env.reset(), self.eval_env.raw_state())]
 
-        # opt_gaps = 0
-        # reward_diffs = 0
         for r in results:
             for sol in r[0]:
                 self.log('eval/' + sol, r[0][sol])
-            # self.log('eval/opt_gap', r[0])
             self.log('eval/diff_mcts_model_free', r[1])
             self.log('eval/rew_mcts', r[2])
             self.log('eval/rew_learned_policy', r[3])
             self.log('eval/instance_id', r[4])
-            # reward_diffs += r[1]
 
-
-        # self.log('mctstrain/eval_optgap', opt_gaps / eval_iterations)
-        # self.log('mctstrain/diff_mcts_model_free', reward_diffs / eval_iterations)
-
-    def evaluate_single(self):
+    def evaluate_single(self, instance):
+        self.eval_env.set_instance(instance)
         state = copy.deepcopy(self.eval_env.reset())
         state_ = copy.deepcopy(self.eval_env.raw_state())
 
-        print(self.eval_env.instance.id)
+        print(instance.id)
         reward_model_free = eval(self.eval_env, Stb3AgentWrapper(self.model_free_agent, self.eval_env, self.mcts_agent.model), copy.deepcopy(state_), copy.deepcopy(state))
 
         reward_mcts = eval(self.eval_env, MCTSAgentWrapper(self.mcts_agent, self.eval_env), state_, state)
