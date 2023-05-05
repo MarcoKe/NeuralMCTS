@@ -275,7 +275,7 @@ class MCTSPolicyImprovementTrainer:
             self.log('eval/instance_id', r[4])
 
     def evaluate_single(self, instance):
-        self.eval_env.set_instance(instance)
+        self.eval_env.set_instance(copy.deepcopy(instance))
         state = copy.deepcopy(self.eval_env.reset())
         state_ = copy.deepcopy(self.eval_env.raw_state())
 
