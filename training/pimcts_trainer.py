@@ -218,30 +218,30 @@ class MCTSPolicyImprovementTrainer:
             print("collecting experience")
             start_time = time.time()
 
-            if self.workers > 1:
-                pool = mp.Pool(self.workers)
-                results = pool.starmap(self.collect_experience, [[]] * self.workers)
-                pool.close()
-            else:
-                results = [self.collect_experience()]
-
-            for r in results:
-                observations = th.Tensor(np.array(r[0])) #todo: we are converting between different datastructures in this file. is all of it necessary?
-                pi_mcts = th.Tensor(r[1])
-                outcomes = th.Tensor(r[2])
-                avg_reward = r[3]
-                self.total_model_steps += r[4]
-                self.total_neural_net_calls += r[5]
-                self.memory.store(observations, pi_mcts, outcomes)
-                self.log('mctstrain/ep_rew', avg_reward)
-
-            self.log('mctstrain/model_steps', self.total_model_steps)
-            self.log('mctstrain/neural_net_calls', self.total_neural_net_calls)
-
-            self.log('time/collecting', time.time() - start_time)
-
-            start_time = time.time()
-            self.train_on_mcts_experiences()
+            # if self.workers > 1:
+            #     pool = mp.Pool(self.workers)
+            #     results = pool.starmap(self.collect_experience, [[]] * self.workers)
+            #     pool.close()
+            # else:
+            #     results = [self.collect_experience()]
+            #
+            # for r in results:
+            #     observations = th.Tensor(np.array(r[0])) #todo: we are converting between different datastructures in this file. is all of it necessary?
+            #     pi_mcts = th.Tensor(r[1])
+            #     outcomes = th.Tensor(r[2])
+            #     avg_reward = r[3]
+            #     self.total_model_steps += r[4]
+            #     self.total_neural_net_calls += r[5]
+            #     self.memory.store(observations, pi_mcts, outcomes)
+            #     self.log('mctstrain/ep_rew', avg_reward)
+            #
+            # self.log('mctstrain/model_steps', self.total_model_steps)
+            # self.log('mctstrain/neural_net_calls', self.total_neural_net_calls)
+            #
+            # self.log('time/collecting', time.time() - start_time)
+            #
+            # start_time = time.time()
+            # self.train_on_mcts_experiences()
 
             self.log('mctstrain/policy_improvement_iter', i)
             self.log('time/training', time.time()-start_time)
@@ -264,7 +264,7 @@ class MCTSPolicyImprovementTrainer:
             results = pool.starmap(self.evaluate_single, instances)
             pool.close()
         else: # only for debugging purposes
-            results = [self.evaluate_single(self.eval_env.reset(), self.eval_env.raw_state())]
+            results = [self.evaluate_single(self.eval_env.generator.generate())]
 
         for r in results:
             for sol in r[0]:
@@ -276,15 +276,15 @@ class MCTSPolicyImprovementTrainer:
 
     def evaluate_single(self, instance):
         self.eval_env.set_instance(copy.deepcopy(instance))
-        state = copy.deepcopy(self.eval_env.reset())
+        state = copy.deepcopy(self.eval_env.state)
         state_ = copy.deepcopy(self.eval_env.raw_state())
 
-        reward_model_free = eval(self.eval_env, Stb3AgentWrapper(self.model_free_agent, self.eval_env, self.mcts_agent.model), copy.deepcopy(state_), copy.deepcopy(state))
+        reward_model_free = eval(self.eval_env, Stb3AgentWrapper(self.model_free_agent, self.eval_env, self.mcts_agent.model), copy.deepcopy(instance))
 
-        reward_mcts = eval(self.eval_env, MCTSAgentWrapper(self.mcts_agent, self.eval_env), state_, state)
+        reward_mcts = eval(self.eval_env, MCTSAgentWrapper(self.mcts_agent, self.eval_env), copy.deepcopy(instance))
         reward_diff = reward_mcts - reward_model_free
 
-        solutions = self.solver.solve(self.eval_env.current_instance())
+        solutions = self.solver.solve(copy.deepcopy(self.eval_env.current_instance()))
         solution_gaps = self.solutions_to_gaps(solutions)
 
         return solution_gaps, reward_diff, reward_mcts, reward_model_free, self.eval_env.instance.id

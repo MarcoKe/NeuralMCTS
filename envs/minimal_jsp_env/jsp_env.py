@@ -24,15 +24,15 @@ class JobShopEnv(gym.Env):
                 'last_job_ops': last_job_ops}
 
         self.state = s_
-        return s_
+        return self.state
 
     def _generate_instance(self):
         instance = self.generator.generate()
-        return self.set_instance(instance)
+        self.set_instance(instance)
 
     def reset(self):
         self.done = False
-        self.state = self._generate_instance()
+        self._generate_instance()
 
         return self.state
 
