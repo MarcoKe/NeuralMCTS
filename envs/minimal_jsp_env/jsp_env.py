@@ -11,6 +11,7 @@ class JobShopEnv(gym.Env):
         self.reset()
 
     def set_instance(self, instance):
+        self.done = False
         self.instance = instance
         self.ops_per_job = self.instance.num_ops_per_job
         self.num_machines = self.instance.num_ops_per_job

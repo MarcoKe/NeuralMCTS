@@ -14,8 +14,8 @@ class OptimalityGapReward(gym.RewardWrapper):
             return - 1
 
         optimum = self.env.instance.opt_time
-        if not optimum:
-            print("Reward function requires precomputed optima")
+        assert optimum, "Reward function requires precomputed optima"
+
         optimality_gap = (makespan - optimum) / optimum
 
         assert makespan >= optimum, f"weird opt gap: {optimality_gap}, makespan: {makespan}, optimum: {optimum}"
