@@ -17,12 +17,14 @@ class JSPReaderJSON:
             operations = []
             for operation_id, (operation_machine_type, operation_duration) in enumerate(
                     zip(job_machine_types, job_durations)):
-                operations.append(Operation(job_id, operation_id, operation_machine_type, operation_duration))
+                unique_op_id = operation_id + job_id * input_file['durations']
+                operations.append(Operation(job_id, operation_id, unique_op_id,
+                                            operation_machine_type, operation_duration))
 
             jobs.append(operations)
 
-        return JSPInstance(jobs, input_file['num_ops_per_job'], input_file['max_op_time'], input_file['id'],
-                           input_file['opt_time'])
+        return JSPInstance(jobs, input_file['num_ops_per_job'], input_file['n_resources'],
+                           input_file['max_op_time'], input_file['id'], input_file['opt_time'])
 
 
 class JSPReaderGoogleOR:

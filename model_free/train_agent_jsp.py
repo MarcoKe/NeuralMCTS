@@ -11,15 +11,15 @@ from experiment_management.setup_experiment import create_env
 env_config = load_yml((Path('../data/config/envs/jsp_gnn_001.yml')))
 env, _ = create_env(env_config)
 
-feature_extractor_kwargs = dict(num_layers=3, num_mlp_layers=2, input_dim=2,
-                                hidden_dim=64, graph_pool="avg")
-policy_kwargs = dict(activation_fn=torch.nn.modules.activation.ReLU,
-                     net_arch=[dict(pi=[256, 256], vf=[256, 256])],
-                     features_extractor_class=GNNExtractor,
-                     features_extractor_kwargs=feature_extractor_kwargs)
-# policy_kwargs = dict(activation_fn=torch.nn.modules.activation.Mish, net_arch=[dict(pi=[256, 256], vf=[256, 256])])
+# feature_extractor_kwargs = dict(num_layers=3, num_mlp_layers=2, input_dim=2,
+#                                 hidden_dim=64, graph_pool="avg")
+# policy_kwargs = dict(activation_fn=torch.nn.modules.activation.ReLU,
+#                      net_arch=[dict(pi=[256, 256], vf=[256, 256])],
+#                      features_extractor_class=GNNExtractor,
+#                      features_extractor_kwargs=feature_extractor_kwargs)
+policy_kwargs = dict(activation_fn=torch.nn.modules.activation.Mish, net_arch=[dict(pi=[256, 256], vf=[256, 256])])
 model = PPO("MlpPolicy", env, verbose=1, learning_rate=0.00005,
-            #tensorboard_log="results/tensorboard/stb3_gnn_jsp_tensorboard/",
+            tensorboard_log="results/tensorboard/stb3_gnn_jsp_tensorboard/",
             policy_kwargs=policy_kwargs)
 # model = PPO("MlpPolicy", env, verbose=1, learning_rate=0.00005, tensorboard_log="results/tensorboard/stb3_jsp_tensorboard/", policy_kwargs=policy_kwargs)
 model.learn(total_timesteps=3_000_000)

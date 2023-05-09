@@ -8,9 +8,6 @@ from envs.gnn_jsp_env.util.jsp_conversion.instance_reader_factory import instanc
 
 
 class MultipleInstanceGenerator(JSPGenerator):
-#     def __init__(self, path: str, reader: JSPReader):
-#         self.instance = reader.read_instance(path)
-
     def __init__(self, path: str, format: str, **kwargs):
         self.reader = instance_readers.get(format)
         self.instances = [jsp_file for jsp_file in glob.glob(path + '*')]

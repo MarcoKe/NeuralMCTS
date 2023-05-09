@@ -18,7 +18,8 @@ class SamsonovReader(JSPReader):
         for job_id, (jd, jm) in enumerate(zip(jobs_input['durations'], jobs_input['machines'])):
             op_list = []
             for op_id, (d, m) in enumerate(zip(jd, jm)):
-                op_list.append(Operation(job_id, op_id, op_id + job_id * len(jobs_input['durations']), m, d))
+                unique_op_id = op_id + job_id * len(jobs_input['durations'])
+                op_list.append(Operation(job_id, op_id, unique_op_id, m, d))
 
             job_list.append(op_list)
 

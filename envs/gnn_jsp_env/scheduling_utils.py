@@ -2,6 +2,11 @@ import numpy as np
 
 
 def get_legal_pos(op_dur, job_ready_time, possible_pos, mch_infos):
+    """
+    Returns the positions which fit the given operation duration,
+    considering that the operation can only start when the required machine is free
+    and the job is ready (the previous operations of the job are completed)
+    """
     earliest_start_time = max(job_ready_time, mch_infos['end_times'][possible_pos[0] - 1])
     possible_pos_end_times = np.append(earliest_start_time, mch_infos['end_times'][possible_pos])[:-1]
     possible_gaps = mch_infos['start_times'][possible_pos] - possible_pos_end_times
@@ -11,6 +16,9 @@ def get_legal_pos(op_dur, job_ready_time, possible_pos, mch_infos):
 
 
 def put_in_the_end(op, job_ready_time, mch_ready_time, mch_infos):
+    """
+    Puts an operation at the end of the already scheduled operations
+    """
     index = np.where(mch_infos['start_times'] == -1)[0][0]
     op_start_time = max(job_ready_time, mch_ready_time)
     mch_infos['op_ids'][index] = op.unique_op_id
@@ -20,6 +28,9 @@ def put_in_the_end(op, job_ready_time, mch_ready_time, mch_infos):
 
 
 def put_in_between(op, legal_pos_idx, legal_pos, possible_pos_end_times, mch_infos):
+    """
+    Puts an operation between already scheduled operations
+    """
     earliest_idx = legal_pos_idx[0]
     earliest_pos = legal_pos[0]
     start_time = possible_pos_end_times[earliest_idx]
@@ -62,6 +73,7 @@ def get_op_nbghs(op, machine_infos):
         if op.unique_op_id in value['op_ids']:
             action_coord = [key, np.where(op.unique_op_id == value['op_ids'])[0][0]]
             break
+    assert action_coord, "The operation's unique id was not found in the machine informations"
 
     if action_coord[1].item() > 0:
         pred_id = action_coord[0], action_coord[1] - 1
@@ -79,15 +91,11 @@ def get_op_nbghs(op, machine_infos):
     return pred, succ
 
 
-def get_first_col(state):
+def get_first_ops(state):
+    """
+    Returns an array containing the unique indices of the first operations of each job.
+    """
     num_ops = len(state['features'])
     num_jobs = len(state['jobs'])
     first_col = np.arange(start=0, stop=num_ops, step=1).reshape(num_jobs, -1)[:, 0]
     return first_col
-
-
-def get_last_col(state):
-    num_jobs = len(state['features'])
-    num_ops = len(state['jobs'][0]) * num_jobs
-    last_col = np.arange(start=0, stop=num_ops, step=1).reshape(num_jobs, -1)[:, -1]
-    return last_col

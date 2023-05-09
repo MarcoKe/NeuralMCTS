@@ -1,9 +1,24 @@
 from collections import namedtuple
 from typing import List
 from envs.minimal_jsp_env.util.jsp_solver import JSPSolver
-from envs.minimal_jsp_env.util.jsp_generation.entropy_functions import calculate_entropy_from_operations_list, collect_all_operations
+from envs.minimal_jsp_env.util.jsp_generation.entropy_functions import calculate_entropy_from_operations_list
 
 Operation = namedtuple("Operation", ["job_id", "op_id", "unique_op_id", "machine_type", "duration"])
+
+
+def collect_all_operations(jobs: List) -> List[tuple]:
+    """
+    Returns a list of all operations in the given jobs.
+    Each list entry is a 2-tuple consisting of the machine
+    on which the operation is carried out and the operation's
+    duration.
+    Used to calculate the entropy of a JSP instance.
+    """
+    all_operations = []
+    for job in jobs:
+        job_operations = [(i.machine_type, i.duration) for i in job]
+        all_operations += job_operations
+    return all_operations
 
 
 class JSPInstance:
