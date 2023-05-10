@@ -8,9 +8,6 @@ from envs.minimal_jsp_env.util.jsp_conversion.instance_reader_factory import ins
 
 
 class MultipleInstanceGenerator(JSPGenerator):
-#     def __init__(self, path: str, reader: JSPReader):
-#         self.instance = reader.read_instance(path)
-
     def __init__(self, path: str, format: str, **kwargs):
         self.reader = instance_readers.get(format)
         self.instances = [jsp_file for jsp_file in glob.glob(path + '*')]
@@ -18,6 +15,22 @@ class MultipleInstanceGenerator(JSPGenerator):
     def generate(self) -> JSPInstance:
         random_instance = random.choice(self.instances)
         return self.reader.read_instance(random_instance)
+
+
+class DeterministicMultiInstanceGenerator(JSPGenerator):
+    def __init__(self, path: str, format: str, max_instances: int, **kwargs):
+        self.reader = instance_readers.get(format)
+        self.instances = [jsp_file for jsp_file in glob.glob(path + '*')]
+        self.max_instances = max_instances
+        self.ptr = 0
+
+    def generate(self) -> JSPInstance:
+        current_instance = self.reader.read_instance(self.instances[self.ptr])
+        self.ptr += 1
+        if self.ptr >= self.max_instances:
+            self.ptr = 0
+
+        return current_instance
 
 
 class RepeatingMultipleInstanceGenerator(MultipleInstanceGenerator):

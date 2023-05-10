@@ -15,12 +15,13 @@ def collect_all_operations(jobs: List) -> List[tuple]:
 
 class JSPInstance:
     def __init__(self, jobs: List, num_ops_per_job: int=None, max_op_time: int=None,
-                 id: str=None, opt_time: float=None, calculate_opt_time=True):
+                 id: str=None, opt_time: float=None, calculate_opt_time=True, spt_time: float=None):
         self.jobs = jobs
         self.num_jobs = len(jobs)
         self.num_ops_per_job = num_ops_per_job #todo infer if not given
         self.max_op_time = max_op_time #todo infer if not given
         self.id = id
+        self.spt_time = spt_time
 
         if opt_time:
             self.opt_time = opt_time

@@ -23,7 +23,7 @@ from training.schedule import LinearSchedule
 
 
 class MCTSPolicyImprovementTrainer:
-    def __init__(self, exp_name, env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.0005, learning_rate=1e-5,
+    def __init__(self, exp_name, env, eval_env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.0005, learning_rate=1e-5,
                  buffer_size=50000, batch_size=256, num_epochs=1, policy_improvement_iterations=2000, workers=8,
                  num_episodes=5, warmup_steps=0, entropy_loss=False, selection_mode='mean', stochastic_actions=False,
                  solver=None, wandb_run=None):
@@ -41,6 +41,7 @@ class MCTSPolicyImprovementTrainer:
         """
         self.exp_name = exp_name
         self.env = env
+        self.eval_env = eval_env
         self.model_free_agent = model_free_agent
         self.policy: ActorCriticPolicy = model_free_agent.policy
         self.guided_mcts_agent = mcts_agent
@@ -256,43 +257,64 @@ class MCTSPolicyImprovementTrainer:
             model_path = os.path.join(self.wandb_run.dir, self.exp_name)
         self.model_free_agent.save(model_path)
 
-    def evaluate(self, eval_iterations=10):
+    def evaluate(self, eval_iterations=8):
         if self.workers > 1:
+            instances = [(self.eval_env.generator.generate(),) for _ in range(eval_iterations)]
             pool = mp.Pool(eval_iterations)
-            results = pool.starmap(self.evaluate_single, [[]] * eval_iterations)
+            results = pool.starmap(self.evaluate_single, instances)
             pool.close()
-        else:
-            results = [self.evaluate_single()]
+        else: # only for debugging purposes
+            results = [self.evaluate_single(self.eval_env.generator.generate())]
 
-        opt_gaps = 0
-        reward_diffs = 0
         for r in results:
-            opt_gaps += r[0]
-            self.log('eval/opt_gap', r[0])
+            for sol in r[0]:
+                self.log('eval/' + sol, r[0][sol])
             self.log('eval/diff_mcts_model_free', r[1])
             self.log('eval/rew_mcts', r[2])
             self.log('eval/rew_learned_policy', r[3])
+            self.log('eval/instance_id', r[4])
 
-            reward_diffs += r[1]
+    def evaluate_single(self, instance):
+        solutions = self.solver.solve(copy.deepcopy(instance))
+        solution_gaps = self.solutions_to_gaps(solutions)
 
+        eval_env_ = copy.deepcopy(self.eval_env)
+        self.mcts_agent.env = eval_env_
 
-        self.log('mctstrain/eval_optgap', opt_gaps / eval_iterations)
-        self.log('mctstrain/diff_mcts_model_free', reward_diffs / eval_iterations)
+        reward_model_free = self.perform_eval_episode(eval_env_, Stb3AgentWrapper(self.model_free_agent, eval_env_,
+                                                                                  self.mcts_agent.model), copy.deepcopy(instance))
 
-    def evaluate_single(self):
-        state = copy.deepcopy(self.env.reset())
-        state_ = copy.deepcopy(self.env.raw_state())
-
-        reward_model_free = eval(self.env, Stb3AgentWrapper(self.model_free_agent, self.env, self.mcts_agent.model), copy.deepcopy(state_), copy.deepcopy(state))
-
-        reward_mcts = eval(self.env, MCTSAgentWrapper(self.mcts_agent, self.env), state_, state)
-        opt = self.solver.solve(self.env.current_instance())
-
-        gap = opt_gap(opt, -reward_mcts)
+        reward_mcts = self.perform_eval_episode(eval_env_, MCTSAgentWrapper(self.mcts_agent, eval_env_), copy.deepcopy(instance))
         reward_diff = reward_mcts - reward_model_free
 
-        return gap, reward_diff, reward_mcts, reward_model_free
+        return solution_gaps, reward_diff, reward_mcts, reward_model_free, eval_env_.instance.id
 
+    def perform_eval_episode(self, env, agent, instance):
+        state = env.set_instance(instance)
+        state = env.observation(state)
+        done = False
+
+        steps = 0
+        while not done:
+            action = agent.select_action(state)
+            state, reward, done, _ = env.step(action)
+            steps += 1
+
+        return reward
+
+    def solutions_to_gaps(self, solutions):
+        if 'opt' in solutions:
+            opt = solutions['opt']
+            gaps = dict()
+
+            for sol in solutions.keys():
+                if sol != 'opt':
+                    gaps[sol] = opt_gap(opt, solutions[sol])
+
+            return gaps
+
+        else:
+            return dict()
 
 
 if __name__ == '__main__':

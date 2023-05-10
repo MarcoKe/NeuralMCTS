@@ -1,3 +1,5 @@
+import copy
+
 import wandb
 import torch
 from envs.env_factory import env_factory, model_factory, instance_factories, observation_factories, action_factories, \
@@ -12,23 +14,38 @@ from mcts.expansion_policies.expansion_policy_factory import expansion_policy_fa
 from mcts.evaluation_policies.eval_policy_factory import eval_policy_factory
 from training.pimcts_trainer import MCTSPolicyImprovementTrainer
 
-
-def create_env(env_config):
+def env_from_config(env_config):
     observation_spaces = observation_factories.get(env_config['name'])
     action_spaces = action_factories.get(env_config['name'])
     reward_functions = reward_factories.get(env_config['name'])
+
+    environment = env_factory.get(env_config['name'], **env_config['params'])
+    environment = action_spaces.get(env_config['params']['action_space']['name'], env=environment)
+    environment = reward_functions.get(env_config['params']['reward_function']['name'], env=environment)
+    environment = observation_spaces.get(env_config['params']['observation_space']['name'],
+                                         env=environment)  # this one needs to be last, do not change
+
+    return environment
+
+def create_env(env_config):
     instance_generators = instance_factories.get(env_config['name'])
 
     if 'instance_generator' in env_config['params']:
         gen_config = env_config['params']['instance_generator']
         env_config['params']['instance_generator'] = instance_generators.get(gen_config['name'], **gen_config['params'])
 
-    environment = env_factory.get(env_config['name'], **env_config['params'])
-    environment = action_spaces.get(env_config['params']['action_space']['name'], env=environment)
-    environment = reward_functions.get(env_config['params']['reward_function']['name'], env=environment)
-    environment = observation_spaces.get(env_config['params']['observation_space']['name'], env=environment) # this one needs to be last, do not change
+    environment = env_from_config(env_config)
+
+    eval_env_config = env_config
+    if 'instance_generator_eval' in env_config['params']:
+        gen_config = env_config['params']['instance_generator_eval']
+        eval_env_config['params']['instance_generator'] = instance_generators.get(gen_config['name'], **gen_config['params'])
+
+    eval_environment = env_from_config(eval_env_config)
+
     model = model_factory.get(env_config['name'], **env_config['params'])
-    return environment, model
+
+    return environment, eval_environment, model
 
 
 def create_agent(env, model, agent_config):
@@ -86,13 +103,13 @@ def setup_experiment(exp_name):
     general_config, exp_name, exp_config, agent_config, env_config = load_exp_config(exp_name)
     wandb_run = init_wandb(general_config, exp_name, exp_config, agent_config, env_config)
 
-    env, model = create_env(env_config)
+    env, eval_env, model = create_env(env_config)
 
     mcts_agent, model_free_agent = create_agent(env, model, agent_config)
 
     solver_factory = solver_factories.get(env_config['name'])
     solver = solver_factory.get('opt')  # todo
-    trainer = MCTSPolicyImprovementTrainer(exp_config['name'], env, mcts_agent, model_free_agent, wandb_run=wandb_run, solver=solver,
+    trainer = MCTSPolicyImprovementTrainer(exp_config['name'], env, eval_env, mcts_agent, model_free_agent, wandb_run=wandb_run, solver=solver,
                                            **agent_config['training'], policy_improvement_iterations=exp_config['policy_improvement_iterations'])
 
     trainer.train()
@@ -102,4 +119,5 @@ def setup_experiment(exp_name):
 
 if __name__ == '__main__':
     # setup_experiment("20230128_exp_001")
-    setup_experiment("gnn_jsp_test")
+    setup_experiment("jsp_test")
+    # setup_experiment("naive2_ff_05/jsp_uct_neural_expansion_neural_rollout_eval_value_initialization_initialize_tree")

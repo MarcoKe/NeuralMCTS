@@ -5,13 +5,14 @@ from copy import deepcopy
 
 class JobShopEnv(gym.Env):
     def __init__(self, instance_generator: JSPGenerator, **kwargs):
-        self.jsp_generator = instance_generator
+        self.generator = instance_generator
         self.model = JobShopModel()
 
         self.reset()
 
-    def _generate_instance(self):
-        self.instance = self.jsp_generator.generate()
+    def set_instance(self, instance):
+        self.done = False
+        self.instance = instance
         self.ops_per_job = self.instance.num_ops_per_job
         self.num_machines = self.instance.num_ops_per_job
         self.max_op_duration = self.instance.max_op_time
@@ -19,11 +20,20 @@ class JobShopEnv(gym.Env):
 
         schedule = [[] for _ in range(self.num_machines)]
         last_job_ops = [-1 for _ in range(self.num_jobs)]
-        return {'remaining_operations': deepcopy(self.instance.jobs), 'schedule': schedule, 'last_job_ops': last_job_ops}
+
+        s_ = {'remaining_operations': deepcopy(self.instance.jobs), 'schedule': schedule,
+                'last_job_ops': last_job_ops}
+
+        self.state = s_
+        return self.state
+
+    def _generate_instance(self):
+        instance = self.generator.generate()
+        self.set_instance(instance)
 
     def reset(self):
         self.done = False
-        self.state = self._generate_instance()
+        self._generate_instance()
 
         return self.state
 

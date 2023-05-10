@@ -67,6 +67,17 @@ def perform_episode(env, agent, hstate=None, obs=None):
 
     return reward
 
+def perform_episode(env, agent, instance):
+    state = env.set_instance(instance)
+    state = env.observation(state)
+    done = False
+
+    while not done:
+        action = agent.select_action(state)  # todo: why throw the tree away after every action
+        state, reward, done, _ = env.step(action)
+
+    return reward
+
 
 def compete(env, agents, trials=10):
     for i in tqdm.tqdm(range(trials)):
