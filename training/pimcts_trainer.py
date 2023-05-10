@@ -7,7 +7,6 @@ import wandb
 import os
 import time
 from torch.nn import functional as F
-from torch.distributions import Categorical
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3 import PPO
 
@@ -50,7 +49,8 @@ class MCTSPolicyImprovementTrainer:
         self.policy.optimizer.weight_decay = weight_decay
         self.policy.optimizer.learning_rate = learning_rate
         self.wandb_run = wandb_run
-        self.memory = ReplayMemory(env.observation_space.shape[0], env.max_num_actions(), buffer_size)
+        self.memory = ReplayMemory(env.observation_space.shape,
+                                   env.max_num_actions(), buffer_size)
         self.batch_size = batch_size
         self.num_epochs = num_epochs
         self.policy_improvement_iterations = policy_improvement_iterations

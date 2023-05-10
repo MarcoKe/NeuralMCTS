@@ -6,7 +6,7 @@ class NaiveObservationSpace(gym.ObservationWrapper):
     def __init__(self, env):
         super(NaiveObservationSpace, self).__init__(env)
         vector_length = env.num_machines * 2  # machine state. 2 = (job_id, duration)
-        vector_length += env.num_jobs * env.ops_per_job * 2  # remaining jobs state. 3 = (job_id, duration)
+        vector_length += env.num_jobs * env.ops_per_job * 2  # remaining jobs state. 2 = (job_id, duration)
         self.observation_space = gym.spaces.Box(-np.inf, np.inf, (vector_length,), np.float32)
 
     def observation(self, observation):

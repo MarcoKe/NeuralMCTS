@@ -8,6 +8,7 @@ from experiment_management.config_handling.load_exp_config import load_exp_confi
 from stable_baselines3 import PPO
 from mcts.mcts_agent import MCTSAgent
 from model_free.stb3_wrapper import Stb3ACAgent
+from model_free.gnn_feature_extractor import GNNExtractor
 from mcts.tree_policies.tree_policy_factory import tree_policy_factory
 from mcts.expansion_policies.expansion_policy_factory import expansion_policy_factory
 from mcts.evaluation_policies.eval_policy_factory import eval_policy_factory
@@ -55,6 +56,11 @@ def create_agent(env, model, agent_config):
         policy_kwargs['activation_fn'] = torch.nn.modules.Mish
         if 'net_arch' in agent_config['learned_policy']:
             policy_kwargs['net_arch'] = agent_config['learned_policy']['net_arch']
+        if agent_config['features_extractor'] == 'gnn':
+            feature_extractor_kwargs = dict(num_layers=3, num_mlp_layers=2, input_dim=2,
+                                            hidden_dim=64, graph_pool="avg")
+            policy_kwargs['features_extractor_class'] = GNNExtractor
+            policy_kwargs['features_extractor_kwargs'] = feature_extractor_kwargs
         model_free_agent = PPO('MlpPolicy', env, policy_kwargs=policy_kwargs)
     neural_net = Stb3ACAgent(model_free_agent)
 
