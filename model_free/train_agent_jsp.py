@@ -8,8 +8,8 @@ from experiment_management.config_handling.load_exp_config import load_yml
 from experiment_management.setup_experiment import create_env
 
 # env_config = load_yml((Path('../data/config/envs/jsp_minimal_001.yml')))
-env_config = load_yml((Path('../data/config/envs/jsp_gnn_001.yml')))
-env, _ = create_env(env_config)
+env_config = load_yml((Path('data/config/envs/jsp_gnn_001.yml')))
+env, _, _ = create_env(env_config)
 
 # feature_extractor_kwargs = dict(num_layers=3, num_mlp_layers=2, input_dim=2,
 #                                 hidden_dim=64, graph_pool="avg")
