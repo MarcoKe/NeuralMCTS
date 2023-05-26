@@ -1,6 +1,6 @@
 from copy import deepcopy
 from envs.model import Model
-from envs.gnn_jsp_env.entities import Operation
+from envs.minimal_jsp_env.entities import Operation
 from envs.gnn_jsp_env.scheduling_utils import get_legal_pos, put_in_the_end, put_in_between, get_op_nbghs, \
     get_end_time_lbs, get_first_ops
 import numpy as np
@@ -20,7 +20,7 @@ class GNNJobShopModel(Model):
         for i in range(num_jobs):
             job = []
             for j in range(num_ops_per_job):
-                unique_id = id + i * num_jobs
+                unique_id = id
                 job.append(Operation(i, id, unique_id, random.randint(0, num_machines - 1),
                                      random.randint(0, max_duration - 1)))
                 id += 1
@@ -219,25 +219,24 @@ class GNNJobShopModel(Model):
 if __name__ == '__main__':
     model = GNNJobShopModel()
 
-    # import time
-    # start_time = time.time()
-    # steps = 0
-    # for _ in range(1000):
-    #     done = False
-    #     state = model.random_problem(2, 2, 2)
-    #     remaining_operations = state['remaining_ops']
-    #     schedule = state['schedule']
-    #     while not done:
-    #         legal_actions = model.legal_actions(state)
-    #
-    #         steps += 1
-    #         action = random.choice(legal_actions)
-    #
-    #         state, reward, done = model.step(state, action)
-    #
-    # duration = time.time() - start_time
-    # print("duration: ", duration, " time per step: ", duration / steps)
-    # print("calls to step: ", model.step.calls)
+    import time
+    start_time = time.time()
+    steps = 0
+    for _ in range(1000):
+        done = False
+        state = model.random_problem(6, 6, 6)
+        remaining_operations = state['remaining_ops']
+        schedule = state['schedule']
+        while not done:
+            legal_actions = model.legal_actions(state)
+
+            steps += 1
+            action = random.choice(legal_actions)
+
+            state, reward, done = model.step(state, action)
+
+    duration = time.time() - start_time
+    print("duration: ", duration, " time per step: ", duration / steps)
     # from envs.minimal_jsp_env.util.visualization.gantt_visualizer import create_gantt
     #
     # create_gantt(schedule)

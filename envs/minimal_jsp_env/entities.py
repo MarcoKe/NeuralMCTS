@@ -3,7 +3,7 @@ from typing import List
 from envs.minimal_jsp_env.util.jsp_solver import JSPSolver
 from envs.minimal_jsp_env.util.jsp_generation.entropy_functions import calculate_entropy_from_operations_list
 
-Operation = namedtuple("Operation", ["job_id", "op_id", "machine_type", "duration"])
+Operation = namedtuple("Operation", ["job_id", "op_id", "unique_op_id", "machine_type", "duration"])
 
 def collect_all_operations(jobs: List) -> List[tuple]:
     """Collect a list of all operations in the given jobs."""
@@ -13,6 +13,7 @@ def collect_all_operations(jobs: List) -> List[tuple]:
         all_operations += job_operations
     return all_operations
 
+
 class JSPInstance:
     def __init__(self, jobs: List, num_ops_per_job: int=None, max_op_time: int=None,
                  id: str=None, opt_time: float=None, calculate_opt_time=True, spt_time: float=None):
@@ -20,6 +21,7 @@ class JSPInstance:
         self.num_jobs = len(jobs)
         self.num_ops_per_job = num_ops_per_job #todo infer if not given
         self.max_op_time = max_op_time #todo infer if not given
+        self.num_machines = num_ops_per_job
         self.id = id
         self.spt_time = spt_time
 

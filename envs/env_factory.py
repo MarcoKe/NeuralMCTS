@@ -14,7 +14,7 @@ from envs.tsp.observation_spaces.factory import observation_spaces as tsp_observ
 from envs.tsp.action_spaces.factory import action_spaces as tsp_action_spaces
 from envs.tsp.reward_functions.factory import reward_functions as tsp_reward_functions
 from envs.minimal_jsp_env.util.jsp_generation.instance_generator_factory import jsp_generators
-from envs.gnn_jsp_env.util.jsp_generation.instance_generator_factory import gnn_generators
+# from envs.gnn_jsp_env.util.jsp_generation.instance_generator_factory import gnn_generators
 from envs.minimal_jsp_env.util.jsp_solver import jsp_solvers
 
 
@@ -79,7 +79,7 @@ reward_factories.register_class('jsp_minimal', reward_functions)
 reward_factories.register_class('tsp', tsp_reward_functions)
 
 instance_factories = InstanceFactoryFactory()
-instance_factories.register_class('jsp_gnn', gnn_generators)
+instance_factories.register_class('jsp_gnn', jsp_generators)
 instance_factories.register_class('jsp_minimal', jsp_generators)
 instance_factories.register_class('tsp', None)  # todo
 

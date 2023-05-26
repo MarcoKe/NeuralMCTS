@@ -1,4 +1,5 @@
-from envs.gnn_jsp_env.util.jsp_generation.jsp_generator import JSPGenerator
+
+from envs.minimal_jsp_env.util.jsp_generation.jsp_generator import JSPGenerator
 from envs.gnn_jsp_env.jsp_model import GNNJobShopModel
 import gym
 import numpy as np
@@ -7,13 +8,15 @@ from copy import deepcopy
 
 class GNNJobShopEnv(gym.Env):
     def __init__(self, instance_generator: JSPGenerator, **kwargs):
-        self.jsp_generator = instance_generator
+        self.generator = instance_generator
         self.model = GNNJobShopModel()
 
         self.reset()
 
-    def _generate_instance(self):
-        self.instance = self.jsp_generator.generate()
+    def set_instance(self, instance):
+        self.done = False
+        self.instance = instance
+
         self.ops_per_job = self.instance.num_ops_per_job
         self.num_machines = self.instance.num_machines
         self.max_op_duration = self.instance.max_op_time
@@ -27,7 +30,8 @@ class GNNJobShopEnv(gym.Env):
         # corresponding start and end times
         machine_infos = {m: {'op_ids': -1 * np.ones(ops_per_machine[m], dtype=np.int32),
                              'start_times': -1 * np.ones(ops_per_machine[m], dtype=np.int32),
-                             'end_times': -1 * np.ones(ops_per_machine[m], dtype=np.int32)} for m in range(self.num_machines)}
+                             'end_times': -1 * np.ones(ops_per_machine[m], dtype=np.int32)} for m in
+                         range(self.num_machines)}
         # time at which the last scheduled operation ends for each job
         last_job_ops = [-1 for _ in range(self.num_jobs)]
         # time at which the last scheduled operation ends on each machine
@@ -38,13 +42,19 @@ class GNNJobShopEnv(gym.Env):
         schedule = [[] for _ in range(self.num_machines)]
         remaining_ops = [job for job in deepcopy(self.instance.jobs)]
 
-        return {'remaining_ops': remaining_ops, 'schedule': schedule, 'machine_infos': machine_infos,
+        self.state = {'remaining_ops': remaining_ops, 'schedule': schedule, 'machine_infos': machine_infos,
                 'last_job_ops': last_job_ops, 'last_mch_ops': last_machine_ops, 'adj_matrix': adj_matrix,
                 'features': features, 'jobs': self.instance.jobs}
 
+        return self.state
+
+    def _generate_instance(self):
+        instance = self.generator.generate()
+        self.set_instance(instance)
+
     def reset(self):
         self.done = False
-        self.state = self._generate_instance()
+        self._generate_instance()
 
         return self.state
 

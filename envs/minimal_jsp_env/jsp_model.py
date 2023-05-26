@@ -11,11 +11,12 @@ class JobShopModel(Model):
     @staticmethod
     def random_problem(num_jobs, num_machines, max_duration=10):
         remaining_operations = []
+        op_id = 0
         for j in range(num_jobs):
             job = []
             for m in range(num_machines):
-                job.append(Operation(j, m, random.randint(0, num_machines-1), random.randint(0, max_duration-1)))
-
+                job.append(Operation(j, m, op_id, random.randint(0, num_machines-1), random.randint(0, max_duration-1)))
+                op_id += 1
             remaining_operations.append(job)
 
         schedule = [[] for i in range(num_machines)]
@@ -101,27 +102,26 @@ class JobShopModel(Model):
 
 if __name__ == '__main__':
     model = JobShopModel()
-    #
-    #
-    # import time
-    # start_time = time.time()
-    # steps = 0
-    # for _ in range(1000):
-    #     done = False
-    #     state = model.random_problem(6, 6)
-    #     remaining_operations = state['remaining_operations']
-    #     schedule = state['schedule']
-    #     while not done:
-    #         legal_actions = model.legal_actions(state)
-    #
-    #         steps += 1
-    #         action = random.choice(legal_actions)
-    #
-    #         state, reward, done = model.step(state, action)
-    #
-    # duration = time.time() - start_time
-    # print("duration: ", duration, " time per step: ", duration / steps)
-    # print("calls to step: ", model.step.calls)
+
+
+    import time
+    start_time = time.time()
+    steps = 0
+    for _ in range(1000):
+        done = False
+        state = model.random_problem(6, 6)
+        remaining_operations = state['remaining_operations']
+        schedule = state['schedule']
+        while not done:
+            legal_actions = model.legal_actions(state)
+
+            steps += 1
+            action = random.choice(legal_actions)
+
+            state, reward, done = model.step(state, action)
+
+    duration = time.time() - start_time
+    print("duration: ", duration, " time per step: ", duration / steps)
     # from envs.minimal_jsp_env.util.visualization.gantt_visualizer import create_gantt
 
     # create_gantt(schedule)
