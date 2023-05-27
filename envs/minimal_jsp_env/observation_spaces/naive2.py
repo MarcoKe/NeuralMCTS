@@ -2,6 +2,18 @@ import gym
 import numpy as np
 import math
 
+"""
+Creates a vector containing the following information:
+- the job id of the latest scheduled operation o_m on each machine m  (normalized)
+- the relative duration of the latest scheduled operation on each machine. 
+  relative with respect to min(finish_time(o_m) forall m) and max(finish_time(o_m) forall m)
+  s.t. relative_duration_m = (finish_time(o_m) - min(...)) / (max(...) - min(...))
+- on machines without ANY scheduled operations, both of the above are given as -1
+  
+- for every operation: its corresponding job id and its duration (normalized)
+- for finished operations, these are represented as -1 
+"""
+
 class NaiveObservationSpace(gym.ObservationWrapper):
     def __init__(self, env):
         super(NaiveObservationSpace, self).__init__(env)
