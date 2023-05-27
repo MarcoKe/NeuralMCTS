@@ -11,7 +11,7 @@ class SingleInstanceRandomGenerator(JSPGenerator):
         self.num_jobs = num_jobs
         self.num_operations = num_operations
 
-        random_generator = RandomJSPGenerator(self.num_jobs, self.num_operations)
+        random_generator = RandomJSPGenerator(self.num_jobs, self.num_operations, self.num_operations)
         self.instance = random_generator.generate()
 
     def generate(self) -> JSPInstance:
