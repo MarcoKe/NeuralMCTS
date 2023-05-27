@@ -1,6 +1,6 @@
 name: 'mcts_from_scratch_100000replay'
 num_simulations: 100
-evaluate_leaf_children: True
+evaluate_leaf_children: False
 value_initialization: True
 initialize_tree: True
 learned_policy:
@@ -30,5 +30,5 @@ training:
   num_epochs: 1
   num_episodes: 5
   workers: 8
-  warmup_steps: 50
+  warmup_steps: 0
 
