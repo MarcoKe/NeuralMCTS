@@ -22,7 +22,7 @@ class SamsonovReader(JSPReader):
 
             job_list.append(op_list)
 
-        return JSPInstance(job_list, input['n_ops_per_job'], input['max_op_time'], input['jssp_identification'],
-                           input['optimal_time'], spt_time=input['spt_time'])
+        return JSPInstance(job_list, num_ops_per_job=input['n_ops_per_job'], max_op_time=input['max_op_time'],
+                           id=input['jssp_identification'], opt_time=input['optimal_time'], spt_time=input['spt_time'])
 
 
