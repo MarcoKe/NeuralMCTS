@@ -16,14 +16,13 @@ class GNNJobShopModel(Model):
     @staticmethod
     def random_problem(num_jobs, num_ops_per_job, num_machines, max_duration=10):
         remaining_operations = []
-        id = 0
+        unique_op_id = 0
         for i in range(num_jobs):
             job = []
             for j in range(num_ops_per_job):
-                unique_id = id
-                job.append(Operation(i, id, unique_id, random.randint(0, num_machines - 1),
+                job.append(Operation(i, j, unique_op_id, random.randint(0, num_machines - 1),
                                      random.randint(0, max_duration - 1)))
-                id += 1
+                unique_op_id += 1
 
             remaining_operations.append(job)
 

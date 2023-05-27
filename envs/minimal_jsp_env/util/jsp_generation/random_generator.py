@@ -19,16 +19,14 @@ class RandomJSPGenerator(JSPGenerator):
         and returns a JSPInstance based on these jobs
         """
         jobs = []
-        id = 0
+        unique_op_id = 0
         for i in range(0, self.num_jobs):
             operations = []
             for j in range(0, self.num_operations):
-                op_id = id
-                unique_op_id = op_id + i * self.num_jobs
-                id += 1
                 duration = random.randint(1, self.max_op_duration)
                 machine_type = random.randint(0, self.num_machines - 1)
-                operations.append(Operation(i, op_id, unique_op_id,  machine_type, duration))
+                operations.append(Operation(i, j, unique_op_id,  machine_type, duration))
+                unique_op_id += 1
 
             jobs.append(operations)
 
