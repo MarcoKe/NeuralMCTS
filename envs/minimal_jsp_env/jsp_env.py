@@ -1,3 +1,4 @@
+from envs.minimal_jsp_env.util.visualization.gantt_visualizer import create_gantt
 from envs.minimal_jsp_env.util.jsp_generation.jsp_generator import JSPGenerator
 from envs.minimal_jsp_env.jsp_model import JobShopModel
 import gym
@@ -48,7 +49,7 @@ class JobShopEnv(gym.Env):
         return self.state, reward, self.done, {}
 
     def render(self):
-        pass
+        create_gantt(self.state['schedule'])
 
     def raw_state(self):
         return self.state
