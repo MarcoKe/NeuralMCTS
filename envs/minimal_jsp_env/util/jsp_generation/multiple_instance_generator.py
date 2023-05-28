@@ -34,7 +34,7 @@ class DeterministicMultiInstanceGenerator(JSPGenerator):
 
 
 class RepeatingMultipleInstanceGenerator(MultipleInstanceGenerator):
-    def __init__(self, path: str, format: str, repetitions: int):
+    def __init__(self, path: str, format: str, repetitions: int=30):
         super().__init__(path, format)
         print(len(self.instances))
         self.repetitions = repetitions
