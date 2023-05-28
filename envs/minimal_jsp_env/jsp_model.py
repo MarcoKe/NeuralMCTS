@@ -41,27 +41,57 @@ class JobShopModel(Model):
         possible = False
 
         if len(remaining_operations[job_id]) > 0:
+            possible = True
+
             op = remaining_operations[job_id].pop(0)
             machine = op.machine_type
-            start_time = JobShopModel._determine_start_time(op, schedule, last_job_ops)
-            schedule[machine].append((op, start_time, start_time + op.duration))
-            last_job_ops[op.job_id] = start_time + op.duration
-            possible = True
+            start_time = JobShopModel._last_op_end(last_job_ops, op)
+            machine_schedule = schedule[op.machine_type]
+            if len(machine_schedule) == 0:
+                schedule[machine].append((op, start_time, start_time + op.duration))
+                last_job_ops[op.job_id] = start_time + op.duration
+                return remaining_operations, schedule, last_job_ops, possible
+
+            left_shift, left_shift_time, insertion_index = JobShopModel._left_shift_possible(start_time, machine_schedule, op.duration)
+            if left_shift:
+                schedule[machine].insert(insertion_index, (op, left_shift_time, left_shift_time + op.duration))
+                new_time = left_shift_time + op.duration
+                last_job_ops[op.job_id] = new_time if new_time > last_job_ops[op.job_id] else last_job_ops[op.job_id]
+
+            else:
+                last_op, start, end = machine_schedule[-1]
+
+                if end > start_time:
+                    start_time = end
+
+                schedule[machine].append((op, start_time, start_time + op.duration))
+                last_job_ops[op.job_id] = start_time + op.duration
+
         return remaining_operations, schedule, last_job_ops, possible
 
     @staticmethod
-    def _determine_start_time(op: Operation, schedule, last_job_ops):
+    def _left_shift_possible(earliest_start, machine_schedule, op_duration):
+        if earliest_start < 0:
+            earliest_start = 0
+
+        last_end = earliest_start
+        for index, (op, start_time, end_time) in enumerate(machine_schedule):
+            if end_time < last_end:
+                continue
+
+            if (start_time - last_end) >= op_duration:
+                return True, last_end, index
+
+            last_end = end_time
+
+        return False, -1, -1
+
+    @staticmethod
+    def _last_op_end(last_job_ops, op: Operation):
         start_time = 0
 
         if last_job_ops[op.job_id] > 0:
             start_time = last_job_ops[op.job_id]
-
-        machine_schedule = schedule[op.machine_type]
-        if len(machine_schedule) > 0:
-            last_op, start, end = machine_schedule[-1]
-
-            if end > start_time:
-                start_time = end
 
         return start_time
 
@@ -101,27 +131,45 @@ class JobShopModel(Model):
 
 
 if __name__ == '__main__':
+    from envs.minimal_jsp_env.util.visualization.gantt_visualizer import create_gantt
+    from envs.minimal_jsp_env.util.jsp_generation.random_generator import RandomJSPGenerator
+    gen = RandomJSPGenerator(6, 6, 6)
+    from envs.minimal_jsp_env.util.jsp_conversion.samsonov_reader import SamsonovReader
+    from envs.gnn_jsp_env.jsp_env import GNNJobShopEnv
+    env = GNNJobShopEnv(gen)
+    reader = SamsonovReader()
+    instance = reader.read_instance('data/jsp_instances/6x6x6/6x6_171_inst.json')
+    state2 = env.set_instance(instance)
     model = JobShopModel()
+    from envs.gnn_jsp_env.jsp_model import GNNJobShopModel
+    model2 = GNNJobShopModel()
 
-
+    random.seed(1337)
     import time
-    start_time = time.time()
+    start_time_ = time.time()
     steps = 0
-    for _ in range(1000):
-        done = False
-        state = model.random_problem(6, 6)
-        remaining_operations = state['remaining_operations']
-        schedule = state['schedule']
-        while not done:
-            legal_actions = model.legal_actions(state)
+    # for _ in range(1000):
+    done = False
+    # state2 = model2.random_problem(6, 6, 6)
+    state = copy.deepcopy(state2)
+    state['remaining_operations'] = state['remaining_ops']
 
-            steps += 1
-            action = random.choice(legal_actions)
+    remaining_operations = state['remaining_operations']
+    schedule = state['schedule']
+    while not done:
+        legal_actions = model.legal_actions(state)
 
-            state, reward, done = model.step(state, action)
+        steps += 1
+        action = random.choice(legal_actions)
+        state, reward, done = model.step(state, action)
+        # create_gantt(schedule)
 
-    duration = time.time() - start_time
+        state2, reward2, done2 = model2.step(state2, action)
+        # create_gantt(state2['schedule'])
+
+    duration = time.time() - start_time_
     print("duration: ", duration, " time per step: ", duration / steps)
-    # from envs.minimal_jsp_env.util.visualization.gantt_visualizer import create_gantt
+    print(reward, reward2)
 
-    # create_gantt(schedule)
+    create_gantt(schedule)
+    # create_gantt(state2['schedule'])
