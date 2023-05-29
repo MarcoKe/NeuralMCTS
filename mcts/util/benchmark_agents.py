@@ -20,9 +20,9 @@ class Stb3AgentWrapper(Agent):
         self.env = env
         self.model = model
 
-    def select_action(self, obs):
+    def select_action(self, obs, node=None):
         legal_actions = self.model.legal_actions(self.env.raw_state())
-        return self.agent.select_action(obs, legal_actions)
+        return self.agent.select_action(obs, legal_actions), None
 
     def __str__(self):
         return "PPO"
@@ -33,10 +33,10 @@ class MCTSAgentWrapper(Agent):
         self.agent = agent
         self.env = env
 
-    def select_action(self, obs):
+    def select_action(self, obs, node=None):
         state = self.env.raw_state()
-        action, value = self.agent.select_action(state)
-        return action
+        action, value, root_node = self.agent.select_action(state, root=node)
+        return action, root_node
 
     def __str__(self):
         return str(self.agent)
