@@ -77,7 +77,7 @@ class MCTSAgent:
         while n.has_parent():
             n.update(terminal_reward)
             n = n.parent
-        n.update(state_value)
+        n.update(terminal_reward)
 
     def mcts_search(self, state, mode='mean'):
         model = ModelStepCounter(self.model)
