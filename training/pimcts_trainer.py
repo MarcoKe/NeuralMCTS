@@ -25,7 +25,7 @@ class MCTSPolicyImprovementTrainer:
                  learning_rate=1e-5,
                  buffer_size=50000, batch_size=256, num_epochs=1, policy_improvement_iterations=2000, workers=8,
                  num_episodes=5, warmup_steps=0, entropy_loss=False, children_value_targets=False,
-                 selection_mode='mean', stochastic_actions=False,
+                 selection_mode='mean', stochastic_actions=False, reuse_root=False,
                  solver=None, wandb_run=None):
         """
         :mcts_agent: is the agent generating experiences by performing mcts searches
@@ -62,6 +62,7 @@ class MCTSPolicyImprovementTrainer:
         self.warmup_steps = warmup_steps
         self.entropy_loss = entropy_loss
         self.stochastic_actions = stochastic_actions
+        self.reuse_root = reuse_root
         self.selection_mode = selection_mode
         self.solver = solver
 
@@ -214,7 +215,11 @@ class MCTSPolicyImprovementTrainer:
             children_v_mcts.append(children_v_mcts_)
             children_observations.append(children_observations_)
             state, reward, done, _ = self.env.step(action)
-            node = Node.create_root(node, action)
+            if self.reuse_root:
+                node = Node.create_root(node, action)
+            else:
+                node = None
+
             num_steps += 1
             model_steps += stats['model_steps']
             neural_net_calls += stats['neural_net_calls']
