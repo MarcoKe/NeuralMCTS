@@ -354,31 +354,3 @@ class MCTSPolicyImprovementTrainer:
 
         else:
             return dict()
-
-
-if __name__ == '__main__':
-    wandb.require("service")
-
-    num_cities = 15
-    env = TSPGym(num_cities=num_cities)
-    model = TSP(num_cities=15)
-
-    # agent = PPO.load("ppo_tsp_15_1e6.zip")
-    policy_kwargs = dict(activation_fn=th.nn.modules.activation.Mish)
-    # model_free_agent = PPO("MlpPolicy", env, verbose=1, tensorboard_log="stb3_tsp_tensorboard/", policy_kwargs=policy_kwargs)
-    model_free_agent = PPO.load('results/trained_agents/tsp/model_free/ppo_tsp_15_1e6_ent.zip', env=env)
-    from mcts.tree_policies.tree_policy import UCTPolicy
-    from mcts.tree_policies.exploration_terms.puct_term import PUCTTerm
-    from mcts.tree_policies.exploitation_terms.avg_node_value import AvgNodeValueTerm
-    from mcts.expansion_policies.expansion_policy import ExpansionPolicy
-    from mcts.evaluation_policies.neural_rollout_policy import NeuralRolloutPolicy
-    from model_free.stb3_wrapper import Stb3ACAgent
-
-
-    tp = UCTPolicy(AvgNodeValueTerm(), PUCTTerm(exploration_constant=1))
-    ep = ExpansionPolicy()
-    rp = NeuralRolloutPolicy()
-    mcts_agent = MCTSAgent(model, tp, ep, rp, neural_net=Stb3ACAgent(model_free_agent), num_simulations=100)
-
-    trainer = MCTSPolicyImprovementTrainer(env, mcts_agent, model_free_agent)
-    trainer.train()
