@@ -172,12 +172,14 @@ class MCTSAgent:
                 children_state_values = [math.inf for _ in new_children]
 
             for i, c in enumerate(new_children):
-                c.update(children_state_values[i])
+                c.returns = children_state_values[i]
+                c.visits = 1
 
     def backpropagation_phase(self, n, value):
         while n.has_parent():
             n.update(value)
             n = n.parent
+
         n.update(value)
 
     def select_action(self, state, mode='mean'):
@@ -193,7 +195,6 @@ class MCTSAgent:
         return exponentiated_visit_counts / sum(exponentiated_visit_counts)
 
     def stochastic_policy(self, state, temperature: float = 0.9, selection_mode='mean', exploration=False):
-
         root_node, stats = self.mcts_search(state)
         visit_counts = [0] * self.env.max_num_actions()
         for c in root_node.children:
@@ -206,7 +207,21 @@ class MCTSAgent:
             action = choices([i for i in range(len(policy))], policy)
         else:
             action = root_node.select_best_action(mode=selection_mode)[0]
-        return policy, value, action, stats
+
+        children_states, children_values = self.children_training_targets(root_node, state)
+       
+        return policy, value, action, stats, children_states, children_values
+
+    def children_training_targets(self, root_node, root_state):
+        root_state = copy.deepcopy(root_state)
+        root_obs = self.env.observation(root_state)
+        children_states = [root_obs] * self.env.max_num_actions() # we want to have consistent tensor sizes, but might not always have the same number of children.
+        children_values = [root_node.value()] * self.env.max_num_actions() # as a workaround, we simply fill the missing children with the root node values
+        for i, c in enumerate(root_node.children):
+            children_states[i] = self.env.observation(self.model.step(root_state, c.action)[0])
+            children_values[i] = c.value()
+
+        return children_states, children_values
 
     def __str__(self):
         return "MCTS(" + str(self.tree_policy) + ", " + str(self.expansion_policy) + ", " \

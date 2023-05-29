@@ -23,9 +23,11 @@ from training.schedule import LinearSchedule
 
 
 class MCTSPolicyImprovementTrainer:
-    def __init__(self, exp_name, env, eval_env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.0005, learning_rate=1e-5,
+    def __init__(self, exp_name, env, eval_env, mcts_agent: MCTSAgent, model_free_agent, weight_decay=0.0005,
+                 learning_rate=1e-5,
                  buffer_size=50000, batch_size=256, num_epochs=1, policy_improvement_iterations=2000, workers=8,
-                 num_episodes=5, warmup_steps=0, entropy_loss=False, selection_mode='mean', stochastic_actions=False,
+                 num_episodes=5, warmup_steps=0, entropy_loss=False, children_value_targets=False,
+                 selection_mode='mean', stochastic_actions=False,
                  solver=None, wandb_run=None):
         """
         :mcts_agent: is the agent generating experiences by performing mcts searches
@@ -45,7 +47,7 @@ class MCTSPolicyImprovementTrainer:
         self.model_free_agent = model_free_agent
         self.policy: ActorCriticPolicy = model_free_agent.policy
         self.guided_mcts_agent = mcts_agent
-        self.mcts_agent = self.build_warmup_agent() # initialized as vanilla mcts agent, replaced by guided agent after # warmup steps
+        self.mcts_agent = self.build_warmup_agent()  # initialized as vanilla mcts agent, replaced by guided agent after # warmup steps
         self.policy.optimizer.weight_decay = weight_decay
         self.policy.optimizer.learning_rate = learning_rate
         self.wandb_run = wandb_run
@@ -55,6 +57,7 @@ class MCTSPolicyImprovementTrainer:
         self.num_epochs = num_epochs
         self.policy_improvement_iterations = policy_improvement_iterations
         self.total_model_steps = 0
+        self.children_value_targets = children_value_targets
         self.total_neural_net_calls = 0
         self.workers = workers
         self.num_episodes = num_episodes
@@ -81,7 +84,8 @@ class MCTSPolicyImprovementTrainer:
         will still be used for neural net training, however.
         """
         tree_policy = tree_policy_factory.get('uct', **{'exploitation': {'name': 'avg_node_value', 'params': {}},
-                                                      'exploration': {'name': 'uct', 'params': {'exploration_constant': 1}}})
+                                                        'exploration': {'name': 'uct',
+                                                                        'params': {'exploration_constant': 1}}})
         expansion_policy = expansion_policy_factory.get('full_expansion')
         evaluation_policy = eval_policy_factory.get('random')
 
@@ -97,17 +101,23 @@ class MCTSPolicyImprovementTrainer:
                          value_initialization=False,
                          initialize_tree=False)
 
-    def mcts_policy_improvement_loss(self, pi_mcts, pi_theta, v_mcts, v_theta):
+    def mcts_policy_improvement_loss(self, pi_mcts, pi_theta, v_mcts, v_theta, c_v_mcts, c_v_theta):
         """
         cross entropy between model free policy prediction and mcts policy
         mse between value estimates
         """
         policy_loss = th.mean(-th.sum(pi_mcts * th.log(pi_theta + 1e-9), dim=-1))
         value_loss = F.mse_loss(v_mcts, v_theta)
+        if self.children_value_targets:
+            children_value_loss = F.mse_loss(c_v_mcts, c_v_theta)
+            value_loss += children_value_loss
+
         entropy = th.Tensor([0])
         if self.entropy_loss:
             # entropy with base=num_actions. since torch does not allow specifying custom bases, we use the change of base formula
-            entropy = -th.mean(th.sum(-(pi_theta * th.log(pi_theta) / th.log(th.ones_like(pi_theta)*self.mcts_agent.env.max_num_actions())), axis=1))
+            entropy = -th.mean(th.sum(
+                -(pi_theta * th.log(pi_theta) / th.log(th.ones_like(pi_theta) * self.mcts_agent.env.max_num_actions())),
+                axis=1))
         total_loss = (policy_loss + value_loss + entropy) / 2
         return total_loss, policy_loss, value_loss, entropy
 
@@ -143,11 +153,23 @@ class MCTSPolicyImprovementTrainer:
         self.policy.set_training_mode(True)
 
         for training_iter in range(self.num_epochs * int(len(self.memory) / self.batch_size)):
-            print("training, batch", training_iter, " size memory buffer", len(self.memory), " / ", self.memory.max_size)
+            print("training, batch", training_iter, " size memory buffer", len(self.memory), " / ",
+                  self.memory.max_size)
             batch = self.memory.sample_batch(self.batch_size)
 
-            predicted_probs, predicted_values = self.forward(batch['obs']) # legal actions or just all actions?
-            loss, ploss, vloss, eloss = self.mcts_policy_improvement_loss(batch['mcts_probs'], predicted_probs, batch['outcomes'], predicted_values)
+            # generate network predictions for loss function
+            # predicted policy probs and state values for each sampled obs
+            predicted_probs, predicted_values = self.forward(batch['obs'])  # legal actions or just all actions?
+
+            # same targets but for the children of the root node at this obs
+            predicted_children_values = [self.forward(batch['children_obs'][:, i, :])[1] for i in
+                                         range(batch['children_obs'].shape[1])]
+            predicted_children_values = th.stack(predicted_children_values, dim=1).squeeze()
+
+            loss, ploss, vloss, eloss = self.mcts_policy_improvement_loss(batch['mcts_probs'], predicted_probs,
+                                                                          batch['outcomes'], predicted_values,
+                                                                          batch['children_vals'],
+                                                                          predicted_children_values)
 
             # Optimization step
             self.policy.optimizer.zero_grad()
@@ -158,8 +180,10 @@ class MCTSPolicyImprovementTrainer:
             self.log("mctstrain/value_mse_loss", vloss.item())
             self.log("mctstrain/entropy_loss", eloss.item())
 
-            self.log("mctstrain/mcts_probs_entropy", np.mean(entropy(batch['mcts_probs'].detach().numpy(), base=self.mcts_agent.env.max_num_actions(), axis=1)))
-            self.log("mctstrain/learned_probs_entropy", np.mean(entropy(predicted_probs.detach().numpy(), base=self.mcts_agent.env.max_num_actions(), axis=1)))
+            self.log("mctstrain/mcts_probs_entropy", np.mean(
+                entropy(batch['mcts_probs'].detach().numpy(), base=self.mcts_agent.env.max_num_actions(), axis=1)))
+            self.log("mctstrain/learned_probs_entropy", np.mean(
+                entropy(predicted_probs.detach().numpy(), base=self.mcts_agent.env.max_num_actions(), axis=1)))
 
         self.policy.set_training_mode(False)
 
@@ -174,22 +198,29 @@ class MCTSPolicyImprovementTrainer:
         observations = []
         pi_mcts = []
         v_mcts = []
+        children_v_mcts = []  # the value of each child of the root node as estimated by mcts
+        children_observations = []
         num_steps = 0
         model_steps = 0
         neural_net_calls = 0
 
         while not done:
-
-            pi_mcts_, v_mcts_, action, stats = self.mcts_agent.stochastic_policy(self.env.raw_state(), temperature=self.temp, selection_mode=self.selection_mode, exploration=self.stochastic_actions)
+            pi_mcts_, v_mcts_, action, stats, children_observations_, children_v_mcts_ = \
+                self.mcts_agent.stochastic_policy(self.env.raw_state(), temperature=self.temp,
+                                                  selection_mode=self.selection_mode,
+                                                  exploration=self.stochastic_actions)
             observations.append(state)
             pi_mcts.append(pi_mcts_.tolist())
             v_mcts.append(v_mcts_)
+            children_v_mcts.append(children_v_mcts_)
+            children_observations.append(children_observations_)
             state, reward, done, _ = self.env.step(action)
             num_steps += 1
             model_steps += stats['model_steps']
             neural_net_calls += stats['neural_net_calls']
 
-        return observations, pi_mcts, v_mcts, num_steps, reward, model_steps, neural_net_calls
+        return observations, pi_mcts, v_mcts, children_v_mcts, children_observations, num_steps, reward, model_steps, \
+               neural_net_calls
 
     def collect_experience(self):
         """
@@ -197,23 +228,28 @@ class MCTSPolicyImprovementTrainer:
         """
 
         pi_mcts = []
-        v_mcts = []
+        v_mcts = []  # mcts root node value
+        children_v_mcts = []  # values of mcts root children
+        children_observations = []
         observations = []
         rewards_list = []
         rewards = 0
         model_steps_sum = 0
         neural_net_calls_sum = 0
         for ep in range(self.num_episodes):
-            o_, pi_mcts_, v_mcts_, num_steps, reward, model_steps, neural_net_calls = self.perform_episode()
+            o_, pi_mcts_, v_mcts_, children_v_mcts_, children_obs_, num_steps, reward, model_steps, neural_net_calls = \
+                self.perform_episode()
             observations.extend(o_)
             pi_mcts.extend(pi_mcts_)
-            v_mcts.extend(v_mcts_)
+            children_v_mcts.extend(children_v_mcts_)
+            children_observations.extend(children_obs_)
             rewards += reward
             rewards_list.extend([reward] * num_steps)
             model_steps_sum += model_steps
             neural_net_calls_sum += neural_net_calls
 
-        return observations, pi_mcts, rewards_list, rewards / self.num_episodes, model_steps_sum, neural_net_calls_sum
+        return observations, pi_mcts, rewards_list, rewards / self.num_episodes, model_steps_sum, neural_net_calls_sum, \
+               children_v_mcts, children_observations
 
     def train(self):
         """
@@ -239,13 +275,16 @@ class MCTSPolicyImprovementTrainer:
                 results = [self.collect_experience()]
 
             for r in results:
-                observations = th.Tensor(np.array(r[0])) #todo: we are converting between different datastructures in this file. is all of it necessary?
+                observations = th.Tensor(np.array(r[0]))  # todo: we are converting between different datastructures in this file. is all of it necessary?
                 pi_mcts = th.Tensor(r[1])
                 outcomes = th.Tensor(r[2])
                 avg_reward = r[3]
                 self.total_model_steps += r[4]
                 self.total_neural_net_calls += r[5]
-                self.memory.store(observations, pi_mcts, outcomes)
+                children_v_mcts = r[6]
+                children_v_mcts = th.Tensor(children_v_mcts)
+                children_observations = th.Tensor(np.array(r[7]))
+                self.memory.store(observations, pi_mcts, outcomes, children_v_mcts, children_observations)
                 self.log('mctstrain/ep_rew', avg_reward)
 
             self.log('mctstrain/model_steps', self.total_model_steps)
@@ -257,17 +296,22 @@ class MCTSPolicyImprovementTrainer:
             self.train_on_mcts_experiences()
 
             self.log('mctstrain/policy_improvement_iter', i)
-            self.log('time/training', time.time()-start_time)
+            self.log('time/training', time.time() - start_time)
             start_time = time.time()
-            if i % 10 == 0: # todo configure eval frequency
+            if i % 10 == 0:  # todo configure eval frequency
+                self.save_model(str(i) + '_' + self.exp_name)
                 self.evaluate()
             self.log('time/evaluation', time.time() - start_time)
             if not self.wandb_run:
                 self.model_free_agent.logger.dump(step=i)
 
-        model_path = 'results/trained_agents/' + self.exp_name
+        self.save_model('final_' + self.exp_name)
+
+
+    def save_model(self, name):
+        model_path = 'results/trained_agents/' + name
         if self.wandb_run:
-            model_path = os.path.join(self.wandb_run.dir, self.exp_name)
+            model_path = os.path.join(self.wandb_run.dir, name)
         self.model_free_agent.save(model_path)
 
     def evaluate(self, eval_iterations=8):
@@ -282,7 +326,7 @@ class MCTSPolicyImprovementTrainer:
             pool = mp.Pool(eval_iterations)
             results = pool.starmap(self.evaluate_single, instances)
             pool.close()
-        else: # only for debugging purposes
+        else:  # only for debugging purposes
             results = [self.evaluate_single(self.eval_env.generator.generate())]
 
         for r in results:
@@ -310,9 +354,11 @@ class MCTSPolicyImprovementTrainer:
         self.mcts_agent.env = eval_env_
 
         reward_model_free = self.perform_eval_episode(eval_env_, Stb3AgentWrapper(self.model_free_agent, eval_env_,
-                                                                                  self.mcts_agent.model), copy.deepcopy(instance))
+                                                                                  self.mcts_agent.model),
+                                                      copy.deepcopy(instance))
 
-        reward_mcts = self.perform_eval_episode(eval_env_, MCTSAgentWrapper(self.mcts_agent, eval_env_), copy.deepcopy(instance))
+        reward_mcts = self.perform_eval_episode(eval_env_, MCTSAgentWrapper(self.mcts_agent, eval_env_),
+                                                copy.deepcopy(instance))
         reward_diff = reward_mcts - reward_model_free
         self.mcts_agent.env = self.env
         return solution_gaps, reward_diff, reward_mcts, reward_model_free, eval_env_.instance.id
