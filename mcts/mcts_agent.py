@@ -208,10 +208,8 @@ class MCTSAgent:
         else:
             action = root_node.select_best_action(mode=selection_mode)[0]
 
-        # children_states, children_values = self.children_training_targets(root_node, state)
-        children_states = [np.zeros(72)] * 6
-        children_values = [0, 0, 0, 0, 0, 0]
-
+        children_states, children_values = self.children_training_targets(root_node, state)
+       
         return policy, value, action, stats, children_states, children_values
 
     def children_training_targets(self, root_node, root_state):
