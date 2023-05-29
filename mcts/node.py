@@ -1,4 +1,6 @@
 import math
+import copy
+
 
 class Node:
     def __init__(self, action, parent):
