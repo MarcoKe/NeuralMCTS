@@ -12,7 +12,7 @@ params:
       format: 'samsonov'
       max_instances: 8
   observation_space:
-    name: 'naive2'
+    name: 'lower_bound'
     params: {}
   action_space:
     name: 'naive'
