@@ -164,6 +164,10 @@ class MCTSPolicyImprovementTrainer:
         self.policy.set_training_mode(False)
 
     def perform_episode(self):
+        """
+        performs a single episode using the nmcts agent
+        @return: data collected from the episode
+        """
         state = self.env.reset()
         done = False
 
@@ -188,6 +192,10 @@ class MCTSPolicyImprovementTrainer:
         return observations, pi_mcts, v_mcts, num_steps, reward, model_steps, neural_net_calls
 
     def collect_experience(self):
+        """
+        collects num_episodes of experience by applying nmcts
+        """
+
         pi_mcts = []
         v_mcts = []
         observations = []
@@ -208,6 +216,11 @@ class MCTSPolicyImprovementTrainer:
         return observations, pi_mcts, rewards_list, rewards / self.num_episodes, model_steps_sum, neural_net_calls_sum
 
     def train(self):
+        """
+        Main training loop consisting of three steps: collecting experience (in parallel if multiple workers),
+        storing it in the replay buffer, training neural network from replay buffer, evaluate current state of agent
+        """
+
         for i in range(self.policy_improvement_iterations):
             if i == self.warmup_steps:
                 self.mcts_agent = self.guided_mcts_agent
@@ -246,7 +259,7 @@ class MCTSPolicyImprovementTrainer:
             self.log('mctstrain/policy_improvement_iter', i)
             self.log('time/training', time.time()-start_time)
             start_time = time.time()
-            if i % 10 == 0:
+            if i % 10 == 0: # todo configure eval frequency
                 self.evaluate()
             self.log('time/evaluation', time.time() - start_time)
             if not self.wandb_run:
@@ -258,6 +271,12 @@ class MCTSPolicyImprovementTrainer:
         self.model_free_agent.save(model_path)
 
     def evaluate(self, eval_iterations=8):
+        """
+        Performs an evaluation of the current agent on instances provided by the eval_env instance generator specified
+        in the environment config file. If multiple workers, the evaluation is executed in parallel.
+        @param eval_iterations: number of instances to be evaluated.
+        """
+
         if self.workers > 1:
             instances = [(self.eval_env.generator.generate(),) for _ in range(eval_iterations)]
             pool = mp.Pool(eval_iterations)
@@ -275,9 +294,18 @@ class MCTSPolicyImprovementTrainer:
             self.log('eval/instance_id', r[4])
 
     def evaluate_single(self, instance):
+        """
+        Evaluation on a single problem instance using multiple methods (problem-specific solver, model-free, mcts)
+        @param instance: the instance to be evaluated on
+        @return: optimality gaps of all methods, difference in rewards between model free and mcts, mcts reward,
+                 model free reward, instance id
+        """
+
+        # optimum and other non-RL methods / heuristics
         solutions = self.solver.solve(copy.deepcopy(instance))
         solution_gaps = self.solutions_to_gaps(solutions)
 
+        # model free and mcts
         eval_env_ = copy.deepcopy(self.eval_env)
         self.mcts_agent.env = eval_env_
 
@@ -290,6 +318,10 @@ class MCTSPolicyImprovementTrainer:
         return solution_gaps, reward_diff, reward_mcts, reward_model_free, eval_env_.instance.id
 
     def perform_eval_episode(self, env, agent, instance):
+        """
+        Performs one evaluation episode by setting a specific problem instance in the environment
+        """
+
         state = env.set_instance(instance)
         state = env.observation(state)
         done = False
@@ -303,6 +335,13 @@ class MCTSPolicyImprovementTrainer:
         return reward
 
     def solutions_to_gaps(self, solutions):
+        """
+        compares different objective values to the optimum and computes corresponding optimality gaps
+        @param solutions: dictionary with solution names as keys and objective values as values. optimum should have
+                          key 'opt'
+        @return: dictionary containing the optimality gaps for every solution
+        """
+
         if 'opt' in solutions:
             opt = solutions['opt']
             gaps = dict()
