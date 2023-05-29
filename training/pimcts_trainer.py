@@ -314,7 +314,7 @@ class MCTSPolicyImprovementTrainer:
 
         reward_mcts = self.perform_eval_episode(eval_env_, MCTSAgentWrapper(self.mcts_agent, eval_env_), copy.deepcopy(instance))
         reward_diff = reward_mcts - reward_model_free
-
+        self.mcts_agent.env = self.env
         return solution_gaps, reward_diff, reward_mcts, reward_model_free, eval_env_.instance.id
 
     def perform_eval_episode(self, env, agent, instance):
