@@ -299,14 +299,19 @@ class MCTSPolicyImprovementTrainer:
             self.log('time/training', time.time() - start_time)
             start_time = time.time()
             if i % 10 == 0:  # todo configure eval frequency
+                self.save_model(str(i) + '_' + self.exp_name)
                 self.evaluate()
             self.log('time/evaluation', time.time() - start_time)
             if not self.wandb_run:
                 self.model_free_agent.logger.dump(step=i)
 
-        model_path = 'results/trained_agents/' + self.exp_name
+        self.save_model('final_' + self.exp_name)
+
+
+    def save_model(self, name):
+        model_path = 'results/trained_agents/' + name
         if self.wandb_run:
-            model_path = os.path.join(self.wandb_run.dir, self.exp_name)
+            model_path = os.path.join(self.wandb_run.dir, name)
         self.model_free_agent.save(model_path)
 
     def evaluate(self, eval_iterations=8):
