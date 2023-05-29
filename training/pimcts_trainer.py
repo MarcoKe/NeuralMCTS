@@ -3,23 +3,21 @@ import torch as th
 import numpy as np
 from scipy.stats import entropy
 import multiprocess as mp
-import wandb
+
 import os
 import time
 from torch.nn import functional as F
 from stable_baselines3.common.policies import ActorCriticPolicy
-from stable_baselines3 import PPO
 
-from envs.tsp.TSP import TSPGym, TSP
 from mcts.mcts_agent import MCTSAgent
 from mcts.tree_policies.tree_policy_factory import tree_policy_factory
 from mcts.expansion_policies.expansion_policy_factory import expansion_policy_factory
 from mcts.evaluation_policies.eval_policy_factory import eval_policy_factory
-from mcts.util.benchmark_agents import perform_episode as eval
 from mcts.util.benchmark_agents import opt_gap
 from mcts.util.benchmark_agents import MCTSAgentWrapper, Stb3AgentWrapper
 from training.replay_buffer import ReplayMemory
 from training.schedule import LinearSchedule
+from mcts.node import Node
 
 
 class MCTSPolicyImprovementTrainer:
@@ -27,7 +25,7 @@ class MCTSPolicyImprovementTrainer:
                  learning_rate=1e-5,
                  buffer_size=50000, batch_size=256, num_epochs=1, policy_improvement_iterations=2000, workers=8,
                  num_episodes=5, warmup_steps=0, entropy_loss=False, children_value_targets=False,
-                 selection_mode='mean', stochastic_actions=False,
+                 selection_mode='mean', stochastic_actions=False, reuse_root=False,
                  solver=None, wandb_run=None):
         """
         :mcts_agent: is the agent generating experiences by performing mcts searches
@@ -64,6 +62,7 @@ class MCTSPolicyImprovementTrainer:
         self.warmup_steps = warmup_steps
         self.entropy_loss = entropy_loss
         self.stochastic_actions = stochastic_actions
+        self.reuse_root = reuse_root
         self.selection_mode = selection_mode
         self.solver = solver
 
@@ -203,18 +202,24 @@ class MCTSPolicyImprovementTrainer:
         num_steps = 0
         model_steps = 0
         neural_net_calls = 0
+        node = None
 
         while not done:
-            pi_mcts_, v_mcts_, action, stats, children_observations_, children_v_mcts_ = \
+            pi_mcts_, v_mcts_, action, stats, children_observations_, children_v_mcts_, node = \
                 self.mcts_agent.stochastic_policy(self.env.raw_state(), temperature=self.temp,
                                                   selection_mode=self.selection_mode,
-                                                  exploration=self.stochastic_actions)
+                                                  exploration=self.stochastic_actions, root=node)
             observations.append(state)
             pi_mcts.append(pi_mcts_.tolist())
             v_mcts.append(v_mcts_)
             children_v_mcts.append(children_v_mcts_)
             children_observations.append(children_observations_)
             state, reward, done, _ = self.env.step(action)
+            if self.reuse_root:
+                node = Node.create_root(node, action)
+            else:
+                node = None
+
             num_steps += 1
             model_steps += stats['model_steps']
             neural_net_calls += stats['neural_net_calls']
@@ -373,9 +378,11 @@ class MCTSPolicyImprovementTrainer:
         done = False
 
         steps = 0
+        node = None
         while not done:
-            action = agent.select_action(state)
+            action, node = agent.select_action(state, node)
             state, reward, done, _ = env.step(action)
+            node = Node.create_root(node, action)
             steps += 1
 
         return reward

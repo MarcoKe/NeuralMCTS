@@ -1,4 +1,6 @@
 import math
+import copy
+
 
 class Node:
     def __init__(self, action, parent):
@@ -29,6 +31,9 @@ class Node:
     def has_parent(self):
         return self.parent is not None
 
+    def has_children(self):
+        return len(self.children) > 0
+
     def value(self):
         return self.returns / self.visits
 
@@ -45,3 +50,18 @@ class Node:
                     best_value = val
 
         return best_action, best_value
+
+    def get_child(self, action):
+        for c in self.children:
+            if c.action == action:
+                return c
+
+        return None
+
+    @staticmethod
+    def create_root(old_root, action):
+        if not old_root: return old_root
+        new_root = copy.deepcopy(old_root.get_child(action))
+        new_root.parent = None
+
+        return new_root

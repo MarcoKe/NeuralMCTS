@@ -79,12 +79,13 @@ class MCTSAgent:
             n = n.parent
         n.update(terminal_reward)
 
-    def mcts_search(self, state, mode='mean'):
+    def mcts_search(self, state, mode='mean', root_node=None):
         model = ModelStepCounter(self.model)
         neural_net = EvalCounterWrapper(self.neural_net)
-        root_node = Node(None, None)
 
-        if self.initialize_tree: self.init_tree(root_node, copy.deepcopy(state))
+        if not root_node:
+            root_node = Node(None, None)
+            if self.initialize_tree: self.init_tree(root_node, copy.deepcopy(state))
 
         simulation_count = 0
         while simulation_count < self.num_simulations:
@@ -182,11 +183,11 @@ class MCTSAgent:
 
         n.update(value)
 
-    def select_action(self, state, mode='mean'):
-        root_node, _ = self.mcts_search(state, mode)
+    def select_action(self, state, mode='mean', root=None):
+        root_node, _ = self.mcts_search(state, mode, root_node=root)
         action, value = root_node.select_best_action(mode)
 
-        return action, value
+        return action, value, root_node
 
     @staticmethod
     def exponentiated_visit_counts(counts: List[int], total: int, temperature: float) -> np.array:
@@ -194,8 +195,8 @@ class MCTSAgent:
         exponentiated_visit_counts = np.power(exponentiated_visit_counts, temperature)
         return exponentiated_visit_counts / sum(exponentiated_visit_counts)
 
-    def stochastic_policy(self, state, temperature: float = 0.9, selection_mode='mean', exploration=False):
-        root_node, stats = self.mcts_search(state)
+    def stochastic_policy(self, state, temperature: float = 0.9, selection_mode='mean', exploration=False, root=None):
+        root_node, stats = self.mcts_search(state, root_node=root)
         visit_counts = [0] * self.env.max_num_actions()
         for c in root_node.children:
             visit_counts[c.action] = c.visits
@@ -209,8 +210,8 @@ class MCTSAgent:
             action = root_node.select_best_action(mode=selection_mode)[0]
 
         children_states, children_values = self.children_training_targets(root_node, state)
-       
-        return policy, value, action, stats, children_states, children_values
+
+        return policy, value, action, stats, children_states, children_values, root_node
 
     def children_training_targets(self, root_node, root_state):
         root_state = copy.deepcopy(root_state)
