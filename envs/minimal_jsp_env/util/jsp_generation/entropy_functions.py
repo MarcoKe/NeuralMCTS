@@ -6,11 +6,11 @@ import torch.nn.functional as F
 from scipy.stats import entropy
 
 
-def calculate_entropy_from_operations_list(operation_types: List) -> float:
+def calculate_entropy_from_operations_list(operation_types: List, base=None) -> float:
     """Calculates the entropy of a list of operations."""
     counts = Counter(operation_types)
     probabilities = [count/len(operation_types) for count in counts.values()]
-    entropy_val = entropy(probabilities)
+    entropy_val = entropy(probabilities, base=base)
     return entropy_val
 
 class ProbabilityAdjustmentNetwork(nn.Module):
