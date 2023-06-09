@@ -1,0 +1,4 @@
+name: jsp_children_value_targets_puct_neural_expansion_neural_rollout_eval
+env: jsp_minimal_003
+agent: left_shift_ff_05_children_value_targets/children_value_targets_puct_neural_expansion_neural_rollout_eval
+policy_improvement_iterations: 100
