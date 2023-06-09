@@ -1,0 +1,4 @@
+name: jsp_value_initialization_puct_neural_expansion_random
+env: jsp_minimal_003
+agent: left_shift_ff_04/value_initialization_puct_neural_expansion_random
+policy_improvement_iterations: 100
