@@ -117,7 +117,7 @@ class MCTSPolicyImprovementTrainer:
             entropy = -th.mean(th.sum(
                 -(pi_theta * th.log(pi_theta) / th.log(th.ones_like(pi_theta) * self.mcts_agent.env.max_num_actions())),
                 axis=1))
-        total_loss = (policy_loss + value_loss + entropy) / 2
+        total_loss = (policy_loss + value_loss + (0.5*entropy)) / 2
         return total_loss, policy_loss, value_loss, entropy
 
     def forward(self, obs: th.Tensor):
