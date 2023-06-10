@@ -1,0 +1,4 @@
+name: jsp_puct_full_expansion_random
+env: jsp_minimal_003
+agent: left_shift_ff_05_children_value_targets/puct_full_expansion_random
+policy_improvement_iterations: 100

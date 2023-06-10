@@ -1,0 +1,37 @@
+name: evaluate_leaf_children_uct_neural_expansion_neural_rollout_eval
+num_simulations: 100
+value_initialization: false
+initialize_tree: false
+learned_policy:
+  location: ''
+features_extractor: ''
+training:
+  buffer_size: 36000
+  weight_decay: 0.0005
+  learning_rate: 1.0e-05
+  batch_size: 256
+  num_epochs: 1
+  num_episodes: 5
+  workers: 8
+  warmup_steps: 0
+  entropy_loss: false
+  reuse_root: false
+  children_value_targets: false
+evaluate_leaf_children: true
+tree_policy:
+  name: uct
+  params:
+    exploitation:
+      name: avg_node_value
+      params: {}
+    exploration:
+      name: uct
+      params:
+        exploration_constant: 1
+expansion_policy:
+  name: neural_expansion
+  params:
+    threshold: 0.9
+eval_policy:
+  name: neural_rollout_eval
+  params: {}
