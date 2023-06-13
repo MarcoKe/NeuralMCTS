@@ -32,6 +32,5 @@ class JSPInstance:
             self.opt_time = JSPSolver().solve_from_job_list(jobs)
 
         all_operations = collect_all_operations(jobs)
-        total_entropy = calculate_entropy_from_operations_list(all_operations)
-        self.relative_entropy = total_entropy / calculate_entropy_from_operations_list(list(range(len(all_operations))))
+        self.relative_entropy = calculate_entropy_from_operations_list(all_operations, base=len(all_operations))
 
