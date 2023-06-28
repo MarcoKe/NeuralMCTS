@@ -25,7 +25,7 @@ class MCTSPolicyImprovementTrainer:
                  learning_rate=1e-5,
                  buffer_size=50000, batch_size=256, num_epochs=1, policy_improvement_iterations=2000, workers=8,
                  num_episodes=5, warmup_steps=0, entropy_loss=False, children_value_targets=False,
-                 selection_mode='mean', stochastic_actions=False, reuse_root=False, policy_loss_weight=1.0,
+                 selection_mode='mean', stochastic_actions=False, reuse_root=False,
                  value_loss_weight=1.0, entropy_loss_weight=1.0,
                  solver=None, wandb_run=None):
         """
@@ -62,7 +62,6 @@ class MCTSPolicyImprovementTrainer:
         self.num_episodes = num_episodes
         self.warmup_steps = warmup_steps
         self.entropy_loss = entropy_loss
-        self.policy_loss_weight = policy_loss_weight
         self.value_loss_weight = value_loss_weight
         self.entropy_loss_weight = entropy_loss_weight
         self.stochastic_actions = stochastic_actions
@@ -121,7 +120,9 @@ class MCTSPolicyImprovementTrainer:
             entropy = -th.mean(th.sum(
                 -(pi_theta * th.log(pi_theta) / th.log(th.ones_like(pi_theta) * self.mcts_agent.env.max_num_actions())),
                 axis=1))
-        total_loss = (self.policy_loss_weight * policy_loss + self.value_loss_weight * value_loss + (self.entropy_loss_weight * entropy)) / 2
+
+        policy_loss_weight = 1.0 - self.value_loss_weight - self.entropy_loss_weight
+        total_loss = (policy_loss_weight * policy_loss + self.value_loss_weight * value_loss + (self.entropy_loss_weight * entropy)) / 2
         return total_loss, policy_loss, value_loss, entropy
 
     def forward(self, obs: th.Tensor):
