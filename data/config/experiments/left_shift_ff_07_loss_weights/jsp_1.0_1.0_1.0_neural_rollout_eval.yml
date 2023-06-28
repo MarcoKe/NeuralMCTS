@@ -1,0 +1,4 @@
+name: jsp_1.0_1.0_1.0_neural_rollout_eval
+env: jsp_minimal_003
+agent: left_shift_ff_07_loss_weights/1.0_1.0_1.0_neural_rollout_eval
+policy_improvement_iterations: 30
