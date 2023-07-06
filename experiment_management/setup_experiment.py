@@ -5,7 +5,8 @@ import torch
 from envs.env_factory import env_factory, model_factory, instance_factories, observation_factories, action_factories, \
     reward_factories, solver_factories
 from experiment_management.config_handling.load_exp_config import load_exp_config
-from stable_baselines3 import PPO
+# from stable_baselines3 import PPO
+from sb3_contrib import MaskablePPO as PPO
 from mcts.mcts_agent import MCTSAgent
 from model_free.stb3_wrapper import Stb3ACAgent
 from model_free.gnn_feature_extractor import GNNExtractor
