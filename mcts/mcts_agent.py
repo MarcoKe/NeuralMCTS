@@ -18,7 +18,7 @@ class MCTSAgent:
     def __init__(self, env, model, tree_policy: TreePolicy, expansion_policy: ExpansionPolicy,
                  evaluation_policy: EvaluationPolicy, neural_net: RLAgent,
                  num_simulations=10, dirichlet_noise=False, evaluate_leaf_children=False, value_initialization=True,
-                 initialize_tree=True, **kwargs):
+                 initialize_tree=True, persist_trajectories=False, **kwargs):
         self.env = env
         self.model = model
         self.tree_policy = tree_policy
@@ -30,6 +30,7 @@ class MCTSAgent:
         self.evaluate_leaf_children = evaluate_leaf_children   # if False, apply evaluation policy to encountered leaf. If True, apply evaluation policy to expanded children of leaf
         self.value_initialization = value_initialization  # this only matters if evaluate_leaf_children is False
         self.initialize_tree = initialize_tree  # whether to populate tree with greedy neural net rollout
+        self.persist_trajectories = persist_trajectories # whether to include rollout trajectories as nodes in the tree
 
     def init_prior(self, action_probs, new_children, s):
         if torch.is_tensor(action_probs) or action_probs:
@@ -39,7 +40,7 @@ class MCTSAgent:
             self.tree_policy.exploration_term.init_prior(new_children, state=copy.deepcopy(s), env=self.env,
                                                          neural_net=self.neural_net)
 
-    def init_tree(self, n, s):
+    def init_tree(self, n: Node, s):
         """
         create a path from the root of the tree to a terminal node by greedily choosing nodes with the learned policy
         this should make the results of a tree search at least as good as the learned policy without tree search would have been
@@ -106,20 +107,20 @@ class MCTSAgent:
         stats = {'model_steps': model.count, 'neural_net_calls': neural_net.count}
         return root_node, stats
 
-    def selection_phase(self, n, s, model):
+    def selection_phase(self, n: Node, s, model):
         done = False
         terminal_reward = None
         while not n.is_leaf():
             n = self.tree_policy.select(n, add_dirichlet=(n.is_root() and self.dirichlet_noise))
-            s, terminal_reward, done = model.step(s, n.action) #todo: check if model reward should go through reward fun wrapper
+            s, terminal_reward, done = model.step(s, n.action)
             terminal_reward = self.env.reward(terminal_reward)
         return n, s, terminal_reward, done
 
-    def expansion_phase(self, n, s, model, neural_net):
+    def expansion_phase(self, n: Node, s, model, neural_net):
         new_children = self.expansion_policy.expand(n, s, model=model, env=self.env, neural_net=neural_net)
         return new_children
 
-    def evaluation_phase(self, n, s, new_children, model, neural_net):
+    def evaluation_phase(self, n: Node, s, new_children, model, neural_net):
         """
         Two distinct modes depending on self.evaluate_leaf_children:
         if True, the evaluation policy is applied to evaluate every newly expanded child of the encountered leaf node
@@ -143,8 +144,10 @@ class MCTSAgent:
                     state_values.append(reward_)
 
             if len(state_values) == 0:
-                state_values, action_probs = self.evaluation_policy.evaluate_multiple(copy.deepcopy(states), model=model, env=self.env,
+                state_values, action_probs, trajectories = self.evaluation_policy.evaluate_multiple(new_children, copy.deepcopy(states), model=model, env=self.env,
                                                                                   neural_net=neural_net)
+
+            # todo: handle trajectories to persist in the tree here
 
             for i, value in enumerate(state_values):
                 child = new_children[i]
@@ -159,12 +162,8 @@ class MCTSAgent:
 
 
         else:
-            state_value, action_probs = self.evaluation_policy.evaluate(copy.deepcopy(s), model=model, env=self.env,
-                                                                        neural_net=neural_net)
-            self.backpropagation_phase(n, state_value)
-
-            self.init_prior(action_probs, new_children, s)
-
+            # only n is evaluated here, so we need to initialise its children somehow
+            # initialise values of expanded children of n, either through value network or as inf
             if self.value_initialization:
                 children_state_values = neural_net.state_values(
                     [self.env.observation(model.step(copy.deepcopy(s), c.action)[0]) for c in new_children])
@@ -176,7 +175,46 @@ class MCTSAgent:
                 c.returns = children_state_values[i]
                 c.visits = 1
 
-    def backpropagation_phase(self, n, value):
+            # evaluate n
+            state_value, action_probs, trajectory = self.evaluation_policy.evaluate(n, copy.deepcopy(s), model=model, env=self.env,
+                                                                        neural_net=neural_net)
+
+            # optionally persist trajectory in tree
+            n = self.process_trajectory(n, trajectory)
+
+            # backpropagate the evaluated value of n up the tree
+            self.backpropagation_phase(n, state_value)
+
+            # initialise prior probability for selection policy
+            self.init_prior(action_probs, new_children, s)
+
+    def process_trajectory(self, n: Node, trajectory: List[Node]):
+        """
+        Merge the trajectory from a rollout into the search tree
+        @param n: node at which the rollout starts (already part of the tree)
+        @param trajectory: list of nodes comprising the trajectory
+        @return: the last node of the trajectory, if desired
+        """
+        if self.persist_trajectories:
+            if trajectory and len(trajectory) > 1:
+                # trajectory starts at n and second element of trajectory is a child already initialised above
+                # kill and replace the child:
+                child_action = trajectory[1].action
+                child_index = [i for i, c in enumerate(n.children) if c.action == child_action][0]
+                n.children[child_index] = trajectory[1]
+
+                # draw the rest of the edges in the trajectory
+                for i, n_ in enumerate(trajectory[1:-1]):
+                    n_.children.append(trajectory[i + 1])
+
+            n = trajectory[-1]  # perform subsequent backpropagation from last node in trajectory
+
+        return n
+
+    def backpropagation_phase(self, n: Node, value: float):
+        """
+        Backpropagates a value up the tree starting at n
+        """
         while n.has_parent():
             n.update(value)
             n = n.parent
@@ -229,57 +267,6 @@ class MCTSAgent:
                + str(self.evaluation_policy) + ") " + str(self.evaluate_leaf_children) + " " \
                + str(self.initialize_tree) + " " + str(self.value_initialization)
 
-
-if __name__ == '__main__':
-    from envs.tsp.TSP import TSPGym, TSP
-    # env = TSPGym(num_cities=15)
-    # model = TSP(num_cities=15)
-    #
-    #
-    # from tree_policies.tree_policy import UCTPolicy
-    # from tree_policies.exploration_terms.puct_term import PUCTTerm
-    # from tree_policies.exploitation_terms.avg_node_value import AvgNodeValueTerm
-    # from evaluation_policies.neural_value_eval import NeuralValueEvalPolicy
-    # from stable_baselines3 import PPO
-    # from model_free.stb3_wrapper import Stb3ACAgent
-    #
-    # model_free_agent = PPO.load("results/trained_agents/tsp/model_free/ppo_tsp_15_3e6")
-    # tp = UCTPolicy(AvgNodeValueTerm(), PUCTTerm(exploration_constant=1))
-    # ep = ExpansionPolicy()
-    # rp = NeuralValueEvalPolicy()
-    # agent = MCTSAgent(model, tp, ep, rp, neural_net=Stb3ACAgent(model_free_agent), num_simulations=1000, dirichlet_noise=True)
-    #
-    # num_iter = 100
-    #
-    # rewards = 0
-    # for _ in range(num_iter):
-    #     state = env.reset()
-    #     done = False
-    #
-    #     while not done:
-    #         action, _ = agent.select_action(env.raw_state())
-    #         state, reward, done, _ = env.step(action)
-    #
-    #     rewards += reward
-    #
-    #     env.render()
-    # print("avg rew: ", rewards / num_iter)
-    #
-    #
-    # rewards = 0
-    # for _ in range(num_iter):
-    #     state = env.reset()
-    #     done = False
-    #
-    #     while not done:
-    #         action, _ = model_free_agent.predict(state, deterministic=True)
-    #         state, reward, done, _ = env.step(action)
-    #
-    #     rewards += reward
-    #
-    #     env.render()
-    # print("avg rew: ", rewards / num_iter)
-    #
 
 
 

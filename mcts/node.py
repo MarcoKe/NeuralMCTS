@@ -8,6 +8,12 @@ class Node:
         self.visits, self.returns, self.max_return, self.prior_prob = 0, math.inf, -math.inf, None
 
     def expand(self, actions):
+        # check if actions have already been expanded
+        already_expanded = [c.action for c in self.children]
+        if len(already_expanded) > 0:
+            actions = set(actions) - set(already_expanded)
+
+        # expand all that have not been expanded before
         for a in actions:
             child = Node(a, self)
             self.children.append(child)
