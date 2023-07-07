@@ -72,7 +72,8 @@ def create_agent(env, model, agent_config):
                            num_simulations=agent_config['num_simulations'],
                            evaluate_leaf_children=agent_config['evaluate_leaf_children'],
                            value_initialization=agent_config['value_initialization'],
-                           initialize_tree=agent_config['initialize_tree'])
+                           initialize_tree=agent_config['initialize_tree'],
+                           persist_trajectories=agent_config['persist_trajectories'])
 
     return mcts_agent, model_free_agent
 
