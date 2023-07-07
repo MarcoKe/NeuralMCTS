@@ -34,13 +34,17 @@ class EvaluationPolicy:
 class RandomRolloutPolicy(EvaluationPolicy):
     def evaluate(self, node: Node, state, model=None, env=None, **kwargs):
         done = False
-        trajectory: List[Node] = [node]
+        trajectory: List[(Node, )] = [(node, state)]
 
         while not done:
+            # choose action
             legal_actions = model.legal_actions(state)
             action = random.choice(legal_actions)
-            trajectory.append(Node(action, trajectory[-1]))
 
+            # add to trajectory
+            trajectory.append((Node(action, trajectory[-1]), copy.deepcopy(state)))
+
+            # step
             state, reward, done = model.step(state, action)
             reward = env.reward(reward)
 

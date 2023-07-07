@@ -50,7 +50,7 @@ class MCTSAgent:
 
         while not done:
             new_children = self.expansion_policy.expand(n, s, model=self.model, env=self.env, neural_net=self.neural_net)
-            state_value, action_probs = self.evaluation_policy.evaluate(s, model=self.model, env=self.env, neural_net=self.neural_net)
+            state_value, action_probs, _ = self.evaluation_policy.evaluate(n, s, model=self.model, env=self.env, neural_net=self.neural_net)
             # children_states = [self.model.step(state, c.action)[0] for c in new_children]
             children_state_values = self.neural_net.state_values(
                 [self.env.observation(self.model.step(s, c.action)[0]) for c in new_children])
@@ -188,7 +188,7 @@ class MCTSAgent:
             # initialise prior probability for selection policy
             self.init_prior(action_probs, new_children, s)
 
-    def process_trajectory(self, n: Node, trajectory: List[Node]):
+    def process_trajectory(self, n: Node, trajectory: List[Node, ]):
         """
         Merge the trajectory from a rollout into the search tree
         @param n: node at which the rollout starts (already part of the tree)
@@ -199,15 +199,20 @@ class MCTSAgent:
             if trajectory and len(trajectory) > 1:
                 # trajectory starts at n and second element of trajectory is a child already initialised above
                 # kill and replace the child:
-                child_action = trajectory[1].action
+                child_action = trajectory[1][0].action
                 child_index = [i for i, c in enumerate(n.children) if c.action == child_action][0]
-                n.children[child_index] = trajectory[1]
+                n.children[child_index] = trajectory[1][0]
 
                 # draw the rest of the edges in the trajectory
-                for i, n_ in enumerate(trajectory[1:-1]):
-                    n_.children.append(trajectory[i + 1])
+                for i, (n_, _) in enumerate(trajectory[1:-1]):
+                    n_.children.append(trajectory[i + 2][0])
 
-            n = trajectory[-1]  # perform subsequent backpropagation from last node in trajectory
+            # init prior probs in trajectory nodes
+            for tn, ts in trajectory:
+                if tn.action:
+                    self.tree_policy.exploration_term.init_prior([tn], state=ts, env=self.env, neural_net=self.neural_net)
+
+            n = trajectory[-1][0]  # perform subsequent backpropagation from last node in trajectory
 
         return n
 
