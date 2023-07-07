@@ -8,7 +8,7 @@ class PUCTTerm(UCTTerm):
         self.dirichlet_alpha = dirichlet_alpha
         self.dirichlet_epsilon = dirichlet_epsilon
 
-    def val(self, node, model=None, neural_net=None, dirichlet_noise=None):
+    def val(self, node, dirichlet_noise=None):
         # (1 - eps) p + eps eta
         prior = node.prior_prob
         if dirichlet_noise:

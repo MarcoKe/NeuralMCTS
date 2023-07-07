@@ -209,7 +209,7 @@ class MCTSAgent:
 
             # init prior probs in trajectory nodes
             for tn, ts in trajectory:
-                if tn.action:
+                if tn.action is not None:
                     self.tree_policy.exploration_term.init_prior([tn], state=ts, env=self.env, neural_net=self.neural_net)
 
             n = trajectory[-1][0]  # perform subsequent backpropagation from last node in trajectory

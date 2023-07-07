@@ -42,7 +42,7 @@ class RandomRolloutPolicy(EvaluationPolicy):
             action = random.choice(legal_actions)
 
             # add to trajectory
-            trajectory.append((Node(action, trajectory[-1]), copy.deepcopy(state)))
+            trajectory.append((Node(action, trajectory[-1][0]), copy.deepcopy(state)))
 
             # step
             state, reward, done = model.step(state, action)
