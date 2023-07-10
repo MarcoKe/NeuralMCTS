@@ -1,4 +1,5 @@
 from .puct_term import PUCTTerm
+import math
 
 
 class PUCTBTerm(PUCTTerm):
@@ -8,6 +9,9 @@ class PUCTBTerm(PUCTTerm):
 
     def val(self, node, dirichlet_noise=None):
         puct = super().val(node, dirichlet_noise)
+
+        if node.max_return == -math.inf:
+            return puct
 
         puct_b = puct + (self.best_value_constant * node.max_return)
         return puct_b
