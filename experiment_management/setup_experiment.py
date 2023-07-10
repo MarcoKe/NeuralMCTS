@@ -49,6 +49,13 @@ def create_env(env_config):
     return environment, eval_environment, model
 
 
+def make_compatible(agent_config):
+    if not 'persist_trajectories' in agent_config:
+        agent_config['persist_trajectories'] = False
+
+    return agent_config
+
+
 def create_agent(env, model, agent_config):
     if len(agent_config['learned_policy']['location']) > 0:
         model_free_agent = PPO.load(agent_config['learned_policy']['location'], env=env)
@@ -65,6 +72,7 @@ def create_agent(env, model, agent_config):
         model_free_agent = PPO('MlpPolicy', env, policy_kwargs=policy_kwargs)
     neural_net = Stb3ACAgent(model_free_agent)
 
+    agent_config = make_compatible(agent_config)
     tp = tree_policy_factory.get(agent_config['tree_policy']['name'], **agent_config['tree_policy']['params'])
     ep = expansion_policy_factory.get(agent_config['expansion_policy']['name'], **agent_config['expansion_policy']['params'])
     rp = eval_policy_factory.get(agent_config['eval_policy']['name'], **agent_config['eval_policy']['params'])
