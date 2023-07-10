@@ -9,7 +9,7 @@ class PUCTBTerm(PUCTTerm):
     def val(self, node, dirichlet_noise=None):
         puct = super().val(node, dirichlet_noise)
 
-        puct_b = puct + (self.best_value_constant * self.node.max_return)
+        puct_b = puct + (self.best_value_constant * node.max_return)
         return puct_b
 
     def __str__(self):
