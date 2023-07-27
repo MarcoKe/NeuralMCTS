@@ -7,10 +7,10 @@ class OptimalityGapReward(gym.RewardWrapper):
         super(OptimalityGapReward, self).__init__(env)
 
     def reward(self, reward):
-        makespan = - reward
-        if reward == 0:
+        makespan = - reward[0]
+        if reward[0] == 0:
             return 0
-        elif reward == -1:
+        elif reward[0] == -1:
             return - 1
 
         optimum = self.env.instance.opt_time

@@ -160,13 +160,14 @@ class GNNJobShopModel(Model):
     def step(state, action):
         new_state, possible = GNNJobShopModel._schedule_op(action, deepcopy(state))
 
-        reward = 0
+        reward = (0, 0)
         if not possible:
-            reward = -1
+            reward = (-1, -1)
         done = GNNJobShopModel._is_done(new_state['remaining_ops'])
         if done:
-            reward = - GNNJobShopModel._makespan(new_state['schedule'])
-            # reward = - (new_state['features'][:, 0].max() - state['features'][:, 0].max())
+            makespan = - GNNJobShopModel._makespan(new_state['schedule'])
+            lower_bounds_diff = - (new_state['features'][:, 0].max() - state['features'][:, 0].max()) * norm_coeff
+            reward = (makespan, lower_bounds_diff)
 
         return new_state, reward, done
 
@@ -233,6 +234,7 @@ if __name__ == '__main__':
             action = random.choice(legal_actions)
 
             state, reward, done = model.step(state, action)
+        print(reward)
 
     duration = time.time() - start_time
     print("duration: ", duration, " time per step: ", duration / steps)
