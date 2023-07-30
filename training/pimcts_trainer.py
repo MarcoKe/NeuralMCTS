@@ -207,6 +207,7 @@ class MCTSPolicyImprovementTrainer:
         num_steps = 0
         model_steps = 0
         neural_net_calls = 0
+        max_returns = []
         node = None
 
         while not done:
@@ -219,6 +220,8 @@ class MCTSPolicyImprovementTrainer:
             v_mcts.append(v_mcts_)
             children_v_mcts.append(children_v_mcts_)
             children_observations.append(children_observations_)
+            max_returns.append(node.max_return)
+
             state, reward, done, _ = self.env.step(action)
             if self.reuse_root:
                 node = Node.create_root(node, action)
@@ -230,7 +233,7 @@ class MCTSPolicyImprovementTrainer:
             neural_net_calls += stats['neural_net_calls']
 
         return observations, pi_mcts, v_mcts, children_v_mcts, children_observations, num_steps, reward, model_steps, \
-               neural_net_calls
+               neural_net_calls, max_returns
 
     def collect_experience(self):
         """
@@ -243,12 +246,13 @@ class MCTSPolicyImprovementTrainer:
         children_observations = []
         observations = []
         rewards_list = []
+        max_returns = []
         rewards = 0
         model_steps_sum = 0
         neural_net_calls_sum = 0
         for ep in range(self.num_episodes):
-            o_, pi_mcts_, v_mcts_, children_v_mcts_, children_obs_, num_steps, reward, model_steps, neural_net_calls = \
-                self.perform_episode()
+            o_, pi_mcts_, v_mcts_, children_v_mcts_, children_obs_, num_steps, reward, model_steps, neural_net_calls, \
+               max_returns = self.perform_episode()
             observations.extend(o_)
             pi_mcts.extend(pi_mcts_)
             children_v_mcts.extend(children_v_mcts_)
@@ -259,7 +263,7 @@ class MCTSPolicyImprovementTrainer:
             neural_net_calls_sum += neural_net_calls
 
         return observations, pi_mcts, rewards_list, rewards / self.num_episodes, model_steps_sum, neural_net_calls_sum, \
-               children_v_mcts, children_observations
+               children_v_mcts, children_observations, max_returns
 
     def train(self):
         """
@@ -294,8 +298,11 @@ class MCTSPolicyImprovementTrainer:
                 children_v_mcts = r[6]
                 children_v_mcts = th.Tensor(children_v_mcts)
                 children_observations = th.Tensor(np.array(r[7]))
+                max_returns = r[8]
                 self.memory.store(observations, pi_mcts, outcomes, children_v_mcts, children_observations)
                 self.log('mctstrain/ep_rew', avg_reward)
+                self.log('mctstrain/max_returns', max_returns)
+                self.log('mctstrain/max_max_returns', max(max_returns))
 
             self.log('mctstrain/model_steps', self.total_model_steps)
             self.log('mctstrain/neural_net_calls', self.total_neural_net_calls)
