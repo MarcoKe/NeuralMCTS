@@ -15,7 +15,6 @@ class MixedPolicy(EvaluationPolicy):
         self.thresholds = np.array(thresholds)
         self.policies = policies
 
-
     def evaluate(self, node: Node, state, neural_net=None, model=None, env=None):
         real_node_depth = env.current_num_steps() + node.depth
 
@@ -24,4 +23,5 @@ class MixedPolicy(EvaluationPolicy):
 
         return policy.evaluate(node, state, neural_net=neural_net, model=model, env=env)
 
-
+    def __str__(self):
+        return "MixedEval"
