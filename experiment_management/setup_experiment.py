@@ -128,6 +128,6 @@ def setup_experiment(exp_name):
 
 
 if __name__ == '__main__':
-    setup_experiment("left_shift_ff_08_mcts4/jsp_0.5_0.1_100_uct_neural_expansion_random_55d78051")
-    # setup_experiment("jsp_test")
+    # setup_experiment("left_shift_ff_08_mcts4/jsp_0.5_0.1_100_uct_neural_expansion_random_55d78051")
+    setup_experiment("jsp_test")
     # setup_experiment("naive2_ff_05/jsp_uct_neural_expansion_neural_rollout_eval_value_initialization_initialize_tree")
