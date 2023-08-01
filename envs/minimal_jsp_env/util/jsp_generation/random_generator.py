@@ -55,7 +55,7 @@ class RandomJSPGeneratorPool(JSPGenerator):
         return JSPInstance(jobs, num_ops_per_job=self.num_operations, max_op_time=self.max_op_duration)
 
 
-class RandomJSPGeneratorOperationDistirbution(JSPGenerator):
+class RandomJSPGeneratorOperationDistribution(JSPGenerator):
     def __init__(self, num_jobs: int, num_operations: int, max_op_duration: int = 9):
         self.num_jobs = num_jobs
         self.num_operations = num_operations
@@ -109,7 +109,7 @@ class RandomJSPGeneratorWithJobPool(JSPGenerator):
         self.operation_distribution = operation_distribution
 
         if self.operation_distribution:
-            pool_generator = RandomJSPGeneratorOperationDistirbution(
+            pool_generator = RandomJSPGeneratorOperationDistribution(
                 num_jobs=self.job_pool_size, 
                 num_operations=self.num_operations, 
                 max_op_duration=self.max_op_duration)
