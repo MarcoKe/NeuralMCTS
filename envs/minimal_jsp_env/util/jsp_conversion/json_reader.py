@@ -1,6 +1,5 @@
-from envs.gnn_jsp_env.entities import Operation, JSPInstance
 import json
-from typing import List
+from envs.minimal_jsp_env.entities import JSPInstance, Operation
 
 
 class JSPReaderJSON:
@@ -25,22 +24,3 @@ class JSPReaderJSON:
 
         return JSPInstance(jobs, input_file['num_ops_per_job'], input_file['n_resources'],
                            input_file['max_op_time'], input_file['id'], input_file['opt_time'])
-
-
-class JSPReaderGoogleOR:
-    def read_instance(self, path: str) -> List:
-
-        with open(path, 'r') as file:
-            input_file = json.load(file)
-
-        jobs = []
-
-        for job_machine_types, job_durations in zip(input_file['machine_types'], input_file['durations']):
-
-            operations = []
-            for operation_machine_type, operation_duration in zip(job_machine_types, job_durations):
-                operations.append([operation_machine_type, operation_duration])
-
-            jobs.append(operations)
-
-        return jobs
