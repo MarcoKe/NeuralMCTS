@@ -4,7 +4,7 @@ import copy
 
 class Node:
     def __init__(self, action, parent):
-        self.action, self.parent, self.depth, self.children = action, parent, [] # action is the action that led to this node from the parent
+        self.action, self.parent, self.children = action, parent, [] # action is the action that led to this node from the parent
         self.visits, self.returns, self.max_return, self.prior_prob = 0, math.inf, -math.inf, None
         self.depth = 0 if not parent else parent.depth + 1
 
