@@ -180,7 +180,8 @@ class MCTSAgent:
                                                                         neural_net=neural_net)
 
             # optionally persist trajectory in tree
-            n = self.process_trajectory(n, trajectory)
+            if trajectory: # in mixed policies trajectories may only be returned for some individual policies
+                n = self.process_trajectory(n, trajectory)
 
             # backpropagate the evaluated value of n up the tree
             self.backpropagation_phase(n, state_value)
