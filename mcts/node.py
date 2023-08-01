@@ -3,9 +3,10 @@ import copy
 
 
 class Node:
-    def __init__(self, action, parent, depth):
-        self.action, self.parent, self.depth, self.children = action, parent, depth, [] # action is the action that led to this node from the parent
+    def __init__(self, action, parent):
+        self.action, self.parent, self.depth, self.children = action, parent, [] # action is the action that led to this node from the parent
         self.visits, self.returns, self.max_return, self.prior_prob = 0, math.inf, -math.inf, None
+        self.depth = 0 if not parent else parent.depth + 1
 
     def expand(self, actions):
         # check if actions have already been expanded
@@ -15,7 +16,7 @@ class Node:
 
         # expand all that have not been expanded before
         for a in actions:
-            child = Node(a, self, self.depth+1)
+            child = Node(a, self)
             self.children.append(child)
 
     def update(self, r):

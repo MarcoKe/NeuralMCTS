@@ -85,7 +85,7 @@ class MCTSAgent:
         neural_net = EvalCounterWrapper(self.neural_net)
 
         if not root_node:
-            root_node = Node(None, None, 0)
+            root_node = Node(None, None)
             if self.initialize_tree: self.init_tree(root_node, copy.deepcopy(state))
 
         simulation_count = 0
