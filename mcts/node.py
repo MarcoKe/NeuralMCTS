@@ -3,8 +3,8 @@ import copy
 
 
 class Node:
-    def __init__(self, action, parent):
-        self.action, self.parent, self.children = action, parent, [] # action is the action that led to this node from the parent
+    def __init__(self, action, parent, depth):
+        self.action, self.parent, self.depth, self.children = action, parent, depth, [] # action is the action that led to this node from the parent
         self.visits, self.returns, self.max_return, self.prior_prob = 0, math.inf, -math.inf, None
 
     def expand(self, actions):
@@ -15,7 +15,7 @@ class Node:
 
         # expand all that have not been expanded before
         for a in actions:
-            child = Node(a, self)
+            child = Node(a, self, self.depth+1)
             self.children.append(child)
 
     def update(self, r):
@@ -69,5 +69,14 @@ class Node:
         if not old_root: return old_root
         new_root = copy.deepcopy(old_root.get_child(action))
         new_root.parent = None
+        Node.decrement_depths(new_root)
 
         return new_root
+
+    @staticmethod
+    def decrement_depths(start_node):
+        start_node.depth -= 1
+
+        for child in start_node.children:
+            Node.decrement_depths(child)
+
