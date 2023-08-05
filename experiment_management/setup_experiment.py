@@ -66,15 +66,16 @@ def create_model_free_agent(general_config, env, config):
     else:
         policy_kwargs = dict()
         policy_kwargs['activation_fn'] = torch.nn.modules.Mish
+        learning_rate = 0.0001 if not 'learning_rate' in config else config['learning_rate']
         if 'net_arch' in config:
-            policy_kwargs['net_arch'] = config['net_arch']
+            policy_kwargs['net_arch'] = [config['net_arch']]
         if 'features_extractor' in config and config['features_extractor'] == 'gnn':
             feature_extractor_kwargs = dict(num_layers=3, num_mlp_layers=2, input_dim=2,
                                             hidden_dim=64, graph_pool="avg")
             policy_kwargs['features_extractor_class'] = GNNExtractor
             policy_kwargs['features_extractor_kwargs'] = feature_extractor_kwargs
 
-        return PPO('MlpPolicy', env, tensorboard_log=general_config['output']['tensorboard_logs'], policy_kwargs=policy_kwargs)
+        return PPO('MlpPolicy', env, learning_rate=learning_rate, tensorboard_log=general_config['output']['tensorboard_logs'], policy_kwargs=policy_kwargs)
 
 
 def create_agent(general_config, env, model, agent_config):
@@ -176,5 +177,12 @@ if __name__ == '__main__':
     # setup_budget_sensitivity_experiment('budget_sensitivity/budget_sensitivity_test')
     # setup_experiment("left_shift_ff_08_mcts4/jsp_0.5_0.1_100_uct_neural_expansion_random_55d78051")
     # setup_experiment("jsp_test")
-    setup_model_free_experiment("model_free/jsp_test")
+    # setup_model_free_experiment("model_free/jsp_test")
+    exps = ['model_free/inter_instance_op_02', 'model_free/inter_instance_op_03', 'model_free/inter_instance_op_04',
+            'model_free/inter_instance_op_05', 'model_free/inter_instance_op_06', 'model_free/inter_instance_op_07',
+            'model_free/inter_instance_op_08']
+
+    for exp in exps:
+        print(exp)
+        setup_model_free_experiment(exp)
     # setup_experiment("naive2_ff_05/jsp_uct_neural_expansion_neural_rollout_eval_value_initialization_initialize_tree")

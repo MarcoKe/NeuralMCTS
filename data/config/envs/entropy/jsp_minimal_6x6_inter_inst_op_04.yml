@@ -1,0 +1,24 @@
+jsp_minimal_6x6_inter_inst_op_02:
+  yml:
+name: 'jsp_minimal'
+params:
+  instance_generator:
+    name: 'multiple'
+    params:
+      path: 'data/jsp_instances/entropy/inter-instance-operation/inter-op-500-6x6/inter-op-500-6x6-04/'
+      format: 'json'
+  instance_generator_eval:
+    name: 'deterministic_multiple'
+    params:
+      path: 'data/jsp_instances/entropy/inter-instance-operation/inter-op-500-6x6/inter-op-500-6x6-04_test/'
+      format: 'json'
+      max_instances: 50
+  observation_space:
+    name: 'lower_bound'
+    params: {}
+  action_space:
+    name: 'naive'
+    params: {}
+  reward_function:
+    name: 'opt_gap'
+    params: {}

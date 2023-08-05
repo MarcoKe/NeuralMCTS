@@ -1,4 +1,4 @@
 name: jsp_test
-env: entropy/jsp_minimal_6x6_inter_inst_op_02
+env: entropy/jsp_minimal_6x6_inter_inst_op_06
 agent: model_free/ppo
 training_steps: 1000000
