@@ -165,8 +165,9 @@ def setup_model_free_experiment(exp_name):
     agent = create_model_free_agent(general_config, env, agent_config)
 
     trainer = Stb3Trainer(exp_config['name'], env, eval_env, agent, wandb_run, exp_config['training_steps'])
-
     trainer.train()
+    trainer.evaluate()
+
     wandb_run.finish()
 
 
