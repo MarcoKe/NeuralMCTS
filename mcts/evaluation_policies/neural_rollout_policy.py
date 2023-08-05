@@ -40,4 +40,4 @@ class NeuralRolloutPolicy(EvaluationPolicy):
         return reward, priors, trajectory
 
     def __str__(self):
-        return "NRoll"
+        return "NeuralPolicyRollout"

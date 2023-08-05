@@ -13,6 +13,7 @@ class JobShopEnv(gym.Env):
 
     def set_instance(self, instance):
         self.done = False
+        self.steps = 0
         self.instance = instance
         self.ops_per_job = self.instance.num_ops_per_job
         self.num_machines = self.instance.num_ops_per_job
@@ -34,6 +35,7 @@ class JobShopEnv(gym.Env):
 
     def reset(self):
         self.done = False
+        self.steps = 0
         self._generate_instance()
 
         return self.state
@@ -45,6 +47,7 @@ class JobShopEnv(gym.Env):
 
     def step(self, action):
         self.state, reward, self.done = self.model.step(self.state, action)
+        self.steps += 1
 
         return self.state, reward, self.done, {}
 
@@ -59,3 +62,6 @@ class JobShopEnv(gym.Env):
     
     def max_num_actions(self):
         return len(self.state['remaining_operations'])
+
+    def current_num_steps(self) -> int:
+        return self.steps
