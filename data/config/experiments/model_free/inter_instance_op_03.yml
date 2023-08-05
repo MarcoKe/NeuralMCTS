@@ -1,4 +1,4 @@
-name: jsp_6x6_inter_inst_op_03
+name: 6x6_inter_inst_op_03
 env: entropy/jsp_minimal_6x6_inter_inst_op_03
 agent: model_free/ppo
 training_steps: 1000000
