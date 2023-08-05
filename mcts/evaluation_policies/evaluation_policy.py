@@ -51,4 +51,4 @@ class RandomRolloutPolicy(EvaluationPolicy):
         return reward, None, trajectory
 
     def __str__(self):
-        return "RandRoll"
+        return "RandomRollout"

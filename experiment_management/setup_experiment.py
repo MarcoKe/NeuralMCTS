@@ -4,9 +4,9 @@ import wandb
 import torch
 from envs.env_factory import env_factory, model_factory, instance_factories, observation_factories, action_factories, \
     reward_factories, solver_factories
-from experiment_management.config_handling.load_exp_config import load_exp_config
-# from stable_baselines3 import PPO
-from sb3_contrib import MaskablePPO as PPO
+from experiment_management.config_handling.load_exp_config import load_exp_config, load_sensitivity_exp_config
+from stable_baselines3 import PPO
+# from sb3_contrib import MaskablePPO as PPO
 from mcts.mcts_agent import MCTSAgent
 from model_free.stb3_wrapper import Stb3ACAgent
 from model_free.gnn_feature_extractor import GNNExtractor
@@ -14,6 +14,7 @@ from mcts.tree_policies.tree_policy_factory import tree_policy_factory
 from mcts.expansion_policies.expansion_policy_factory import expansion_policy_factory
 from mcts.evaluation_policies.eval_policy_factory import eval_policy_factory
 from training.pimcts_trainer import MCTSPolicyImprovementTrainer
+from evaluation.budget_evaluator import MCTSBudgetEvaluator
 
 def env_from_config(env_config):
     observation_spaces = observation_factories.get(env_config['name'])
@@ -88,12 +89,15 @@ def create_agent(env, model, agent_config):
 
 def init_wandb(general_config, exp_name, exp_config, agent_config, env_config):
     config = {'exp_name': exp_name, 'exp_config': exp_config, 'agent_config': agent_config, 'env_config': env_config}
+    tag = 'test' if not exp_config['tag'] else exp_config['tag']
     wandb.require("service")
+
 
     run = wandb.init(
         project=general_config['wandb']['project'],
         config=config,
-        name=exp_config['name']
+        name=exp_config['name'],
+        tags=[tag]
         # sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
         # monitor_gym=True,  # auto-upload the videos of agents playing the game
         # save_code=True,  # optional
@@ -123,11 +127,26 @@ def setup_experiment(exp_name):
                                            **agent_config['training'], policy_improvement_iterations=exp_config['policy_improvement_iterations'])
 
     trainer.train()
+    wandb_run.finish()
 
+
+def setup_budget_sensitivity_experiment(exp_name):
+    general_config, exp_name, exp_config, original_exp, agent_config, env_config = load_sensitivity_exp_config(exp_name)
+    general_config['wandb']['project'] = 'neural_mcts_budget'
+    wandb_run = init_wandb(general_config, exp_name, exp_config, agent_config, env_config)
+
+    _, eval_env, model = create_env(env_config)
+    mcts_agent, model_free_agent = create_agent(eval_env, model, agent_config)
+
+    evaluator = MCTSBudgetEvaluator(exp_config['name'], eval_env, mcts_agent, model_free_agent, exp_config['budgets'], wandb_run)
+
+    evaluator.evaluate()
     wandb_run.finish()
 
 
 if __name__ == '__main__':
+
+    setup_budget_sensitivity_experiment('budget_sensitivity/budget_sensitivity_test')
     # setup_experiment("left_shift_ff_08_mcts4/jsp_0.5_0.1_100_uct_neural_expansion_random_55d78051")
-    setup_experiment("jsp_test")
+    # setup_experiment("jsp_test")
     # setup_experiment("naive2_ff_05/jsp_uct_neural_expansion_neural_rollout_eval_value_initialization_initialize_tree")

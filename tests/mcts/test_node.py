@@ -67,3 +67,20 @@ def test_construction():
     assert root.value() == approx(11/4)
     assert l22.visits == 2
 
+
+def test_decrement_depths():
+    root = Node(None, None, 1)
+    l11 = Node(1, root, 2)
+    l12 = Node(2, root, 2)
+    root.children.append(l11)
+    root.children.append(l12)
+
+    l21 = Node(3, l11, 3)
+    l22 = Node(4, l11, 3)
+    l11.children.append(l21)
+    l11.children.append(l22)
+
+    Node.decrement_depths(root)
+    assert root.depth == 0
+    assert l11.depth == 1 and l12.depth == 1
+    assert l21.depth == 2 and l22.depth == 2

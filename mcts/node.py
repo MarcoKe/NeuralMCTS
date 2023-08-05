@@ -6,6 +6,7 @@ class Node:
     def __init__(self, action, parent):
         self.action, self.parent, self.children = action, parent, [] # action is the action that led to this node from the parent
         self.visits, self.returns, self.max_return, self.prior_prob = 0, math.inf, -math.inf, None
+        self.depth = 0 if not parent else parent.depth + 1
 
     def expand(self, actions):
         # check if actions have already been expanded
@@ -69,5 +70,14 @@ class Node:
         if not old_root: return old_root
         new_root = copy.deepcopy(old_root.get_child(action))
         new_root.parent = None
+        Node.decrement_depths(new_root)
 
         return new_root
+
+    @staticmethod
+    def decrement_depths(start_node):
+        start_node.depth -= 1
+
+        for child in start_node.children:
+            Node.decrement_depths(child)
+

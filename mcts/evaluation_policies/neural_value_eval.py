@@ -17,4 +17,4 @@ class NeuralValueEvalPolicy(EvaluationPolicy):
         return state_values, None, None
 
     def __str__(self):
-        return "NVRoll"
+        return "NeuralValueEval"
