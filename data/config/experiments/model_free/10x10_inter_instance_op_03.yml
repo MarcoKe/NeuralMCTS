@@ -1,4 +1,4 @@
-name: jsp_10x10_inter_inst_op_03
+name: 10x10_inter_inst_op_03
 env: entropy/jsp_minimal_10x10_inter_inst_op_03
 agent: model_free/ppo_10x10
 training_steps: 10000000
