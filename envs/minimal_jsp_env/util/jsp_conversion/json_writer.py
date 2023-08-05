@@ -2,7 +2,7 @@ from envs.minimal_jsp_env.entities import JSPInstance
 import json
 
 
-class JSPWriterJSON:
+class JSONWriter:
     @staticmethod
     def get_job_matrices(jsp_instance: JSPInstance, display: bool = True):
         machine_types = []
