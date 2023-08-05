@@ -1,5 +1,5 @@
-name: 10x10_inter_inst_op_02
-env: entropy/jsp_minimal_10x10_inter_inst_op_02
+name: 10x10_inter_inst_op_04
+env: entropy/jsp_minimal_10x10_inter_inst_op_04
 agent: model_free/ppo_10x10
 training_steps: 10000000
 tag: model_free_inter_instance_op_entropy
