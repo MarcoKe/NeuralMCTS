@@ -180,7 +180,8 @@ class MCTSAgent:
                                                                         neural_net=neural_net)
 
             # optionally persist trajectory in tree
-            n = self.process_trajectory(n, trajectory)
+            if trajectory: # in mixed policies trajectories may only be returned for some individual policies
+                n = self.process_trajectory(n, trajectory)
 
             # backpropagate the evaluated value of n up the tree
             self.backpropagation_phase(n, state_value)
@@ -200,7 +201,13 @@ class MCTSAgent:
                 # trajectory starts at n and second element of trajectory is a child already initialised above
                 # kill and replace the child:
                 child_action = trajectory[1][0].action
-                child_index = [i for i, c in enumerate(n.children) if c.action == child_action][0]
+
+                child_indices = [i for i, c in enumerate(n.children) if c.action == child_action]
+
+                if len(child_indices) == 0:
+                    return n
+                
+                child_index = child_indices[0]
                 n.children[child_index] = trajectory[1][0]
 
                 # draw the rest of the edges in the trajectory

@@ -1,0 +1,38 @@
+name: 'mcts_mixed_eval'
+num_simulations: 100
+evaluate_leaf_children: False
+value_initialization: True
+initialize_tree: False
+persist_trajectories: True
+learned_policy:
+  location: ''
+features_extractor: ''
+tree_policy:
+  name: 'uct'
+  params:
+    exploitation:
+      name: 'avg_node_value'
+      params: {}
+    exploration:
+      name: 'puct'
+      params:
+        exploration_constant: 1
+expansion_policy:
+  name: 'neural_expansion'
+  params: {threshold: 0.9}
+eval_policy:
+  name: 'mixed'
+  params:
+    thresholds: [0, 12]
+    policies: ['neural_value_eval', 'random']
+training:
+  buffer_size: 36000
+  weight_decay: 0.0005
+  learning_rate: 1e-5
+  batch_size: 256
+  num_epochs: 1
+  num_episodes: 5
+  workers: 8
+  warmup_steps: 0
+  children_value_targets: True
+
