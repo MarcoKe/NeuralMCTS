@@ -58,6 +58,9 @@ class MCTSBudgetEvaluator:
         Performs one evaluation episode by setting a specific problem instance in the environment
         """
 
+        if agent.agent.num_simulations == 0:
+            agent = Stb3AgentWrapper(agent.agent.neural_net.agent, env, env.model)
+
         state = env.set_instance(instance)
         state = env.observation(state)
         done = False
