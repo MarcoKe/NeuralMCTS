@@ -4,8 +4,8 @@ import numpy as np
 from envs.env_factory import env_factory, model_factory, instance_factories, observation_factories, action_factories, \
     reward_factories, solver_factories
 from experiment_management.config_handling.load_exp_config import load_exp_config, load_sensitivity_exp_config
-# from stable_baselines3 import PPO
-from sb3_contrib import MaskablePPO as PPO
+from stable_baselines3 import PPO
+#from sb3_contrib import MaskablePPO as PPO
 from sb3_contrib.common.wrappers import ActionMasker
 from mcts.mcts_agent import MCTSAgent
 from model_free.stb3_wrapper import Stb3ACAgent
@@ -136,6 +136,9 @@ def setup_experiment(exp_name):
 
 def setup_budget_sensitivity_experiment(exp_name):
     general_config, exp_name, exp_config, original_exp, agent_config, env_config = load_sensitivity_exp_config(exp_name)
+    if 'saved_agent_path' in exp_config:
+        agent_config['learned_policy']['location'] = exp_config['saved_agent_path']
+
     general_config['wandb']['project'] = 'neural_mcts_budget'
     wandb_run = init_wandb(general_config, exp_name, exp_config, agent_config, env_config)
 
@@ -154,6 +157,8 @@ def setup_model_free_experiment(exp_name):
     wandb_run = init_wandb(general_config, exp_name, exp_config, agent_config, env_config)
 
     env, eval_env, _ = create_env(env_config)
+    env.set_run(wandb_run)
+    eval_env.set_run(wandb_run)
 
     def mask_fn(env) -> np.ndarray:
         mask = np.array([False for _ in range(env.max_num_actions())])
@@ -173,16 +178,15 @@ def setup_model_free_experiment(exp_name):
 
 
 if __name__ == '__main__':
-
     # setup_budget_sensitivity_experiment('budget_sensitivity/budget_sensitivity_test')
-    # setup_experiment("left_shift_ff_08_mcts4/jsp_0.5_0.1_100_uct_neural_expansion_random_55d78051")
+    setup_experiment("15x15/jsp_puct_neural_expansion_random")
     # setup_experiment("jsp_test")
     # setup_model_free_experiment("model_free/jsp_test")
-    exps = ['model_free/inter_instance_op_02', 'model_free/inter_instance_op_03', 'model_free/inter_instance_op_04',
-            'model_free/inter_instance_op_05', 'model_free/inter_instance_op_06', 'model_free/inter_instance_op_07',
-            'model_free/inter_instance_op_08']
-
-    for exp in exps:
-        print(exp)
-        setup_model_free_experiment(exp)
+    # exps = ['model_free/inter_instance_op_02', 'model_free/inter_instance_op_03', 'model_free/inter_instance_op_04',
+    #         'model_free/inter_instance_op_05', 'model_free/inter_instance_op_06', 'model_free/inter_instance_op_07',
+    #         'model_free/inter_instance_op_08']
+    #
+    # for exp in exps:
+    #     print(exp)
+    #     setup_model_free_experiment(exp)
     # setup_experiment("naive2_ff_05/jsp_uct_neural_expansion_neural_rollout_eval_value_initialization_initialize_tree")
