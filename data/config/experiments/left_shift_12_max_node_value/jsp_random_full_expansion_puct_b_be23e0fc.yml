@@ -1,0 +1,4 @@
+name: jsp_random_full_expansion_puct_b_be23e0fc
+env: jsp_minimal_003
+agent: left_shift_12_max_node_value/random_full_expansion_puct_b_be23e0fc
+policy_improvement_iterations: 30

@@ -1,0 +1,4 @@
+name: jsp_neural_rollout_eval_full_expansion_uct_3030fbb5
+env: jsp_minimal_003
+agent: left_shift_11_persist_trajectories/neural_rollout_eval_full_expansion_uct_3030fbb5
+policy_improvement_iterations: 30

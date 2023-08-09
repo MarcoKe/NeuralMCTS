@@ -1,0 +1,4 @@
+name: jsp_random_neural_expansion_puct_54300f5b
+env: jsp_minimal_003
+agent: left_shift_11_persist_trajectories/random_neural_expansion_puct_54300f5b
+policy_improvement_iterations: 30

@@ -1,8 +1,8 @@
-name: 'mcts_from_scratch_100000replay'
-num_simulations: 100
+name: 'mcts_from_scratch_value_many'
+num_simulations: 1000
 evaluate_leaf_children: False
 value_initialization: True
-initialize_tree: True
+initialize_tree: False
 learned_policy:
   location: ''
 features_extractor: ''
@@ -20,7 +20,7 @@ expansion_policy:
   name: 'full_expansion'
   params: {}
 eval_policy:
-  name: 'neural_rollout_eval'
+  name: 'neural_value_eval'
   params: {}
 training:
   buffer_size: 36000

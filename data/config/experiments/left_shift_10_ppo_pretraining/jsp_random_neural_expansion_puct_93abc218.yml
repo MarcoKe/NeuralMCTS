@@ -1,0 +1,4 @@
+name: jsp_random_neural_expansion_puct_93abc218
+env: jsp_minimal_003
+agent: left_shift_10_ppo_pretraining/random_neural_expansion_puct_93abc218
+policy_improvement_iterations: 30

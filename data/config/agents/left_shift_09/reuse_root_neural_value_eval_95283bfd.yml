@@ -1,0 +1,39 @@
+name: reuse_root_neural_value_eval
+evaluate_leaf_children: false
+value_initialization: true
+initialize_tree: false
+num_simulations: 100
+learned_policy:
+  location: ''
+features_extractor: ''
+training:
+  buffer_size: 36000
+  weight_decay: 0.0005
+  learning_rate: 1.0e-05
+  batch_size: 256
+  num_epochs: 1
+  num_episodes: 5
+  workers: 8
+  warmup_steps: 0
+  entropy_loss: true
+  children_value_targets: true
+  entropy_loss_weight: 0.33
+  value_loss_weight: 0.33
+  reuse_root: true
+tree_policy:
+  name: uct
+  params:
+    exploitation:
+      name: avg_node_value
+      params: {}
+    exploration:
+      name: puct
+      params:
+        exploration_constant: 1
+expansion_policy:
+  name: neural_expansion
+  params:
+    threshold: 0.9
+eval_policy:
+  name: neural_value_eval
+  params: {}

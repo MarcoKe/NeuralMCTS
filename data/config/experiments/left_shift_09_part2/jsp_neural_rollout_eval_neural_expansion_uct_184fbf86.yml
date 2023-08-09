@@ -1,0 +1,4 @@
+name: jsp_neural_rollout_eval_neural_expansion_uct_184fbf86
+env: jsp_minimal_003
+agent: left_shift_09_part2/neural_rollout_eval_neural_expansion_uct_184fbf86
+policy_improvement_iterations: 30

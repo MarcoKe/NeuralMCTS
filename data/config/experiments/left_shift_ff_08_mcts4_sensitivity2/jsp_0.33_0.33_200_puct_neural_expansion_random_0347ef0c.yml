@@ -1,0 +1,8 @@
+name: jsp_0.33_0.33_200_puct_neural_expansion_random_0347ef0csensitivity2
+tag: left_shift_ff_08_mcts4_sensitivity
+original_exp: left_shift_ff_08_mcts4/jsp_0.33_0.33_200_puct_neural_expansion_random_0347ef0c
+original_tag: left_shift_ff_08_mcts4
+budgets:
+- 0
+- 1
+- 5

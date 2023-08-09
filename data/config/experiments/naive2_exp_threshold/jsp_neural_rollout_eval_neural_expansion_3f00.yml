@@ -1,0 +1,4 @@
+name: jsp_neural_rollout_eval_neural_expansion_3f00
+env: jsp_minimal_002
+agent: naive2_exp_threshold/neural_rollout_eval_neural_expansion_3f00
+policy_improvement_iterations: 250

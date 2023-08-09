@@ -1,0 +1,4 @@
+name: jsp_random_1a42579f
+env: jsp_minimal_003
+agent: left_shift_09/random_1a42579f
+policy_improvement_iterations: 30

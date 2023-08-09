@@ -1,0 +1,38 @@
+name: 0.5_1.0_100_puct_full_expansion_random
+evaluate_leaf_children: false
+value_initialization: true
+initialize_tree: false
+learned_policy:
+  location: ''
+features_extractor: ''
+training:
+  buffer_size: 36000
+  weight_decay: 0.0005
+  learning_rate: 1.0e-05
+  batch_size: 256
+  num_epochs: 1
+  num_episodes: 5
+  workers: 8
+  warmup_steps: 0
+  entropy_loss: true
+  reuse_root: false
+  children_value_targets: true
+  entropy_loss_weight: 0.5
+  value_loss_weight: 1.0
+num_simulations: 100
+tree_policy:
+  name: uct
+  params:
+    exploitation:
+      name: avg_node_value
+      params: {}
+    exploration:
+      name: puct
+      params:
+        exploration_constant: 10
+expansion_policy:
+  name: full_expansion
+  params: {}
+eval_policy:
+  name: random
+  params: {}

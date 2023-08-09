@@ -1,0 +1,4 @@
+name: jsp_0.1_0.1_10_uct_neural_expansion_random
+env: jsp_minimal_003
+agent: left_shift_ff_08_mcts2/0.1_0.1_10_uct_neural_expansion_random
+policy_improvement_iterations: 30

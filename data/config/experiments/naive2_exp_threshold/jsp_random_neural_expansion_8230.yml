@@ -1,0 +1,4 @@
+name: jsp_random_neural_expansion_8230
+env: jsp_minimal_002
+agent: naive2_exp_threshold/random_neural_expansion_8230
+policy_improvement_iterations: 250

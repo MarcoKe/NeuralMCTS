@@ -1,0 +1,4 @@
+name: jsp_neural_rollout_eval_neural_expansion_puct_725b2559
+env: jsp_minimal_003
+agent: left_shift_10_ppo_pretraining/neural_rollout_eval_neural_expansion_puct_725b2559
+policy_improvement_iterations: 30

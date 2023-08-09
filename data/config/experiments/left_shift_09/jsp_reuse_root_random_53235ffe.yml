@@ -1,0 +1,4 @@
+name: jsp_reuse_root_random_53235ffe
+env: jsp_minimal_003
+agent: left_shift_09/reuse_root_random_53235ffe
+policy_improvement_iterations: 30

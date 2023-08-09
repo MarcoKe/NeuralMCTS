@@ -1,0 +1,4 @@
+name: jsp_neural_value_eval_d1a2f61d
+env: jsp_minimal_003
+agent: left_shift_09/neural_value_eval_d1a2f61d
+policy_improvement_iterations: 30

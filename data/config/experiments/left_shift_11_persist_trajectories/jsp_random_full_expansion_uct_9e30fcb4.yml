@@ -1,0 +1,4 @@
+name: jsp_random_full_expansion_uct_9e30fcb4
+env: jsp_minimal_003
+agent: left_shift_11_persist_trajectories/random_full_expansion_uct_9e30fcb4
+policy_improvement_iterations: 30
