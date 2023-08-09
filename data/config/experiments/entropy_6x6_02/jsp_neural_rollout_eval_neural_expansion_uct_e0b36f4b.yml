@@ -1,5 +1,0 @@
-name: jsp_neural_rollout_eval_neural_expansion_uct_e0b36f4b
-env: entropy/jsp_minimal_6x6_inter_inst_op_02.yml
-agent: entropy_6x6_02/neural_rollout_eval_neural_expansion_uct_e0b36f4b
-policy_improvement_iterations: 30
-tag: inter_op_entropy_6x6
