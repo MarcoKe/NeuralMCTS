@@ -19,6 +19,7 @@ class JSONReader:
 
             jobs.append(operations)
 
+        op_entropy = None if not 'intra_instance_operation_entropy' in input_file else input_file['intra_instance_operation_entropy']
         return JSPInstance(jobs, num_ops_per_job=input_file['num_ops_per_job'], max_op_time=input_file['max_op_time'],
-                    id=path.split('/')[-1], opt_time=input_file['opt_time'], spt_time=0)
+                    id=path.split('/')[-1], opt_time=input_file['opt_time'], spt_time=0, intra_instance_op_entropy=op_entropy)
 
