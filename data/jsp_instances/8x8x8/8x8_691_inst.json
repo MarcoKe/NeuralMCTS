@@ -176,5 +176,6 @@
                 6
             ]
         ]
-    }
+    },
+    "intra_instance_operation_entropy": 0.9251174804631161
 }
