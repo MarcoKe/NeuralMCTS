@@ -1,6 +1,6 @@
 from util.object_factory import ObjectFactory
 from envs.minimal_jsp_env.reward_functions.opt_gap import OptimalityGapReward
-from envs.gnn_jsp_env.reward_functions.lower_bounds import LowerBoundsDifferenceReward
+from envs.minimal_jsp_env.reward_functions.lower_bounds import LowerBoundsDifferenceReward
 
 
 class RewardFactory(ObjectFactory):
