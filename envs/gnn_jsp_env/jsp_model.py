@@ -50,7 +50,7 @@ class GNNJobShopModel(Model):
 
         return {'remaining_ops': remaining_operations, 'schedule': schedule, 'machine_infos': machine_infos,
                 'last_job_ops': last_job_ops, 'last_mch_ops': last_machine_ops, 'adj_matrix': adj_matrix,
-                'features': features, 'jobs': jobs}
+                'features': features, "init_makespan_estimate": features[:, 0].max(), 'jobs': jobs}
 
     @staticmethod
     def _schedule_op(job_id, state):
@@ -165,9 +165,9 @@ class GNNJobShopModel(Model):
             reward = (-1, -1)
         done = GNNJobShopModel._is_done(new_state['remaining_ops'])
         if done:
-            makespan = - GNNJobShopModel._makespan(new_state['schedule'])
-            lower_bounds_diff = - (new_state['features'][:, 0].max() - state['features'][:, 0].max()) * norm_coeff
-            reward = (makespan, lower_bounds_diff)
+            makespan = GNNJobShopModel._makespan(new_state['schedule'])
+            lower_bounds_diff = makespan - state['init_makespan_estimate'] * norm_coeff
+            reward = (- makespan, - lower_bounds_diff)
 
         return new_state, reward, done
 

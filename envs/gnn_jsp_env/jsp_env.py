@@ -43,8 +43,8 @@ class GNNJobShopEnv(gym.Env):
         remaining_ops = [job for job in deepcopy(self.instance.jobs)]
 
         self.state = {'remaining_ops': remaining_ops, 'schedule': schedule, 'machine_infos': machine_infos,
-                'last_job_ops': last_job_ops, 'last_mch_ops': last_machine_ops, 'adj_matrix': adj_matrix,
-                'features': features, 'jobs': self.instance.jobs}
+                      'last_job_ops': last_job_ops, 'last_mch_ops': last_machine_ops, 'adj_matrix': adj_matrix,
+                      'features': features, "init_makespan_estimate": features[:, 0].max(), 'jobs': self.instance.jobs}
 
         return self.state
 

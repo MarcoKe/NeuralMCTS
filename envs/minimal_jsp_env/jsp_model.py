@@ -26,7 +26,7 @@ class JobShopModel(Model):
         lower_bounds = np.cumsum(durations, axis=1, dtype=np.single).flatten()
 
         return {'remaining_operations': remaining_operations, 'schedule': schedule, 'last_job_ops': last_job_ops,
-                'lower_bounds': lower_bounds}
+                'init_makespan_estimate': lower_bounds.max()}
 
     @staticmethod
     def _schedule_op(job_id, remaining_operations, schedule):
@@ -41,7 +41,7 @@ class JobShopModel(Model):
         return remaining_operations, schedule, possible
 
     @staticmethod
-    def _schedule_op(job_id, remaining_operations, schedule, last_job_ops, lower_bounds):
+    def _schedule_op(job_id, remaining_operations, schedule, last_job_ops):
         possible = False
 
         if len(remaining_operations[job_id]) > 0:
@@ -54,8 +54,7 @@ class JobShopModel(Model):
             if len(machine_schedule) == 0:
                 schedule[machine].append((op, start_time, start_time + op.duration))
                 last_job_ops[op.job_id] = start_time + op.duration
-                new_lower_bounds = JobShopModel._update_lower_bounds(lower_bounds, schedule, remaining_operations)
-                return remaining_operations, schedule, last_job_ops, possible, new_lower_bounds
+                return remaining_operations, schedule, last_job_ops, possible
 
             left_shift, left_shift_time, insertion_index = JobShopModel._left_shift_possible(start_time, machine_schedule, op.duration)
             if left_shift:
@@ -72,25 +71,7 @@ class JobShopModel(Model):
                 schedule[machine].append((op, start_time, start_time + op.duration))
                 last_job_ops[op.job_id] = start_time + op.duration
 
-        new_lower_bounds = JobShopModel._update_lower_bounds(lower_bounds, schedule, remaining_operations)
-
-        return remaining_operations, schedule, last_job_ops, possible, new_lower_bounds
-
-    @staticmethod
-    def _update_lower_bounds(lower_bounds, schedule, remaining_operations):
-        new_lower_bounds = copy.deepcopy(lower_bounds)
-        for machine_schedule in schedule:
-            for entry in machine_schedule:
-                op, start_time, end_time = entry
-                new_lower_bounds[op.unique_op_id] = end_time
-        for job in remaining_operations:
-            for op in job:
-                if op.op_id == 0:
-                    new_lower_bounds[op.unique_op_id] = op.duration
-                else:
-                    new_lower_bounds[op.unique_op_id] = new_lower_bounds[op.unique_op_id - 1] + op.duration
-
-        return new_lower_bounds
+        return remaining_operations, schedule, last_job_ops, possible
 
     @staticmethod
     def _left_shift_possible(earliest_start, machine_schedule, op_duration):
@@ -139,20 +120,19 @@ class JobShopModel(Model):
 
     @staticmethod
     def step(state, action):
-        remaining_ops, schedule, last_job_ops, possible, lower_bounds = \
-            JobShopModel._schedule_op(action, state['remaining_operations'], state['schedule'], state['last_job_ops'],
-                                      state['lower_bounds'])
+        remaining_ops, schedule, last_job_ops, possible = \
+            JobShopModel._schedule_op(action, state['remaining_operations'], state['schedule'], state['last_job_ops'])
 
         reward = (0, 0)
         if not possible:
             reward = (-1, -1)
         done = JobShopModel._is_done(remaining_ops)
         if done:
-            lower_bounds_diff = lower_bounds.max() - state['lower_bounds'].max()
+            lower_bounds_diff = JobShopModel._makespan(schedule) - state['init_makespan_estimate'].max()
             reward = (- JobShopModel._makespan(schedule), - lower_bounds_diff)
 
-        return {'remaining_operations': remaining_ops, 'schedule': schedule,
-                'last_job_ops': last_job_ops, 'lower_bounds': lower_bounds}, reward, done
+        return {'remaining_operations': remaining_ops, 'schedule': schedule, 'last_job_ops': last_job_ops,
+                'init_makespan_estimate': state['init_makespan_estimate']}, reward, done
 
     @staticmethod
     def legal_actions(state):
