@@ -23,11 +23,8 @@ class JobShopEnv(gym.Env):
 
         schedule = [[] for _ in range(self.num_machines)]
         last_job_ops = [-1 for _ in range(self.num_jobs)]
-        durations = np.array([[op.duration for op in job] for job in self.instance.jobs])
-        lower_bounds = np.cumsum(durations, axis=1, dtype=np.single).flatten()
 
-        s_ = {'remaining_operations': deepcopy(self.instance.jobs), 'schedule': schedule,
-              'last_job_ops': last_job_ops, 'init_makespan_estimate': lower_bounds.max()}
+        s_ = {'remaining_operations': deepcopy(self.instance.jobs), 'schedule': schedule, 'last_job_ops': last_job_ops}
 
         self.state = s_
         return self.state

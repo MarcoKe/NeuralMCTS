@@ -50,7 +50,7 @@ class GNNJobShopModel(Model):
 
         return {'remaining_ops': remaining_operations, 'schedule': schedule, 'machine_infos': machine_infos,
                 'last_job_ops': last_job_ops, 'last_mch_ops': last_machine_ops, 'adj_matrix': adj_matrix,
-                'features': features, "init_makespan_estimate": features[:, 0].max(), 'jobs': jobs}
+                'features': features, 'jobs': jobs}
 
     @staticmethod
     def _schedule_op(job_id, state):
@@ -160,14 +160,12 @@ class GNNJobShopModel(Model):
     def step(state, action):
         new_state, possible = GNNJobShopModel._schedule_op(action, deepcopy(state))
 
-        reward = (0, 0)
+        reward = 0
         if not possible:
-            reward = (-1, -1)
+            reward = - 1
         done = GNNJobShopModel._is_done(new_state['remaining_ops'])
         if done:
-            makespan = GNNJobShopModel._makespan(new_state['schedule'])
-            lower_bounds_diff = makespan - state['init_makespan_estimate'] * norm_coeff
-            reward = (- makespan, - lower_bounds_diff)
+            reward = - GNNJobShopModel._makespan(new_state['schedule'])
 
         return new_state, reward, done
 

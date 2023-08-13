@@ -22,11 +22,8 @@ class JobShopModel(Model):
 
         schedule = [[] for i in range(num_machines)]
         last_job_ops = [-1 for _ in range(num_jobs)]
-        durations = np.array([[op.duration for op in job] for job in remaining_operations])
-        lower_bounds = np.cumsum(durations, axis=1, dtype=np.single).flatten()
 
-        return {'remaining_operations': remaining_operations, 'schedule': schedule, 'last_job_ops': last_job_ops,
-                'init_makespan_estimate': lower_bounds.max()}
+        return {'remaining_operations': remaining_operations, 'schedule': schedule, 'last_job_ops': last_job_ops}
 
     @staticmethod
     def _schedule_op(job_id, remaining_operations, schedule):
@@ -123,16 +120,14 @@ class JobShopModel(Model):
         remaining_ops, schedule, last_job_ops, possible = \
             JobShopModel._schedule_op(action, state['remaining_operations'], state['schedule'], state['last_job_ops'])
 
-        reward = (0, 0)
+        reward = 0
         if not possible:
-            reward = (-1, -1)
+            reward = -1
         done = JobShopModel._is_done(remaining_ops)
         if done:
-            lower_bounds_diff = JobShopModel._makespan(schedule) - state['init_makespan_estimate'].max()
-            reward = (- JobShopModel._makespan(schedule), - lower_bounds_diff)
+            reward = - JobShopModel._makespan(schedule)
 
-        return {'remaining_operations': remaining_ops, 'schedule': schedule, 'last_job_ops': last_job_ops,
-                'init_makespan_estimate': state['init_makespan_estimate']}, reward, done
+        return {'remaining_operations': remaining_ops, 'schedule': schedule, 'last_job_ops': last_job_ops}, reward, done
 
     @staticmethod
     def legal_actions(state):
