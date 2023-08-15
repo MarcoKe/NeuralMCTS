@@ -48,9 +48,12 @@ class GNNJobShopModel(Model):
         adj_matrix = GNNJobShopModel.init_adj_matrix(num_ops, num_jobs)
         features = GNNJobShopModel.init_features(jobs)
 
+        node_states = np.array([1 if i % num_ops_per_job == 0 else 0 for i in range(num_ops)],
+                               dtype=np.single)
+
         return {'remaining_ops': remaining_operations, 'schedule': schedule, 'machine_infos': machine_infos,
                 'last_job_ops': last_job_ops, 'last_mch_ops': last_machine_ops, 'adj_matrix': adj_matrix,
-                'features': features, 'jobs': jobs}
+                'features': features, 'node_states': node_states, 'jobs': jobs}
 
     @staticmethod
     def _schedule_op(job_id, state):
@@ -71,6 +74,7 @@ class GNNJobShopModel(Model):
                 state['last_mch_ops'][op.machine_type] = start_time + op.duration
             GNNJobShopModel._update_adj_matrix(state, op, flag)
             GNNJobShopModel._update_features(state, op)
+            GNNJobShopModel._update_node_states(state, op)
 
             possible = True
 
@@ -100,6 +104,13 @@ class GNNJobShopModel(Model):
 
         state['features'] = np.concatenate((lower_bounds.reshape(-1, 1) / norm_coeff,
                                             finished.reshape(-1, 1)), axis=1)
+
+    @staticmethod
+    def _update_node_states(state, op):
+        succ = op.unique_op_id + 1 if ((op.unique_op_id + 1) % len(state['jobs'][0]) != 0) else op.unique_op_id
+        if succ != op.unique_op_id:
+            state['node_states'][op.unique_op_id] = 0  # TODO node_states type changes -> fix
+            state['node_states'][succ] = 1  # TODO add -1 condition?
 
     @staticmethod
     def _determine_start_time(op: Operation, last_job_ops, last_mch_ops, machine_infos):
@@ -166,7 +177,6 @@ class GNNJobShopModel(Model):
         done = GNNJobShopModel._is_done(new_state['remaining_ops'])
         if done:
             reward = - GNNJobShopModel._makespan(new_state['schedule'])
-            # reward = - (new_state['features'][:, 0].max() - state['features'][:, 0].max())
 
         return new_state, reward, done
 
