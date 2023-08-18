@@ -19,7 +19,7 @@ class Stb3Trainer:
         )
 
     def train(self):
-        self.agent.learn(total_timesteps=self.training_steps, callback=[self.wandb_callback])
+        self.agent.learn(total_timesteps=self.training_steps, callback=[self.wandb_callback], tb_log_name="PPO", reset_num_timesteps=False)
 
     def evaluate(self):
         mean_reward = 0

@@ -4,8 +4,8 @@ import numpy as np
 from envs.env_factory import env_factory, model_factory, instance_factories, observation_factories, action_factories, \
     reward_factories, solver_factories
 from experiment_management.config_handling.load_exp_config import load_exp_config, load_sensitivity_exp_config
-from stable_baselines3 import PPO
-#from sb3_contrib import MaskablePPO as PPO
+#from stable_baselines3 import PPO
+from sb3_contrib import MaskablePPO as PPO
 from sb3_contrib.common.wrappers import ActionMasker
 from mcts.mcts_agent import MCTSAgent
 from model_free.stb3_wrapper import Stb3ACAgent
@@ -157,8 +157,6 @@ def setup_model_free_experiment(exp_name):
     wandb_run = init_wandb(general_config, exp_name, exp_config, agent_config, env_config)
 
     env, eval_env, _ = create_env(env_config)
-    env.set_run(wandb_run)
-    eval_env.set_run(wandb_run)
 
     def mask_fn(env) -> np.ndarray:
         mask = np.array([False for _ in range(env.max_num_actions())])
