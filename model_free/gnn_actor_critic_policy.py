@@ -96,7 +96,7 @@ class GNNActorCriticPolicy(ActorCriticPolicy):
 
         # Default network architecture, from L2D
         if net_arch is None:
-            net_arch = dict(pi=[32, 1], vf=[32, 1])
+            net_arch = dict(pi=[32, 32], vf=[32, 32])
 
         super().__init__(
             observation_space,
@@ -243,7 +243,7 @@ class MaskableGNNActorCriticPolicy(MaskableActorCriticPolicy):
 
         # Default network architecture, from L2D
         if net_arch is None:
-            net_arch = dict(pi=[32, 1], vf=[32, 1])
+            net_arch = dict(pi=[32, 32], vf=[32, 32])
 
         super().__init__(
             observation_space,
