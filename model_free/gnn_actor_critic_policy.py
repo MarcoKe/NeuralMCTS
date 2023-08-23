@@ -89,6 +89,7 @@ class GNNActorCriticPolicy(ActorCriticPolicy):
             action_space: spaces.Space,
             lr_schedule: Callable[[float], float],
             net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
+            activation_fn: Type[nn.Module] = nn.Tanh,
             *args,
             **kwargs,
     ):
@@ -102,6 +103,7 @@ class GNNActorCriticPolicy(ActorCriticPolicy):
             action_space,
             lr_schedule,
             net_arch,
+            activation_fn,
             # Pass remaining arguments to base class
             *args,
             **kwargs,
@@ -234,6 +236,7 @@ class MaskableGNNActorCriticPolicy(MaskableActorCriticPolicy):
             action_space: spaces.Space,
             lr_schedule: Callable[[float], float],
             net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
+            activation_fn: Type[nn.Module] = nn.Tanh,
             *args,
             **kwargs,
     ):
@@ -247,6 +250,7 @@ class MaskableGNNActorCriticPolicy(MaskableActorCriticPolicy):
             action_space,
             lr_schedule,
             net_arch,
+            activation_fn,
             # Pass remaining arguments to base class
             *args,
             **kwargs,
