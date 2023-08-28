@@ -42,10 +42,12 @@ class GNNJobShopEnv(gym.Env):
         schedule = [[] for _ in range(self.num_machines)]
         remaining_ops = [job for job in deepcopy(self.instance.jobs)]
 
-        self.state = {'remaining_ops': remaining_ops, 'schedule': schedule, 'machine_infos': machine_infos,
-                'last_job_ops': last_job_ops, 'last_mch_ops': last_machine_ops, 'adj_matrix': adj_matrix,
-                'features': features, 'jobs': self.instance.jobs}
+        node_states = np.array([1 if i % self.ops_per_job == 0 else 0 for i in range(self.num_ops)],
+                               dtype=np.single)
 
+        self.state = {'remaining_ops': remaining_ops, 'schedule': schedule, 'machine_infos': machine_infos,
+                      'last_job_ops': last_job_ops, 'last_mch_ops': last_machine_ops, 'adj_matrix': adj_matrix,
+                      'features': features, 'node_states': node_states, 'jobs': self.instance.jobs}
         return self.state
 
     def _generate_instance(self):
@@ -66,7 +68,7 @@ class GNNJobShopEnv(gym.Env):
     def step(self, action):
         self.state, reward, self.done = self.model.step(self.state, action)
 
-        return self.state, reward, self.done, dict()
+        return self.state, reward, self.done, {'makespan': - reward}
 
     def render(self):
         create_gantt(self.state['schedule'])

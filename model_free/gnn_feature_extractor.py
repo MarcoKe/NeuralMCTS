@@ -1,4 +1,4 @@
-import numpy as np
+from typing import Tuple
 from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 import gym
@@ -15,7 +15,7 @@ class GNNExtractor(BaseFeaturesExtractor):
         This corresponds to the number of unit for the last layer.
     """
 
-    def __init__(self, observation_space: gym.spaces.Box, num_layers: int = 3, num_mlp_layers: int = 2,
+    def __init__(self, observation_space: gym.spaces.Space, num_layers: int = 3, num_mlp_layers: int = 2,
                  input_dim: int = 2, hidden_dim: int = 64, graph_pool: str = "avg", device: str = "auto"):
         super().__init__(observation_space=observation_space, features_dim=64)
 
@@ -39,44 +39,47 @@ class GNNExtractor(BaseFeaturesExtractor):
         self.batch_norms = self.batch_norms.to(self.device)
 
     def next_layer(self, h, layer, adj_block=None):
-        pooled = th.mm(adj_block, h)
-        if self.graph_pool == "avg":
-            # If average pooling
-            degree = th.mm(adj_block, th.ones((adj_block.shape[0], 1)).to(self.device))
-            pooled = pooled / degree
-        else:
-            raise NotImplementedError()
+        pooled = th.bmm(adj_block, h)  # sum pooling
         # representation of neighboring and center nodes
-        pooled_rep = self.mlps[layer](pooled)
-        h = self.batch_norms[layer](pooled_rep)
+        pooled_rep = self.mlps[layer](pooled).permute(0, 2, 1)
+        h = self.batch_norms[layer](pooled_rep).permute(0, 2, 1)
         # non-linearity
         h = th.nn.functional.relu(h)
         return h
 
-    def forward(self, observations: th.Tensor) -> th.Tensor:
-        adj_block = th.stack([th.from_numpy(np.copy(l[:, :-2])).to_sparse() for l in observations])
+    def forward(self, observations: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+        obs_stack = th.stack([obs for obs in observations])
+        adj_block = obs_stack[:, :, :-3].to_sparse()
+        fea = obs_stack[:, :, -3:-1]
+        node_states = obs_stack[:, :, -1:]
         n_tasks = adj_block.shape[1]
-        adj_block_concat = self.aggr_obs(adj_block, n_tasks)
-        fea_concat = th.stack([th.from_numpy(np.copy(l[:, -2:])) for l in observations])
-        fea_concat = fea_concat.reshape(-1, fea_concat.size(-1))
-        h = fea_concat  # list of hidden representations at each layer (including input)
+        batch_size = observations.shape[0]
+        candidate_indices = th.nonzero(node_states, as_tuple=True)
+        candidate = candidate_indices[1].reshape(batch_size, -1)
+        h = fea  # list of hidden representations at each layer (including input)
 
         graph_pool_cal = self.g_pool_cal(self.graph_pool,
-                                         batch_size=adj_block.shape,
+                                         th.Size([1, n_tasks, n_tasks]),
                                          n_nodes=n_tasks,
                                          device=self.device)
 
         for layer in range(self.num_layers - 1):
-            h = self.next_layer(h, layer, adj_block_concat)
+            h = self.next_layer(h, layer, adj_block)
 
-        pooled_h = th.sparse.mm(graph_pool_cal, h)
+        graph_pool_stack = th.stack([graph_pool_cal for _ in range(batch_size)])  # TODO see how this can be done better
+        dummy = candidate.unsqueeze(-1).expand(batch_size, candidate.shape[-1], h.shape[-1])
+        nodes_h = th.gather(h, 1, dummy)
+        pooled_h = th.bmm(graph_pool_stack, h)
+        pooled_h_repeated = pooled_h.expand_as(nodes_h)
+        nodes_h = th.cat((nodes_h, pooled_h_repeated), dim=-1)
 
-        return pooled_h
+        return nodes_h, pooled_h
 
-    def g_pool_cal(self, graph_pool_type, batch_size, n_nodes, device):
+    @staticmethod
+    def g_pool_cal(graph_pool_type, batch_size, n_nodes, device):
         # batch_size is the shape of batch
         # for graph pool sparse matrix
-        if graph_pool_type == 'avg':
+        if graph_pool_type == "avg":
             elem = th.full(size=(batch_size[0] * n_nodes, 1),
                            fill_value=1 / n_nodes,
                            dtype=th.float32,
@@ -95,7 +98,8 @@ class GNNExtractor(BaseFeaturesExtractor):
 
         return graph_pool
 
-    def aggr_obs(self, obs_mb, n_nodes):
+    @staticmethod
+    def aggr_obs(obs_mb, n_nodes):
         idxs = obs_mb.coalesce().indices()
         vals = obs_mb.coalesce().values()
         new_idx_row = idxs[1] + idxs[0] * n_nodes
@@ -150,7 +154,7 @@ class MLP(nn.Module):
             # If MLP
             h = x
             for layer in range(self.num_layers - 1):
-                h = self.linears[layer](h)
-                h = self.batch_norms[layer](h)
+                h = self.linears[layer](h).permute(0, 2, 1)
+                h = self.batch_norms[layer](h).permute(0, 2, 1)
                 h = th.nn.functional.relu(h)
             return self.linears[self.num_layers - 1](h)
