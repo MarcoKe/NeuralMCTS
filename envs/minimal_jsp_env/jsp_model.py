@@ -121,77 +121,23 @@ class JobShopModel(Model):
 
     @staticmethod
     def step(state, action):
-        lb_old = state['lower_bounds']
-        if len(state['remaining_operations'][action]) > 0:
-            op = state['remaining_operations'][action][0]
-            possible = True
-        else:
-            possible = False
-
         remaining_ops, schedule, last_job_ops, possible = \
             JobShopModel._schedule_op(action, state['remaining_operations'], state['schedule'], state['last_job_ops'])
 
-        lb_new = JobShopModel.calculate_lower_bounds(schedule, remaining_ops, len(state['last_job_ops']))
-
-        # reward = - JobShopModel._makespan(schedule) #0#(max(lb_old) - max(lb_new)) #/ 100
-        if possible:
-            reward = op.duration - sum(JobShopModel.get_idle_times(schedule, op, state['time_step']))
-            time_step = max(state['last_job_ops'])
-        cumulative_reward = state['reward'] + reward
-        makespan = 0
+        reward = 0
+        makespan = JobShopModel._makespan(schedule)
         if not possible:
-            reward = -1
+            reward = - 1
         done = JobShopModel._is_done(remaining_ops)
         if done:
-            makespan = JobShopModel._makespan(schedule)
+            reward = - JobShopModel._makespan(schedule)
 
-        return {'remaining_operations': remaining_ops, 'schedule': schedule, 'last_job_ops': last_job_ops,
-                'lower_bounds': lb_new, 'reward': cumulative_reward, 'time_step': time_step}, reward, done, makespan
-
-    @staticmethod
-    def get_idle_times(schedule, op, time_step):
-        op_ext = [o for m in schedule for o in m if o[0] == op][0]
-        start = max([op_ext[1], time_step])
-        end = op_ext[2]
-        idle_times = [0] * len(schedule)
-        if end <= time_step:
-            return idle_times
-
-        for idx, machine in enumerate(schedule):
-            if len(machine) == 0:
-                idle_times[idx] += (end - start) / 11
-                continue
-            sch_op = machine[-1]
-            if sch_op[1] >= start or sch_op[2] >= end:
-                continue
-            if sch_op[2] < end:
-                idle_times[idx] += (end - max([sch_op[2], time_step])) / 11
-
-        return idle_times
+        return {'remaining_operations': remaining_ops, 'schedule': schedule, 'last_job_ops': last_job_ops}, \
+                reward, done, makespan
 
     @staticmethod
     def legal_actions(state):
         return [job_id for job_id in range(len(state['remaining_operations'])) if len(state['remaining_operations'][job_id]) > 0]
-
-    @staticmethod
-    def calculate_lower_bounds(schedule, remaining_ops, len):
-        lower_bounds = np.zeros(len * len)
-        scheduled = np.zeros(len * len)
-
-        for machine_schedule in schedule:
-            for entry in machine_schedule:
-                op, start_time, end_time = entry
-                lower_bounds[op.unique_op_id] = end_time
-                scheduled[op.unique_op_id] = 1
-
-        for job in remaining_ops:
-            for op in job:
-                if op.op_id == 0:
-                    lower_bounds[op.unique_op_id] = op.duration
-                else:
-                    lower_bounds[op.unique_op_id] = lower_bounds[op.unique_op_id-1] + op.duration
-
-        return lower_bounds#, scheduled
 
 
 if __name__ == '__main__':
