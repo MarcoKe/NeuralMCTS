@@ -1,0 +1,5 @@
+name: jsp_neural_rollout_eval_full_expansion_puct_40e1976a
+env: entropy/jsp_minimal_6x6_inter_inst_op_02
+agent: entropy_6x6_02/neural_rollout_eval_full_expansion_puct_40e1976a
+policy_improvement_iterations: 30
+tag: inter_op_entropy_6x6

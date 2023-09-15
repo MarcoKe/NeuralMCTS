@@ -1,0 +1,4 @@
+name: jsp_neural_rollout_eval_full_expansion_uct_69e5528b
+env: jsp_minimal_003
+agent: left_shift_10_ppo_pretraining/neural_rollout_eval_full_expansion_uct_69e5528b
+policy_improvement_iterations: 30

@@ -1,0 +1,4 @@
+name: jsp_reuse_root_neural_value_eval_95283bfd
+env: jsp_minimal_003
+agent: left_shift_09/reuse_root_neural_value_eval_95283bfd
+policy_improvement_iterations: 30

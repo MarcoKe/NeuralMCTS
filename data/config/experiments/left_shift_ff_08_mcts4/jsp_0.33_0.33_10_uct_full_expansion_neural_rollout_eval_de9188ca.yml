@@ -1,0 +1,4 @@
+name: jsp_0.33_0.33_10_uct_full_expansion_neural_rollout_eval_de9188ca
+env: jsp_minimal_003
+agent: left_shift_ff_08_mcts4/0.33_0.33_10_uct_full_expansion_neural_rollout_eval_de9188ca
+policy_improvement_iterations: 30

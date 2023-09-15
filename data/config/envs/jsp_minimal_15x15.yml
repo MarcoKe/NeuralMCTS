@@ -1,0 +1,22 @@
+name: 'jsp_minimal'
+params:
+  instance_generator:
+    name: 'multiple'
+    params:
+      path: 'data/jsp_instances/15x15x15/'
+      format: 'samsonov'
+  instance_generator_eval:
+    name: 'deterministic_multiple'
+    params:
+      path: 'data/jsp_instances/15x15x15/'
+      format: 'samsonov'
+      max_instances: 8
+  observation_space:
+    name: 'lower_bound'
+    params: {}
+  action_space:
+    name: 'naive'
+    params: {}
+  reward_function:
+    name: 'opt_gap'
+    params: {}

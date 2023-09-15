@@ -1,4 +1,0 @@
-name: jsp_uct_neural_expansion_neural_rollout_eval_value_initialization_initialize_tree
-env: jsp_minimal_002
-agent: naive2_ff_04/uct_neural_expansion_neural_rollout_eval_value_initialization_initialize_tree
-policy_improvement_iterations: 250

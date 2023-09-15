@@ -1,0 +1,4 @@
+name: jsp_random_puct_eeba
+env: jsp_minimal_002
+agent: naive2_c_puct/random_puct_eeba
+policy_improvement_iterations: 250

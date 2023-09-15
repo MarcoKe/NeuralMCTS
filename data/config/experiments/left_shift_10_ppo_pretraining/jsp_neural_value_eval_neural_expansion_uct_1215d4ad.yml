@@ -1,0 +1,4 @@
+name: jsp_neural_value_eval_neural_expansion_uct_1215d4ad
+env: jsp_minimal_003
+agent: left_shift_10_ppo_pretraining/neural_value_eval_neural_expansion_uct_1215d4ad
+policy_improvement_iterations: 30

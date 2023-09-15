@@ -1,0 +1,4 @@
+name: jsp_uct_full_expansion_neural_rollout_eval
+env: jsp_minimal_003
+agent: left_shift_ff_06_entropy_loss/uct_full_expansion_neural_rollout_eval
+policy_improvement_iterations: 100

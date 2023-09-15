@@ -1,0 +1,4 @@
+name: jsp_neural_value_eval_full_expansion_uct_1778f207
+env: jsp_minimal_003
+agent: left_shift_09_part2/neural_value_eval_full_expansion_uct_1778f207
+policy_improvement_iterations: 30

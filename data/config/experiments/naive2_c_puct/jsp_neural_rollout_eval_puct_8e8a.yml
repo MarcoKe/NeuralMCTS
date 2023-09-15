@@ -1,0 +1,4 @@
+name: jsp_neural_rollout_eval_puct_8e8a
+env: jsp_minimal_002
+agent: naive2_c_puct/neural_rollout_eval_puct_8e8a
+policy_improvement_iterations: 250

@@ -1,0 +1,4 @@
+name: jsp_reuse_root_neural_value_eval_full_expansion_puct_f3b1014f
+env: jsp_minimal_003
+agent: left_shift_09_part2/reuse_root_neural_value_eval_full_expansion_puct_f3b1014f
+policy_improvement_iterations: 30

@@ -1,0 +1,4 @@
+name: jsp_0.33_0.5_10_uct_full_expansion_random_6e34b22b
+env: jsp_minimal_003
+agent: left_shift_ff_08_mcts4/0.33_0.5_10_uct_full_expansion_random_6e34b22b
+policy_improvement_iterations: 30

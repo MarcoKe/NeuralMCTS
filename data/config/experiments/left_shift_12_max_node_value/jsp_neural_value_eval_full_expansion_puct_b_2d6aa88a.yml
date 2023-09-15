@@ -1,0 +1,4 @@
+name: jsp_neural_value_eval_full_expansion_puct_b_2d6aa88a
+env: jsp_minimal_003
+agent: left_shift_12_max_node_value/neural_value_eval_full_expansion_puct_b_2d6aa88a
+policy_improvement_iterations: 30

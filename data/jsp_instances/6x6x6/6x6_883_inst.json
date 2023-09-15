@@ -329,5 +329,6 @@
             "Job_time": 7,
             "Start_time": 38
         }
-    }
+    },
+    "intra_instance_operation_entropy": 0.8736830214183843
 }

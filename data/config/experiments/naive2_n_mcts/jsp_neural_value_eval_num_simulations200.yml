@@ -1,0 +1,4 @@
+name: jsp_neural_value_eval_num_simulations200
+env: jsp_minimal_002
+agent: naive2_n_mcts/neural_value_eval_num_simulations200
+policy_improvement_iterations: 250

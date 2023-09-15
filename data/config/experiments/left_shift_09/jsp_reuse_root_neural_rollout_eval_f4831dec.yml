@@ -1,0 +1,4 @@
+name: jsp_reuse_root_neural_rollout_eval_f4831dec
+env: jsp_minimal_003
+agent: left_shift_09/reuse_root_neural_rollout_eval_f4831dec
+policy_improvement_iterations: 30

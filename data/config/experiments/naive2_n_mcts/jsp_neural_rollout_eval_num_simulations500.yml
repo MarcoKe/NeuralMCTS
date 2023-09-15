@@ -1,0 +1,4 @@
+name: jsp_neural_rollout_eval_num_simulations500
+env: jsp_minimal_002
+agent: naive2_n_mcts/neural_rollout_eval_num_simulations500
+policy_improvement_iterations: 250

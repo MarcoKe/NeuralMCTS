@@ -18,7 +18,7 @@ def collect_all_operations(jobs: List) -> List[tuple]:
 
 class JSPInstance:
     def __init__(self, jobs: List, num_ops_per_job: int=None, max_op_time: int=None, num_machines: int=None,
-                 id: str=None, opt_time: float=None, calculate_opt_time=True, spt_time: float=None):
+                 id: str=None, opt_time: float=None, spt_time: float=None, intra_instance_op_entropy=None):
         self.jobs = jobs
         self.num_jobs = len(jobs)
         self.num_ops_per_job = num_ops_per_job #todo infer if not given
@@ -26,16 +26,9 @@ class JSPInstance:
         self.num_machines = num_machines if num_machines else num_ops_per_job
         self.id = id
         self.spt_time = spt_time
-
-        if opt_time:
-            self.opt_time = opt_time
-        elif calculate_opt_time:
-            self.opt_time = JSPSolver().solve_from_job_list(jobs)
+        self.opt_time = opt_time
+        self.intra_instance_op_entropy = intra_instance_op_entropy
 
         durations = np.array([[op.duration for op in job] for job in jobs])
         lower_bounds = np.cumsum(durations, axis=1, dtype=np.single).flatten()
         self.makespan_lb = lower_bounds.max()
-
-        all_operations = collect_all_operations(jobs)
-        self.relative_entropy = calculate_entropy_from_operations_list(all_operations, base=len(all_operations))
-

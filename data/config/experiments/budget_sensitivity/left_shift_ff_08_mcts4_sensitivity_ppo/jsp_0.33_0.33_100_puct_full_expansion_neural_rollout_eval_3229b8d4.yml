@@ -1,0 +1,16 @@
+name: jsp_0.33_0.33_100_puct_full_expansion_neural_rollout_eval_3229b8d4sensitivity_ppo
+tag: left_shift_ff_08_mcts4_sensitivity_ppo
+original_exp: left_shift_ff_08_mcts4/jsp_0.33_0.33_100_puct_full_expansion_neural_rollout_eval_3229b8d4
+original_tag: left_shift_ff_08_mcts4
+saved_agent_path: results/trained_agents/jsp/ppo_6x6.zip
+budgets:
+- 0
+- 1
+- 5
+- 10
+- 25
+- 50
+- 100
+- 200
+- 500
+- 1000

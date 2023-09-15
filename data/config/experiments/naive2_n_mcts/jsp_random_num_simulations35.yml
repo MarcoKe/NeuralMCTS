@@ -1,0 +1,4 @@
+name: jsp_random_num_simulations35
+env: jsp_minimal_002
+agent: naive2_n_mcts/random_num_simulations35
+policy_improvement_iterations: 250

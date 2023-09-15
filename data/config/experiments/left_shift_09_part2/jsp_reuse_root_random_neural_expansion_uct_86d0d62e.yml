@@ -1,0 +1,4 @@
+name: jsp_reuse_root_random_neural_expansion_uct_86d0d62e
+env: jsp_minimal_003
+agent: left_shift_09_part2/reuse_root_random_neural_expansion_uct_86d0d62e
+policy_improvement_iterations: 30

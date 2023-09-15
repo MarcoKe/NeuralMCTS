@@ -22,7 +22,8 @@ class SamsonovReader(JSPReader):
 
             job_list.append(op_list)
 
+        op_entropy = None if not 'intra_instance_operation_entropy' in input else input['intra_instance_operation_entropy']
         return JSPInstance(job_list, num_ops_per_job=input['n_ops_per_job'], max_op_time=input['max_op_time'],
-                           id=input['jssp_identification'], opt_time=input['optimal_time'], spt_time=input['spt_time'])
+                           id=input['jssp_identification'], opt_time=input['optimal_time'], spt_time=input['spt_time'], intra_instance_op_entropy=op_entropy)
 
 

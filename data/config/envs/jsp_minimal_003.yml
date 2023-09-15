@@ -10,7 +10,7 @@ params:
     params:
       path: 'data/jsp_instances/6x6x6_test/'
       format: 'samsonov'
-      max_instances: 8
+      max_instances: 100
   observation_space:
     name: 'lower_bound'
     params: {}
