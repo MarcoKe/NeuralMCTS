@@ -58,8 +58,6 @@ def setup_model_free_experiment(exp_name):
     wandb_run = init_wandb(general_config, exp_name, exp_config, agent_config, env_config)
 
     env, eval_env, _ = create_env(env_config)
-    env.set_run(wandb_run)
-    eval_env.set_run(wandb_run)
 
     def mask_fn(env) -> np.ndarray:
         mask = np.array([False for _ in range(env.max_num_actions())])
