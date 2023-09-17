@@ -1,4 +1,5 @@
 name: 'jsp_minimal'
+entropy: 'inter_op_03'
 params:
   instance_generator:
     name: 'multiple'
