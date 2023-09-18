@@ -45,10 +45,10 @@ def setup_budget_sensitivity_experiment(exp_name):
 
 
 def setup_env_test_experiment(exp_name):
-    general_config, exp_name, exp_config, original_exp, agent_config, env_configs = load_envs_test_exp_config(exp_name)
+    general_config, exp_name, exp_config, agent_config, env_configs, model_free = load_envs_test_exp_config(exp_name)
     general_config['wandb']['project'] = 'neural_mcts_testset'
 
-    evaluator = EnvEvaluator(general_config, exp_name, exp_config, agent_config, env_configs)
+    evaluator = EnvEvaluator(general_config, exp_name, exp_config, agent_config, env_configs, model_free)
     evaluator.evaluate()
 
 
@@ -79,7 +79,7 @@ def setup_model_free_experiment(exp_name):
 if __name__ == '__main__':
     # setup_budget_sensitivity_experiment('budget_sensitivity/budget_sensitivity_test')
     # setup_experiment("15x15/jsp_puct_neural_expansion_random")
-    setup_env_test_experiment('envs_test_entropy/test')
+    setup_env_test_experiment('envs_test_entropy/jsp_jsp_neural_value_eval_full_expansion_puct_78a44fc6_3c5b1c15')
     # setup_experiment("jsp_test")
     # setup_model_free_experiment("model_free/jsp_test")
     # exps = ['model_free/inter_instance_op_02', 'model_free/inter_instance_op_03', 'model_free/inter_instance_op_04',

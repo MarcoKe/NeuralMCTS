@@ -1,17 +1,20 @@
 from mcts.node import Node
-from mcts.util.benchmark_agents import MCTSAgentWrapper
+from mcts.util.benchmark_agents import MCTSAgentWrapper, Stb3AgentWrapper
 import copy
+import numpy as np
+from sb3_contrib.common.wrappers import ActionMasker
 import multiprocess as mp
-from experiment_management.utils import create_env, create_agent, init_wandb
+from experiment_management.utils import create_env, create_agent, init_wandb, create_model_free_agent
 
 
 class EnvEvaluator:
-    def __init__(self, general_config, exp_name, exp_config, agent_config, env_configs):
+    def __init__(self, general_config, exp_name, exp_config, agent_config, env_configs, model_free=False):
         self.exp_name = exp_name
         self.general_config = general_config
         self.exp_config = exp_config
         self.agent_config = agent_config
         self.env_configs = env_configs
+        self.model_free = model_free
 
     def log(self, key, value, instance):
         self.wandb_run.log({key: value, 'instance': instance, 'env': self.entropy})
@@ -23,7 +26,20 @@ class EnvEvaluator:
             self.wandb_run = init_wandb(self.general_config, self.exp_name + '_' + self.entropy, self.exp_config, self.agent_config, env_config)
 
             _, eval_env, model = create_env(env_config)
-            self.mcts_agent, model_free_agent = create_agent(self.general_config, eval_env, model, self.agent_config)
+
+            def mask_fn(env) -> np.ndarray:
+                mask = np.array([False for _ in range(env.max_num_actions())])
+                mask[env.model.legal_actions(env.raw_state())] = True
+                return mask
+
+            eval_env = ActionMasker(eval_env, mask_fn)  # Wrap to enable masking
+
+            if self.model_free:
+                self.agent = create_model_free_agent(self.general_config, eval_env, self.agent_config)
+            else:
+                self.agent, _ = create_agent(self.general_config, eval_env, model,
+                                                                 self.agent_config)
+
             self.eval_env = eval_env
             self.evaluate_parallel()
             self.wandb_run.finish()
@@ -51,10 +67,15 @@ class EnvEvaluator:
         """
 
         eval_env_ = copy.deepcopy(self.eval_env)
-        self.mcts_agent.env = eval_env_
 
-        reward_mcts = self.perform_eval_episode(eval_env_, MCTSAgentWrapper(self.mcts_agent, eval_env_),
-                                                copy.deepcopy(instance))
+        wrapped_agent = None
+        if self.model_free:
+            wrapped_agent = Stb3AgentWrapper(self.agent, eval_env_, eval_env_.model)
+        else:
+            self.agent.env = eval_env_
+            wrapped_agent = MCTSAgentWrapper(self.agent, eval_env_)
+
+        reward_mcts = self.perform_eval_episode(eval_env_, wrapped_agent, copy.deepcopy(instance))
         return reward_mcts, eval_env_.instance.id
 
     def perform_eval_episode(self, env, agent, instance):
