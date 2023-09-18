@@ -9,7 +9,7 @@ params:
   instance_generator_eval:
     name: 'deterministic_multiple'
     params:
-      path: 'data/jsp_instances/entropy/inter-instance-job/inter-job-1000-6x6/inter-job-1000-6x6_06_test/'
+      path: 'data/jsp_instances/entropy/inter-instance-job/inter-job-1000-6x6/inter-job-1000-6x6-06_test/'
       format: 'json'
       max_instances: 100
   observation_space:
