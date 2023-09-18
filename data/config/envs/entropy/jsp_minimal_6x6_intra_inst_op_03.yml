@@ -1,11 +1,16 @@
 name: 'jsp_minimal'
 params:
   instance_generator:
-    name: 'deterministic_multiple'
+    name: 'multiple'
     params:
       path: 'data/jsp_instances/entropy/intra-instance-operation/intra-op-1000-6x6/intra-op-1000-6x6-03/'
       format: 'json'
-      max_instances: 1000
+  instance_generator_eval:
+    name: 'deterministic_multiple'
+    params:
+      path: 'data/jsp_instances/entropy/intra-instance-operation/intra-op-1000-6x6/intra-op-1000-6x6-03_test/'
+      format: 'json'
+      max_instances: 100
   observation_space:
     name: 'lower_bound'
     params: {}
