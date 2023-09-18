@@ -1,15 +1,15 @@
 name: 'jsp_minimal'
-entropy: 'intra_op_04'
+entropy: 'inter_job_05'
 params:
   instance_generator:
     name: 'multiple'
     params:
-      path: 'data/jsp_instances/entropy/intra-instance-operation/intra-op-1000-6x6/intra-op-1000-6x6-04/'
+      path: 'data/jsp_instances/entropy/inter-instance-job/inter-job-1000-6x6/inter-job-1000-6x6-05/'
       format: 'json'
   instance_generator_eval:
     name: 'deterministic_multiple'
     params:
-      path: 'data/jsp_instances/entropy/intra-instance-operation/intra-op-1000-6x6/intra-op-1000-6x6-04_test/'
+      path: 'data/jsp_instances/entropy/inter-instance-job/inter-job-1000-6x6/inter-job-1000-6x6_05_test/'
       format: 'json'
       max_instances: 100
   observation_space:
