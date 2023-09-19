@@ -16,16 +16,19 @@ class EnvEvaluator:
         self.env_configs = env_configs
         self.model_free = model_free
 
+        self.eval_on_train_set = False # whether to additionally evaluate on the training set
+        if 'eval_on_train_set' in exp_config:
+            self.eval_on_train_set = exp_config['eval_on_train_set']
+
     def log(self, key, value, instance):
         self.wandb_run.log({key: value, 'instance': instance, 'env': self.entropy})
 
     def evaluate(self):
         for env_config in self.env_configs:
             self.entropy = env_config['entropy']
-            self.eval_instances = env_config['params']['instance_generator_eval']['params']['max_instances']
             self.wandb_run = init_wandb(self.general_config, self.exp_name + '_' + self.entropy, self.exp_config, self.agent_config, env_config)
 
-            _, eval_env, model = create_env(env_config)
+            train_env, eval_env, model = create_env(env_config)
 
             def mask_fn(env) -> np.ndarray:
                 mask = np.array([False for _ in range(env.max_num_actions())])
@@ -41,16 +44,20 @@ class EnvEvaluator:
                                                                  self.agent_config)
 
             self.eval_env = eval_env
-            self.evaluate_parallel()
+            self.evaluate_parallel(env_config['params']['instance_generator_eval']['params']['max_instances'])
+            if self.eval_on_train_set:
+                self.eval_env = train_env
+                self.evaluate_parallel(env_config['params']['instance_generator']['params']['max_instances'])
+
             self.wandb_run.finish()
 
-    def evaluate_parallel(self, workers=8):
+    def evaluate_parallel(self, num_instances, workers=8):
         """
         Performs an evaluation of the current agent on instances provided by the eval_env instance generator specified
         in the environment config file. If multiple workers, the evaluation is executed in parallel.
         @param eval_iterations: number of instances to be evaluated.
         """
-        instances = [(self.eval_env.generator.generate(),) for _ in range(self.eval_instances)]
+        instances = [(self.eval_env.generator.generate(),) for _ in range(num_instances)]
         pool = mp.Pool(workers)
         results = pool.starmap(self.evaluate_single, instances)
         pool.close()
