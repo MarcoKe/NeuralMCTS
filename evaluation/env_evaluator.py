@@ -23,33 +23,38 @@ class EnvEvaluator:
     def log(self, key, value, instance):
         self.wandb_run.log({key: value, 'instance': instance, 'env': self.entropy})
 
-    def evaluate(self):
+    def evaluate(self,):
         for env_config in self.env_configs:
             self.entropy = env_config['entropy']
             self.wandb_run = init_wandb(self.general_config, self.exp_name + '_' + self.entropy, self.exp_config, self.agent_config, env_config)
+            num_instances_eval = env_config['params']['instance_generator_eval']['params']['max_instances']
+            num_instances_train = env_config['params']['instance_generator']['params']['max_instances']
 
             train_env, eval_env, model = create_env(env_config)
 
-            def mask_fn(env) -> np.ndarray:
-                mask = np.array([False for _ in range(env.max_num_actions())])
-                mask[env.model.legal_actions(env.raw_state())] = True
-                return mask
-
-            eval_env = ActionMasker(eval_env, mask_fn)  # Wrap to enable masking
-
-            if self.model_free:
-                self.agent = create_model_free_agent(self.general_config, eval_env, self.agent_config)
-            else:
-                self.agent, _ = create_agent(self.general_config, eval_env, model,
-                                                                 self.agent_config)
-
-            self.eval_env = eval_env
-            self.evaluate_parallel(env_config['params']['instance_generator_eval']['params']['max_instances'])
+            self.eval_on_instances(eval_env, model, num_instances_eval)
             if self.eval_on_train_set:
-                self.eval_env = train_env
-                self.evaluate_parallel(env_config['params']['instance_generator']['params']['max_instances'])
+                print('eval on train set')
+                self.eval_on_instances(train_env, model, num_instances_train)
 
             self.wandb_run.finish()
+
+    def eval_on_instances(self, eval_env, model, num_instances):
+        def mask_fn(env) -> np.ndarray:
+            mask = np.array([False for _ in range(env.max_num_actions())])
+            mask[env.model.legal_actions(env.raw_state())] = True
+            return mask
+
+        eval_env = ActionMasker(eval_env, mask_fn)  # Wrap to enable masking
+
+        if self.model_free:
+            self.agent = create_model_free_agent(self.general_config, eval_env, self.agent_config)
+        else:
+            self.agent, _ = create_agent(self.general_config, eval_env, model,
+                                         self.agent_config)
+
+        self.eval_env = eval_env
+        self.evaluate_parallel(num_instances)
 
     def evaluate_parallel(self, num_instances, workers=8):
         """
@@ -58,6 +63,7 @@ class EnvEvaluator:
         @param eval_iterations: number of instances to be evaluated.
         """
         instances = [(self.eval_env.generator.generate(),) for _ in range(num_instances)]
+        print('evaluating on ', len(instances), ' instances')
         pool = mp.Pool(workers)
         results = pool.starmap(self.evaluate_single, instances)
         pool.close()
