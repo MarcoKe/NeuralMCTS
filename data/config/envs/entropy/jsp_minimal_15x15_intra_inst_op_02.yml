@@ -4,13 +4,13 @@ params:
   instance_generator:
     name: multiple
     params:
-      path: data/jsp_instances/entropy/intra-instance-op/intra-op-1000-15x15/intra-op-1000-15x15-02/
+      path: data/jsp_instances/entropy/intra-instance-operation/intra-op-1000-15x15/intra-op-1000-15x15-02/
       format: json
       max_instances: 900
   instance_generator_eval:
     name: deterministic_multiple
     params:
-      path: data/jsp_instances/entropy/intra-instance-op/intra-op-1000-15x15/intra-op-1000-15x15-02_test/
+      path: data/jsp_instances/entropy/intra-instance-operation/intra-op-1000-15x15/intra-op-1000-15x15-02_test/
       format: json
       max_instances: 100
   observation_space:
