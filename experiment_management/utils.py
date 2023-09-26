@@ -61,15 +61,16 @@ def create_model_free_agent(general_config, env, config):
         policy_kwargs = dict()
         policy_kwargs['activation_fn'] = torch.nn.modules.Mish
         learning_rate = 0.0001 if not 'learning_rate' in config else config['learning_rate']
+        clip_range = 0.2 if not 'clip_range' in config else config['clip_range']
         if 'net_arch' in config:
-            policy_kwargs['net_arch'] = [config['net_arch']]
+            policy_kwargs['net_arch'] = config['net_arch']
         if 'features_extractor' in config and config['features_extractor'] == 'gnn':
             feature_extractor_kwargs = dict(num_layers=3, num_mlp_layers=2, input_dim=2,
                                             hidden_dim=64, graph_pool="avg")
             policy_kwargs['features_extractor_class'] = GNNExtractor
             policy_kwargs['features_extractor_kwargs'] = feature_extractor_kwargs
 
-        return PPO('MlpPolicy', env, learning_rate=learning_rate, tensorboard_log=general_config['output']['tensorboard_logs'], policy_kwargs=policy_kwargs)
+        return PPO('MlpPolicy', env, learning_rate=learning_rate, clip_range=clip_range, tensorboard_log=general_config['output']['tensorboard_logs'], policy_kwargs=policy_kwargs)
 
 
 def create_agent(general_config, env, model, agent_config):
@@ -95,12 +96,13 @@ def init_wandb(general_config, exp_name, exp_config, agent_config, env_config):
     tag = 'test' if not 'tag' in exp_config else exp_config['tag']
     wandb.require("service")
 
-    run = wandb.init(
-        project=general_config['wandb']['project'],
-        config=config,
-        name=exp_config['name'],
-        tags=[tag]
-    )
+    wandb_args = {'project': general_config['wandb']['project'], 'config': config, 'name': exp_config['name'], 'tags': [tag]}
+    if 'wandb_id' in exp_config: # in case we have a multi-part experiment, runs can be resumed
+        print("Resuming wandb run ", exp_config['wandb_id'])
+        wandb_args['id'] = exp_config['wandb_id']
+        wandb_args['resume'] = 'must'
+
+    run = wandb.init(**wandb_args)
 
     return run
 
