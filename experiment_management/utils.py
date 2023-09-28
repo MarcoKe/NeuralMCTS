@@ -10,6 +10,7 @@ from mcts.evaluation_policies.eval_policy_factory import eval_policy_factory
 from sb3_contrib import MaskablePPO as PPO
 import wandb
 import torch
+import uuid
 
 
 def env_from_config(env_config):
@@ -92,7 +93,7 @@ def create_agent(general_config, env, model, agent_config):
 
 
 def init_wandb(general_config, exp_name, exp_config, agent_config, env_config):
-    config = {'exp_name': exp_name, 'exp_config': exp_config, 'agent_config': agent_config, 'env_config': env_config}
+    config = {'exp_name': exp_name + '_' + str(uuid.uuid4())[:4], 'exp_config': exp_config, 'agent_config': agent_config, 'env_config': env_config}
     tag = 'test' if not 'tag' in exp_config else exp_config['tag']
     wandb.require("service")
 
