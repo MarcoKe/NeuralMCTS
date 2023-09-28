@@ -74,8 +74,8 @@ def create_model_free_agent(general_config, env, config, exp_name):
         return PPO('MlpPolicy', env, learning_rate=learning_rate, clip_range=clip_range, tensorboard_log=general_config['output']['tensorboard_logs'] + '/' +exp_name, policy_kwargs=policy_kwargs)
 
 
-def create_agent(general_config, env, model, agent_config):
-    model_free_agent = create_model_free_agent(general_config, env, agent_config['learned_policy'])
+def create_agent(general_config, env, model, agent_config, exp_name):
+    model_free_agent = create_model_free_agent(general_config, env, agent_config['learned_policy'], exp_name)
     neural_net = Stb3ACAgent(model_free_agent)
 
     agent_config = make_compatible(agent_config)

@@ -18,7 +18,7 @@ def setup_experiment(exp_name):
 
     env, eval_env, model = create_env(env_config)
 
-    mcts_agent, model_free_agent = create_agent(general_config, env, model, agent_config)
+    mcts_agent, model_free_agent = create_agent(general_config, env, model, agent_config, exp_name)
 
     solver_factory = solver_factories.get(env_config['name'])
     solver = solver_factory.get('opt')  # todo
@@ -98,7 +98,8 @@ if __name__ == '__main__':
     #         exp = '/'.join(exp.split('/')[-2:]).split('.yml')[0]
     #         setup_env_test_experiment(exp)
 
-    setup_model_free_experiment('model_free/15x15_intra_inst_op_08')
+    # setup_model_free_experiment('model_free/15x15_intra_inst_op_08')
+    setup_experiment('15x15/jsp_uct_neural_expansion_neural_rollout_eval')
 
     # for exp in glob.glob('data/config/experiments/envs_test_intra_op_entropy_mf_10x10/*.yml'):
     #     exp = '/'.join(exp.split('/')[-2:]).split('.yml')[0]
