@@ -1,3 +1,5 @@
+import uuid
+
 import wandb
 import numpy as np
 
@@ -54,6 +56,7 @@ def setup_env_test_experiment(exp_name):
 
 def setup_model_free_experiment(exp_name):
     general_config, exp_name, exp_config, agent_config, env_config = load_exp_config(exp_name)
+    exp_name = str(uuid.uuid4())[:4] + '_' + exp_name
     wandb.tensorboard.patch(root_logdir=general_config['output']['tensorboard_logs'])
     wandb_run = init_wandb(general_config, exp_name, exp_config, agent_config, env_config)
 
@@ -67,7 +70,7 @@ def setup_model_free_experiment(exp_name):
     env = ActionMasker(env, mask_fn)  # Wrap to enable masking
     eval_env = ActionMasker(eval_env, mask_fn)  # Wrap to enable masking
 
-    agent = create_model_free_agent(general_config, env, agent_config)
+    agent = create_model_free_agent(general_config, env, agent_config, exp_name)
 
     trainer = Stb3Trainer(exp_config['name'], env, eval_env, agent, wandb_run, exp_config['training_steps'])
     trainer.train()
@@ -77,9 +80,33 @@ def setup_model_free_experiment(exp_name):
 
 
 if __name__ == '__main__':
+    # import glob
+    #
+    # configs = [
+    #     # {'size': '6', 'type': 'inter_inst_job'},
+    #     #        {'size': '10', 'type': 'inter_inst_op'},
+    #     #        {'size': '10', 'type': 'inter_inst_job'},
+    #     #        {'size': '15', 'type': 'intra_inst_op'},
+    #            {'size': '15', 'type': 'inter_inst_op'},
+    #            {'size': '15', 'type': 'inter_inst_job'}]
+    #
+    # for conf in configs:
+    #     exp_id = 'envs_test_mf_' + conf['size'] + 'x' + conf['size'] + '_' + conf['type']
+    #
+    #     for exp in glob.glob('data/config/experiments/' + exp_id + '/*'):
+    #         print(exp)
+    #         exp = '/'.join(exp.split('/')[-2:]).split('.yml')[0]
+    #         setup_env_test_experiment(exp)
+
+    setup_model_free_experiment('model_free/15x15_intra_inst_op_08')
+
+    # for exp in glob.glob('data/config/experiments/envs_test_intra_op_entropy_mf_10x10/*.yml'):
+    #     exp = '/'.join(exp.split('/')[-2:]).split('.yml')[0]
+    #     print(exp)
+    #     setup_env_test_experiment(exp)
     # setup_budget_sensitivity_experiment('budget_sensitivity/budget_sensitivity_test')
-    # setup_experiment("15x15/jsp_puct_neural_expansion_random")
-    setup_env_test_experiment('envs_test_entropy/jsp_jsp_neural_value_eval_full_expansion_puct_78a44fc6_3c5b1c15')
+    # setup_experiment("jsp_10x10")
+    # setup_env_test_experiment('envs_test_entropy/jsp_jsp_neural_value_eval_full_expansion_puct_78a44fc6_3c5b1c15')
     # setup_experiment("jsp_test")
     # setup_model_free_experiment("model_free/jsp_test")
     # exps = ['model_free/inter_instance_op_02', 'model_free/inter_instance_op_03', 'model_free/inter_instance_op_04',

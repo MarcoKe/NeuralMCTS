@@ -55,7 +55,7 @@ def make_compatible(agent_config):
     return agent_config
 
 
-def create_model_free_agent(general_config, env, config):
+def create_model_free_agent(general_config, env, config, exp_name):
     if len(config['location']) > 0:
         return PPO.load(config['location'], env=env, tensorboard_log=general_config['output']['tensorboard_logs'])
     else:
@@ -71,7 +71,7 @@ def create_model_free_agent(general_config, env, config):
             policy_kwargs['features_extractor_class'] = GNNExtractor
             policy_kwargs['features_extractor_kwargs'] = feature_extractor_kwargs
 
-        return PPO('MlpPolicy', env, learning_rate=learning_rate, clip_range=clip_range, tensorboard_log=general_config['output']['tensorboard_logs'], policy_kwargs=policy_kwargs)
+        return PPO('MlpPolicy', env, learning_rate=learning_rate, clip_range=clip_range, tensorboard_log=general_config['output']['tensorboard_logs'] + '/' +exp_name, policy_kwargs=policy_kwargs)
 
 
 def create_agent(general_config, env, model, agent_config):
@@ -93,11 +93,11 @@ def create_agent(general_config, env, model, agent_config):
 
 
 def init_wandb(general_config, exp_name, exp_config, agent_config, env_config):
-    config = {'exp_name': exp_name + '_' + str(uuid.uuid4())[:4], 'exp_config': exp_config, 'agent_config': agent_config, 'env_config': env_config}
+    config = {'exp_name': exp_name , 'exp_config': exp_config, 'agent_config': agent_config, 'env_config': env_config}
     tag = 'test' if not 'tag' in exp_config else exp_config['tag']
     wandb.require("service")
 
-    wandb_args = {'project': general_config['wandb']['project'], 'config': config, 'name': exp_config['name'], 'tags': [tag]}
+    wandb_args = {'project': general_config['wandb']['project'], 'config': config, 'name': config['exp_name'], 'tags': [tag]}
     if 'wandb_id' in exp_config: # in case we have a multi-part experiment, runs can be resumed
         print("Resuming wandb run ", exp_config['wandb_id'])
         wandb_args['id'] = exp_config['wandb_id']
