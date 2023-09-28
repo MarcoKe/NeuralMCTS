@@ -57,7 +57,7 @@ def setup_env_test_experiment(exp_name):
 def setup_model_free_experiment(exp_name):
     general_config, exp_name, exp_config, agent_config, env_config = load_exp_config(exp_name)
     exp_name = str(uuid.uuid4())[:4] + '_' + exp_name
-    wandb.tensorboard.patch(root_logdir=general_config['output']['tensorboard_logs'])
+    wandb.tensorboard.patch(root_logdir=general_config['output']['tensorboard_logs'] + '/' + exp_name + '/PPO_0')
     wandb_run = init_wandb(general_config, exp_name, exp_config, agent_config, env_config)
 
     env, eval_env, _ = create_env(env_config)
