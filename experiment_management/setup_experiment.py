@@ -1,3 +1,4 @@
+import copy
 import wandb
 import torch
 import numpy as np
@@ -51,6 +52,15 @@ def create_env(env_config):
     model = model_factory.get(env_config['name'], **env_config['params'])
 
     return environment, eval_environment, model
+
+
+def create_multi_env(env_config):
+    """
+    Enables creating multiple environments for stable baselines agents training via the make_vec_env function
+    """
+    env_config_copy = copy.deepcopy(env_config)
+    env, _, _, = create_env(env_config_copy)
+    return env
 
 
 def make_compatible(agent_config):
