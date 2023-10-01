@@ -1,4 +1,4 @@
-name: puct_neural_expansion_neural_value_eval_01
+name: puct_full_expansion_neural_value_eval_01
 evaluate_leaf_children: false
 value_initialization: true
 initialize_tree: false
@@ -31,9 +31,8 @@ tree_policy:
       params:
         exploration_constant: 1.0
 expansion_policy:
-  name: neural_expansion
-  params:
-    threshold: 0.9
+  name: full_expansion
+  params: {}
 eval_policy:
   name: neural_value_eval
   params: {}

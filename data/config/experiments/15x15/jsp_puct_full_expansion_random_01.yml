@@ -1,0 +1,5 @@
+name: jsp_puct_full_expansion_random_01
+env: jsp_minimal_15x15
+agent: 15x15/puct_full_expansion_random_01
+tag: 15x15
+policy_improvement_iterations: 30
