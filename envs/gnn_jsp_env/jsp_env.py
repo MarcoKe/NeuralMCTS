@@ -1,3 +1,4 @@
+from typing import List
 from envs.minimal_jsp_env.util.visualization.gantt_visualizer import create_gantt
 from envs.minimal_jsp_env.util.jsp_generation.jsp_generator import JSPGenerator
 from envs.gnn_jsp_env.jsp_model import GNNJobShopModel
@@ -81,3 +82,7 @@ class GNNJobShopEnv(gym.Env):
 
     def max_num_actions(self):
         return len(self.state['remaining_ops'])
+
+    def action_masks(self) -> List[bool]:
+        return [True if len(self.state['remaining_operations'][job_id]) > 0 else False for job_id in
+                range(len(self.state['remaining_operations']))]
