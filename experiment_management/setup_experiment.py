@@ -38,7 +38,7 @@ def setup_budget_sensitivity_experiment(exp_name):
     wandb_run = init_wandb(general_config, exp_name, exp_config, agent_config, env_config)
 
     _, eval_env, model = create_env(env_config)
-    mcts_agent, model_free_agent = create_agent(general_config, eval_env, model, agent_config)
+    mcts_agent, model_free_agent = create_agent(general_config, eval_env, model, agent_config, exp_name)
 
     evaluator = MCTSBudgetEvaluator(exp_config['name'], eval_env, mcts_agent, model_free_agent, exp_config['budgets'], wandb_run)
 
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     #         setup_env_test_experiment(exp)
 
     # setup_model_free_experiment('model_free/15x15_intra_inst_op_08')
-    setup_experiment('15x15/jsp_uct_neural_expansion_neural_rollout_eval')
+    setup_budget_sensitivity_experiment('15x15_sensitivity/jsp_puct_full_expansion_neural_rollout_eval_01')
 
     # for exp in glob.glob('data/config/experiments/envs_test_intra_op_entropy_mf_10x10/*.yml'):
     #     exp = '/'.join(exp.split('/')[-2:]).split('.yml')[0]
