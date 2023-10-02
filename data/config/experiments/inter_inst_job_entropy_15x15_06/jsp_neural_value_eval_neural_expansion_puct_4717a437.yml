@@ -1,0 +1,5 @@
+name: jsp_neural_value_eval_neural_expansion_puct_4717a437
+env: entropy/jsp_minimal_15x15_inter_inst_job_06
+agent: inter_inst_job_entropy_15x15/neural_value_eval_neural_expansion_puct_4717a437
+policy_improvement_iterations: 15
+tag: inter_inst_job_entropy_15x15
