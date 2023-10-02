@@ -48,7 +48,7 @@ class EnvEvaluator:
         eval_env = ActionMasker(eval_env, mask_fn)  # Wrap to enable masking
 
         if self.model_free:
-            self.agent = create_model_free_agent(self.general_config, eval_env, self.agent_config)
+            self.agent = create_model_free_agent(self.general_config, eval_env, self.agent_config, self.exp_name)
         else:
             self.agent, _ = create_agent(self.general_config, eval_env, model,
                                          self.agent_config)
