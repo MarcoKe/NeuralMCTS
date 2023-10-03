@@ -51,7 +51,7 @@ class EnvEvaluator:
             self.agent = create_model_free_agent(self.general_config, eval_env, self.agent_config, self.exp_name)
         else:
             self.agent, _ = create_agent(self.general_config, eval_env, model,
-                                         self.agent_config)
+                                         self.agent_config, self.exp_name)
 
         self.eval_env = eval_env
         self.evaluate_parallel(num_instances)
