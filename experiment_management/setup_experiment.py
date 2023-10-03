@@ -80,26 +80,30 @@ def setup_model_free_experiment(exp_name):
 
 
 if __name__ == '__main__':
-    # import glob
-    #
-    # configs = [
-    #     # {'size': '6', 'type': 'inter_inst_job'},
-    #     #        {'size': '10', 'type': 'inter_inst_op'},
-    #     #        {'size': '10', 'type': 'inter_inst_job'},
-    #     #        {'size': '15', 'type': 'intra_inst_op'},
-    #            {'size': '15', 'type': 'inter_inst_op'},
-    #            {'size': '15', 'type': 'inter_inst_job'}]
-    #
-    # for conf in configs:
-    #     exp_id = 'envs_test_mf_' + conf['size'] + 'x' + conf['size'] + '_' + conf['type']
-    #
-    #     for exp in glob.glob('data/config/experiments/' + exp_id + '/*'):
-    #         print(exp)
-    #         exp = '/'.join(exp.split('/')[-2:]).split('.yml')[0]
-    #         setup_env_test_experiment(exp)
+    import glob
+
+    configs = [
+        {'size': '6', 'type': 'inter_inst_job'},
+               {'size': '6', 'type': 'inter_inst_op'},
+               {'size': '6', 'type': 'intra_inst_op'},
+        #        {'size': '10', 'type': 'intra_inst_op'},
+        #        {'size': '10', 'type': 'inter_inst_op'},
+        #        {'size': '10', 'type': 'inter_inst_job'},
+        #        {'size': '15', 'type': 'intra_inst_op'},
+        #        {'size': '15', 'type': 'inter_inst_op'},
+        #        {'size': '15', 'type': 'inter_inst_job'}
+    ]
+
+    for conf in configs:
+        exp_id = 'envs_test_' + conf['size'] + 'x' + conf['size'] + '_' + conf['type']
+
+        for exp in glob.glob('data/config/experiments/' + exp_id + '/*'):
+            print(exp)
+            exp = '/'.join(exp.split('/')[-2:]).split('.yml')[0]
+            setup_env_test_experiment(exp)
 
     # setup_model_free_experiment('model_free/15x15_intra_inst_op_08')
-    setup_budget_sensitivity_experiment('15x15_sensitivity/jsp_puct_full_expansion_neural_rollout_eval_01')
+    # setup_budget_sensitivity_experiment('15x15_sensitivity/jsp_uct_neural_expansion_neural_rollout_eval_01')
 
     # for exp in glob.glob('data/config/experiments/envs_test_intra_op_entropy_mf_10x10/*.yml'):
     #     exp = '/'.join(exp.split('/')[-2:]).split('.yml')[0]

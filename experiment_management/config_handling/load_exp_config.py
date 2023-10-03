@@ -53,7 +53,7 @@ def load_envs_test_exp_config(exp_name):
         _, _, original_exp, agent_config, env_config = load_exp_config(exp['original_exp'])
         saved_agent_path = general_config['output']['saved_agents'] + '/' + exp['original_exp']
         saved_agent_path = saved_agent_path.split('/')
-        saved_agent_path[-1] = 'final_' + saved_agent_path[-1]
+        # saved_agent_path[-1] = 'final_' + saved_agent_path[-1]
         saved_agent_path = '/'.join(saved_agent_path)
         agent_config['learned_policy']['location'] = saved_agent_path
 
