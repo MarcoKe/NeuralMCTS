@@ -19,4 +19,5 @@ class OptimalityGapRewardDense(gym.RewardWrapper):
 
         if self.env.model._is_done(self.env.state['remaining_operations']):
             assert makespan >= optimum, f"weird opt gap: {optimality_gap}, makespan: {makespan}, optimum: {optimum}"
+
         return - optimality_gap

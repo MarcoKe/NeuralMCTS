@@ -1,3 +1,4 @@
+import copy
 from copy import deepcopy
 from envs.model import Model
 from envs.minimal_jsp_env.entities import Operation
@@ -51,16 +52,17 @@ class GNNJobShopModel(Model):
         node_states = np.array([1 if i % num_ops_per_job == 0 else 0 for i in range(num_ops)],
                                dtype=np.single)
 
-        return {'remaining_ops': remaining_operations, 'schedule': schedule, 'machine_infos': machine_infos,
+        return {'remaining_operations': remaining_operations, 'schedule': schedule, 'machine_infos': machine_infos,
                 'last_job_ops': last_job_ops, 'last_mch_ops': last_machine_ops, 'adj_matrix': adj_matrix,
-                'features': features, 'node_states': node_states, 'jobs': jobs}
+                'features': features, 'old_features': features, 'node_states': node_states, 'time_step': 0,
+                'last_op': None, 'jobs': jobs}
 
     @staticmethod
     def _schedule_op(job_id, state):
         possible = False
 
-        if len(state['remaining_ops'][job_id]) > 0:
-            op = state['remaining_ops'][job_id].pop(0)
+        if len(state['remaining_operations'][job_id]) > 0:
+            op = state['remaining_operations'][job_id].pop(0)
             start_time, flag = GNNJobShopModel._determine_start_time(op, state['last_job_ops'],
                                                                      state['last_mch_ops'], state['machine_infos'])
             # Insert the operation at the correct position so that the entries remain sorted according to start_time
@@ -102,6 +104,7 @@ class GNNJobShopModel(Model):
                              else 1 for i, f in enumerate(state['features'])])  # set op as finished
         assert norm_coeff > 0, "The normalization coefficient has not been initialized"
 
+        state['old_features'] = copy.deepcopy(state['features'])
         state['features'] = np.concatenate((lower_bounds.reshape(-1, 1) / norm_coeff,
                                             finished.reshape(-1, 1)), axis=1)
 
@@ -174,16 +177,17 @@ class GNNJobShopModel(Model):
         reward = 0
         if not possible:
             reward = - 1
-        done = GNNJobShopModel._is_done(new_state['remaining_ops'])
+        done = GNNJobShopModel._is_done(new_state['remaining_operations'])
         if done:
             reward = - GNNJobShopModel._makespan(new_state['schedule'])
 
         return new_state, reward, done
 
+
     @staticmethod
     def legal_actions(state):
-        return [job_id for job_id in range(len(state['remaining_ops'])) if
-                len(state['remaining_ops'][job_id]) > 0]
+        return [job_id for job_id in range(len(state['remaining_operations'])) if
+                len(state['remaining_operations'][job_id]) > 0]
 
     @staticmethod
     def init_adj_matrix(num_ops, num_jobs):
@@ -234,7 +238,7 @@ if __name__ == '__main__':
     for _ in range(1000):
         done = False
         state = model.random_problem(6, 6, 6)
-        remaining_operations = state['remaining_ops']
+        remaining_operations = state['remaining_operations']
         schedule = state['schedule']
         while not done:
             legal_actions = model.legal_actions(state)
