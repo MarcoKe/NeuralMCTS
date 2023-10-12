@@ -140,32 +140,6 @@ class JobShopModel(Model):
         return {'remaining_operations': remaining_ops, 'schedule': schedule, 'last_job_ops': last_job_ops,
                 'last_time_step': time_step, 'last_op': op if possible else state['last_op']}, reward, done, makespan
 
-    @staticmethod
-    def get_idle_times(schedule, op, time_step):
-        for m in schedule:
-            if len(m) > 0:
-                for o in m:
-                    if o[0] == op:
-                        op_ext = o
-        # op_ext = [o for m in schedule for o in m if o[0] == op][0]
-        start = max([op_ext[1], time_step])
-        end = op_ext[2]
-        idle_times = [0] * len(schedule)
-        if end <= time_step:
-            return idle_times
-
-        for idx, machine in enumerate(schedule):
-            if len(machine) == 0:
-                idle_times[idx] += (end - start) / 11  # <- normalization by maximal op duration
-                continue
-            sch_op = machine[-1]
-            if sch_op[1] >= start or sch_op[2] >= end:  # gap already accounted for
-                continue
-            if sch_op[2] < end:
-                idle_times[idx] += (end - max([sch_op[2], time_step])) / 11
-
-        return idle_times
-
 
     @staticmethod
     def legal_actions(state):

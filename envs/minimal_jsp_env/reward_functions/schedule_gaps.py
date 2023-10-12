@@ -6,9 +6,9 @@ class ScheduleGapsReward(gym.RewardWrapper):
         self.env = env
         super(ScheduleGapsReward, self).__init__(env)
 
-    def reward(self, reward):  # todo make tests
+    def reward(self, reward):
         if reward == -1:  # action was not possible
-            return reward  # todo check how this influences performance - is it better when left out?
+            return reward
 
         schedule = self.env.state['schedule']
         time_step = self.env.state['last_time_step']
@@ -23,6 +23,14 @@ class ScheduleGapsReward(gym.RewardWrapper):
 
         start = max([op_ext[1], time_step])
         end = op_ext[2]
+        idle_times = ScheduleGapsReward.get_idle_times(start, end, time_step, schedule)
+
+        reward = (op.duration - sum(idle_times)) / self.env.max_op_duration  # normalization
+
+        return reward
+
+    @staticmethod
+    def get_idle_times(start, end, time_step, schedule):
         idle_times = [0] * len(schedule)
 
         # Calculate gaps induced by the last scheduled operation
@@ -36,6 +44,4 @@ class ScheduleGapsReward(gym.RewardWrapper):
                     if last_sch_op_start < start and last_sch_op_end < end:  # otherwise the gap is already accounted for
                         idle_times[idx] += (end - max([last_sch_op_end, time_step]))
 
-        reward = (op.duration - sum(idle_times)) / self.env.max_op_duration  # normalization
-
-        return reward
+        return idle_times
