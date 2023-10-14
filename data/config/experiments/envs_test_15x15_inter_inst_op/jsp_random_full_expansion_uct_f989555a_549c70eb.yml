@@ -1,0 +1,11 @@
+name: jsp_random_full_expansion_uct_f989555a_549c70eb
+tag: inter_inst_op_entropy_15x15_test
+original_exp: inter_inst_op_entropy_15x15_04/jsp_random_full_expansion_uct_f989555a
+envs:
+- entropy/jsp_minimal_15x15_inter_inst_op_02
+- entropy/jsp_minimal_15x15_inter_inst_op_03
+- entropy/jsp_minimal_15x15_inter_inst_op_04
+- entropy/jsp_minimal_15x15_inter_inst_op_05
+- entropy/jsp_minimal_15x15_inter_inst_op_06
+- entropy/jsp_minimal_15x15_inter_inst_op_07
+- entropy/jsp_minimal_15x15_inter_inst_op_08
