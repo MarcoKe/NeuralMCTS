@@ -1,0 +1,12 @@
+name: jsp_uct_neural_expansion_neural_value_eval_01sensitivity
+tag: left_shift_15x15_sensitivity
+original_exp: 15x15/jsp_uct_neural_expansion_neural_value_eval_01
+original_tag: 15x15
+budgets:
+- 0
+- 1
+- 5
+- 10
+- 25
+- 50
+- 100

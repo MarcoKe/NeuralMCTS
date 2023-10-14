@@ -1,0 +1,6 @@
+location: ''
+learning_rate: 0.00001
+clip_range: 0.01
+net_arch:
+  pi: [512,512,512]
+  vf: [512,512,512]
