@@ -1,3 +1,4 @@
+from typing import List
 from envs.minimal_jsp_env.util.visualization.gantt_visualizer import create_gantt
 from envs.minimal_jsp_env.util.jsp_generation.jsp_generator import JSPGenerator
 from envs.gnn_jsp_env.jsp_model import GNNJobShopModel
@@ -45,9 +46,10 @@ class GNNJobShopEnv(gym.Env):
         node_states = np.array([1 if i % self.ops_per_job == 0 else 0 for i in range(self.num_ops)],
                                dtype=np.single)
 
-        self.state = {'remaining_ops': remaining_ops, 'schedule': schedule, 'machine_infos': machine_infos,
+        self.state = {'remaining_operations': remaining_ops, 'schedule': schedule, 'machine_infos': machine_infos,
                       'last_job_ops': last_job_ops, 'last_mch_ops': last_machine_ops, 'adj_matrix': adj_matrix,
-                      'features': features, 'node_states': node_states, 'jobs': self.instance.jobs}
+                      'features': features, 'old_features': features, 'node_states': node_states,
+                      'time_step': 0, 'last_op': None, 'jobs': self.instance.jobs}
         return self.state
 
     def _generate_instance(self):
@@ -62,7 +64,7 @@ class GNNJobShopEnv(gym.Env):
 
     def set_state(self, state):
         self.state = state
-        if len(state['remaining_ops']) > 0:
+        if len(state['remaining_operations']) > 0:
             self.done = False
 
     def step(self, action):
@@ -80,4 +82,8 @@ class GNNJobShopEnv(gym.Env):
         return self.instance
 
     def max_num_actions(self):
-        return len(self.state['remaining_ops'])
+        return len(self.state['remaining_operations'])
+
+    def action_masks(self) -> List[bool]:
+        return [True if len(self.state['remaining_operations'][job_id]) > 0 else False for job_id in
+                range(len(self.state['remaining_operations']))]
