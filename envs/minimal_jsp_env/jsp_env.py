@@ -1,10 +1,7 @@
-from typing import List
-
 from envs.minimal_jsp_env.util.visualization.gantt_visualizer import create_gantt
 from envs.minimal_jsp_env.util.jsp_generation.jsp_generator import JSPGenerator
 from envs.minimal_jsp_env.jsp_model import JobShopModel
 import gym
-import numpy as np
 from copy import deepcopy
 
 class JobShopEnv(gym.Env):
@@ -26,11 +23,8 @@ class JobShopEnv(gym.Env):
         schedule = [[] for _ in range(self.num_machines)]
         last_job_ops = [-1 for _ in range(self.num_jobs)]
 
-        durations = np.array([[op.duration for op in job] for job in self.instance.jobs])
-        lower_bounds = np.cumsum(durations, axis=1, dtype=np.single).flatten()
-
-        s_ = {'remaining_operations': deepcopy(self.instance.jobs), 'schedule': schedule, 'last_job_ops': last_job_ops,
-              'lower_bounds': lower_bounds, 'reward': 0.0, 'time_step': 0, 'last_op': None}
+        s_ = {'remaining_operations': deepcopy(self.instance.jobs), 'schedule': schedule,
+                'last_job_ops': last_job_ops}
 
         self.state = s_
         return self.state
@@ -52,10 +46,10 @@ class JobShopEnv(gym.Env):
             self.done = False
 
     def step(self, action):
-        self.state, reward, self.done, makespan = self.model.step(self.state, action)
+        self.state, reward, self.done = self.model.step(self.state, action)
         self.steps += 1
 
-        return self.state, reward, self.done, {"makespan": makespan}
+        return self.state, reward, self.done, {}
 
     def render(self):
         create_gantt(self.state['schedule'])
@@ -71,7 +65,3 @@ class JobShopEnv(gym.Env):
 
     def current_num_steps(self) -> int:
         return self.steps
-
-    def action_masks(self) -> List[bool]:
-        return [True if len(self.state['remaining_operations'][job_id]) > 0 else False for job_id in
-                range(len(self.state['remaining_operations']))]

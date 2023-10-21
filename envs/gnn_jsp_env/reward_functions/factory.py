@@ -7,5 +7,5 @@ class RewardFactory(ObjectFactory):
         return self.create(key, **kwargs)
 
 
-reward_functions = RewardFactory()
-reward_functions.register_builder('opt_gap', OptimalityGapReward)
+gnn_reward_functions = RewardFactory()
+gnn_reward_functions.register_builder('opt_gap', OptimalityGapReward)

@@ -2,7 +2,7 @@ import torch
 from stable_baselines3 import PPO
 
 from envs.minimal_jsp_env.jsp_model import JobShopModel
-from envs.minimal_jsp_env.reward_functions.opt_gap import OptimalityGapReward
+from envs.gnn_jsp_env.reward_functions.opt_gap import OptimalityGapReward
 from envs.tsp.TSP import TSPGym
 from envs.minimal_jsp_env.jsp_env import JobShopEnv
 from envs.minimal_jsp_env.action_spaces.naive import NaiveActionSpace

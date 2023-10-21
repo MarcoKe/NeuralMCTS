@@ -2,7 +2,6 @@ import copy
 from envs.model import Model
 from envs.minimal_jsp_env.entities import Operation
 import random
-import numpy as np
 
 
 class JobShopModel(Model):
@@ -21,13 +20,9 @@ class JobShopModel(Model):
             remaining_operations.append(job)
 
         schedule = [[] for i in range(num_machines)]
+
         last_job_ops = [-1 for _ in range(num_jobs)]
-
-        durations = np.array([[op.duration for op in job] for job in remaining_operations])
-        lower_bounds = np.cumsum(durations, axis=1, dtype=np.single).flatten()
-
-        return {'remaining_operations': remaining_operations, 'schedule': schedule, 'last_job_ops': last_job_ops,
-                'lower_bounds': lower_bounds, 'reward': 0.0, 'time_step': 0, 'last_op': None}
+        return {'remaining_operations': remaining_operations, 'schedule': schedule, 'last_job_ops': last_job_ops}
 
     @staticmethod
     def _schedule_op(job_id, remaining_operations, schedule):
@@ -121,25 +116,14 @@ class JobShopModel(Model):
 
     @staticmethod
     def step(state, action):
-        op = None
-        if len(state['remaining_operations'][action]) > 0:
-            op = state['remaining_operations'][action][0]
-        time_step = max(state['last_job_ops'])
-
-        remaining_ops, schedule, last_job_ops, possible = \
-            JobShopModel._schedule_op(action, state['remaining_operations'], state['schedule'], state['last_job_ops'])
+        remaining_ops, schedule, last_job_ops, possible = JobShopModel._schedule_op(action, state['remaining_operations'], state['schedule'], state['last_job_ops'])
 
         reward = 0
-        makespan = JobShopModel._makespan(schedule)
-        if not possible:
-            reward = - 1
+        if not possible: reward = -1
         done = JobShopModel._is_done(remaining_ops)
         if done:
             reward = - JobShopModel._makespan(schedule)
-
-        return {'remaining_operations': remaining_ops, 'schedule': schedule, 'last_job_ops': last_job_ops,
-                'last_time_step': time_step, 'last_op': op if possible else state['last_op']}, reward, done, makespan
-
+        return {'remaining_operations': remaining_ops, 'schedule': schedule, 'last_job_ops': last_job_ops}, reward, done
 
     @staticmethod
     def legal_actions(state):

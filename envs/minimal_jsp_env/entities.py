@@ -2,7 +2,6 @@ from collections import namedtuple
 from typing import List
 from envs.minimal_jsp_env.util.jsp_solver import JSPSolver
 from envs.minimal_jsp_env.util.jsp_generation.entropy_functions import calculate_entropy_from_operations_list
-import numpy as np
 
 # todo: make this prettier. unique_op_id is a unique op id across all jobs. op_id should probably be renamed "precedence"
 Operation = namedtuple("Operation", ["job_id", "op_id", "unique_op_id", "machine_type", "duration"])
@@ -28,7 +27,3 @@ class JSPInstance:
         self.spt_time = spt_time
         self.opt_time = opt_time
         self.intra_instance_op_entropy = intra_instance_op_entropy
-
-        durations = np.array([[op.duration for op in job] for job in jobs])
-        lower_bounds = np.cumsum(durations, axis=1, dtype=np.single).flatten()
-        self.makespan_lb = lower_bounds.max()

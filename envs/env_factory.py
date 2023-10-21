@@ -9,6 +9,7 @@ from envs.gnn_jsp_env.jsp_env import GNNJobShopEnv
 from envs.gnn_jsp_env.jsp_model import GNNJobShopModel
 from envs.gnn_jsp_env.observation_spaces.factory import gnn_observation_spaces
 from envs.gnn_jsp_env.action_spaces.factory import gnn_action_spaces
+from envs.gnn_jsp_env.reward_functions.factory import gnn_reward_functions
 from envs.tsp.observation_spaces.factory import observation_spaces as tsp_observation_spaces
 from envs.tsp.action_spaces.factory import action_spaces as tsp_action_spaces
 from envs.tsp.reward_functions.factory import reward_functions as tsp_reward_functions
@@ -73,7 +74,7 @@ action_factories.register_class('jsp_minimal', action_spaces)
 action_factories.register_class('tsp', tsp_action_spaces)
 
 reward_factories = RewardFactoryFactory()
-reward_factories.register_class('jsp_gnn', reward_functions)
+reward_factories.register_class('jsp_gnn', gnn_reward_functions)
 reward_factories.register_class('jsp_minimal', reward_functions)
 reward_factories.register_class('tsp', tsp_reward_functions)
 
