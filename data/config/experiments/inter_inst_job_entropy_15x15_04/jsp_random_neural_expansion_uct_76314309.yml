@@ -1,0 +1,5 @@
+name: jsp_random_neural_expansion_uct_76314309
+env: entropy/jsp_minimal_15x15_inter_inst_job_04
+agent: inter_inst_job_entropy_15x15/random_neural_expansion_uct_76314309
+policy_improvement_iterations: 15
+tag: inter_inst_job_entropy_15x15

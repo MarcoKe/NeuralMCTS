@@ -1,0 +1,12 @@
+name: jsp_puct_full_expansion_random_01sensitivity
+tag: left_shift_15x15_sensitivity
+original_exp: 15x15/jsp_puct_full_expansion_random_01
+original_tag: 15x15
+budgets:
+- 0
+- 1
+- 5
+- 10
+- 25
+- 50
+- 100
