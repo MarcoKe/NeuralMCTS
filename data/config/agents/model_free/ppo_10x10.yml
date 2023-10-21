@@ -1,6 +1,5 @@
 location: ''
 learning_rate: 0.00002
-clip_range: 0.05
 net_arch:
   pi: [256, 256]
   vf: [256, 256]

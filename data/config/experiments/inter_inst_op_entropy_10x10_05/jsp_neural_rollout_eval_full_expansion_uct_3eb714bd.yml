@@ -1,5 +1,0 @@
-name: jsp_neural_rollout_eval_full_expansion_uct_3eb714bd
-env: entropy/jsp_minimal_10x10_inter_inst_op_05
-agent: inter_inst_op_entropy_10x10/neural_rollout_eval_full_expansion_uct_3eb714bd
-policy_improvement_iterations: 15
-tag: inter_inst_op_entropy_10x10

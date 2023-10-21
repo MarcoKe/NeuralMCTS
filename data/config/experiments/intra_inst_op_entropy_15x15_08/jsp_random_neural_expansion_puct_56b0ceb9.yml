@@ -1,5 +1,0 @@
-name: jsp_random_neural_expansion_puct_56b0ceb9
-env: entropy/jsp_minimal_15x15_intra_inst_op_08
-agent: intra_inst_op_entropy_15x15/random_neural_expansion_puct_56b0ceb9
-policy_improvement_iterations: 15
-tag: intra_inst_op_entropy_15x15

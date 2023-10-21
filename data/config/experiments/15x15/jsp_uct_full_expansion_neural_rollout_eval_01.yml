@@ -1,5 +1,0 @@
-name: jsp_uct_full_expansion_neural_rollout_eval_01
-env: jsp_minimal_15x15
-agent: 15x15/uct_full_expansion_neural_rollout_eval_01
-policy_improvement_iterations: 30
-tag: 15x15

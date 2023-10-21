@@ -1,5 +1,0 @@
-name: jsp_random_full_expansion_uct_af247fa4
-env: entropy/jsp_minimal_10x10_inter_inst_job_05
-agent: inter_inst_job_entropy_10x10/random_full_expansion_uct_af247fa4
-policy_improvement_iterations: 15
-tag: inter_inst_job_entropy_10x10

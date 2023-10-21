@@ -1,5 +1,0 @@
-name: jsp_random_full_expansion_uct_ad44aa6c
-env: entropy/jsp_minimal_10x10_intra_inst_op_03
-agent: intra_inst_op_entropy_10x10/random_full_expansion_uct_ad44aa6c
-policy_improvement_iterations: 15
-tag: intra_inst_op_entropy_10x10

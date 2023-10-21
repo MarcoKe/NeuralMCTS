@@ -37,28 +37,3 @@ def load_sensitivity_exp_config(exp_name):
     agent_config['learned_policy']['location'] = saved_agent_path
 
     return general_config, exp_name, exp, original_exp, agent_config, env_config
-
-
-def load_envs_test_exp_config(exp_name):
-    general_config, experiments_path, agents_path, environments_path = load_gen_config()
-
-    exp = load_yml((experiments_path / Path(exp_name + '.yml')))
-
-    model_free = False
-    if 'agent_config' in exp:
-        if 'model_free' in exp['agent_config']:
-            model_free = True
-        agent_config = load_yml((agents_path / Path(exp['agent_config'] + '.yml')))
-    else:
-        _, _, original_exp, agent_config, env_config = load_exp_config(exp['original_exp'])
-        saved_agent_path = general_config['output']['saved_agents'] + '/' + exp['original_exp']
-        saved_agent_path = saved_agent_path.split('/')
-        # saved_agent_path[-1] = 'final_' + saved_agent_path[-1]
-        saved_agent_path = '/'.join(saved_agent_path)
-        agent_config['learned_policy']['location'] = saved_agent_path
-
-    eval_envs = []
-    for env in exp['envs']:
-        eval_envs.append(load_yml((environments_path / Path(env + '.yml'))))
-
-    return general_config, exp_name, exp, agent_config, eval_envs, model_free

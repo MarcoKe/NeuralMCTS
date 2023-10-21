@@ -20,3 +20,4 @@ class OptimalityGapReward(gym.RewardWrapper):
 
         assert makespan >= optimum, f"weird opt gap: {optimality_gap}, makespan: {makespan}, optimum: {optimum}"
         return - optimality_gap
+

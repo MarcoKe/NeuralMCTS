@@ -8,9 +8,9 @@ params:
   instance_generator_eval:
     name: 'deterministic_multiple'
     params:
-      path: 'data/jsp_instances/15x15x15_test/'
+      path: 'data/jsp_instances/15x15x15/'
       format: 'samsonov'
-      max_instances: 100
+      max_instances: 8
   observation_space:
     name: 'lower_bound'
     params: {}
