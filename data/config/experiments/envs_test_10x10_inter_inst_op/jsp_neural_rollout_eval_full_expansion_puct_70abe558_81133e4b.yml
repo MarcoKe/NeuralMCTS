@@ -1,0 +1,11 @@
+name: jsp_neural_rollout_eval_full_expansion_puct_70abe558_81133e4b
+tag: inter_inst_op_entropy_10x10_test
+original_exp: inter_inst_op_entropy_10x10_04/jsp_neural_rollout_eval_full_expansion_puct_70abe558
+envs:
+- entropy/jsp_minimal_10x10_inter_inst_op_02
+- entropy/jsp_minimal_10x10_inter_inst_op_03
+- entropy/jsp_minimal_10x10_inter_inst_op_04
+- entropy/jsp_minimal_10x10_inter_inst_op_05
+- entropy/jsp_minimal_10x10_inter_inst_op_06
+- entropy/jsp_minimal_10x10_inter_inst_op_07
+- entropy/jsp_minimal_10x10_inter_inst_op_08

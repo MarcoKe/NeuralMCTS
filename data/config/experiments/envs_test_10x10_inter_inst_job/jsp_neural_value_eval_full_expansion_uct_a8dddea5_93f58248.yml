@@ -1,0 +1,11 @@
+name: jsp_neural_value_eval_full_expansion_uct_a8dddea5_93f58248
+tag: inter_inst_job_entropy_10x10_test
+original_exp: inter_inst_job_entropy_10x10_04/jsp_neural_value_eval_full_expansion_uct_a8dddea5
+envs:
+- entropy/jsp_minimal_10x10_inter_inst_job_02
+- entropy/jsp_minimal_10x10_inter_inst_job_03
+- entropy/jsp_minimal_10x10_inter_inst_job_04
+- entropy/jsp_minimal_10x10_inter_inst_job_05
+- entropy/jsp_minimal_10x10_inter_inst_job_06
+- entropy/jsp_minimal_10x10_inter_inst_job_07
+- entropy/jsp_minimal_10x10_inter_inst_job_08

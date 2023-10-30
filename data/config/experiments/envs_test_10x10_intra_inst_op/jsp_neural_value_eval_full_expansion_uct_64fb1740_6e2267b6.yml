@@ -1,0 +1,11 @@
+name: jsp_neural_value_eval_full_expansion_uct_64fb1740_6e2267b6
+tag: intra_inst_op_entropy_10x10_test
+original_exp: intra_inst_op_entropy_10x10_03/jsp_neural_value_eval_full_expansion_uct_64fb1740
+envs:
+- entropy/jsp_minimal_10x10_intra_inst_op_02
+- entropy/jsp_minimal_10x10_intra_inst_op_03
+- entropy/jsp_minimal_10x10_intra_inst_op_04
+- entropy/jsp_minimal_10x10_intra_inst_op_05
+- entropy/jsp_minimal_10x10_intra_inst_op_06
+- entropy/jsp_minimal_10x10_intra_inst_op_07
+- entropy/jsp_minimal_10x10_intra_inst_op_08

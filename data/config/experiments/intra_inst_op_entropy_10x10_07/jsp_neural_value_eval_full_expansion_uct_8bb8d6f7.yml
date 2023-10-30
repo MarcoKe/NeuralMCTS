@@ -1,0 +1,5 @@
+name: jsp_neural_value_eval_full_expansion_uct_8bb8d6f7
+env: entropy/jsp_minimal_10x10_intra_inst_op_07
+agent: intra_inst_op_entropy_10x10/neural_value_eval_full_expansion_uct_8bb8d6f7
+policy_improvement_iterations: 15
+tag: intra_inst_op_entropy_10x10
